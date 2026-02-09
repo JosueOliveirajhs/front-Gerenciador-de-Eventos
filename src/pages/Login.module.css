@@ -1,0 +1,175 @@
+/* Base Styles */
+.loginPage {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  position: relative;
+}
+
+.background {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: 
+    radial-gradient(circle at 20% 80%, rgba(99, 102, 241, 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(139, 92, 246, 0.1) 0%, transparent 50%);
+}
+
+/* Login Container */
+.loginContainer {
+  width: 100%;
+  max-width: 440px;
+  z-index: 2;
+}
+
+/* Login Card */
+.loginCard {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 
+    0 20px 40px rgba(0, 0, 0, 0.1),
+    0 8px 25px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+}
+
+/* Header */
+.loginHeader {
+  background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+  padding: 2.5rem 2rem 2rem;
+  text-align: center;
+  border-bottom: 1px solid #334155;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.logoIcon {
+  width: 48px;
+  height: 48px;
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+}
+
+.logoText {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.logoTitle {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: white;
+  line-height: 1;
+}
+
+.logoSubtitle {
+  font-size: 0.875rem;
+  color: #94a3b8;
+  line-height: 1;
+}
+
+/* Form Container */
+.loginFormContainer {
+  padding: 2.5rem 2rem;
+}
+
+.welcomeTitle {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 0.5rem;
+  text-align: center;
+}
+
+.welcomeSubtitle {
+  color: #64748b;
+  text-align: center;
+  margin-bottom: 2rem;
+  font-size: 0.875rem;
+}
+
+/* Footer */
+.loginFooter {
+  padding: 1.5rem 2rem;
+  border-top: 1px solid #e2e8f0;
+  text-align: center;
+  background: #f8fafc;
+}
+
+.footerText {
+  color: #64748b;
+  font-size: 0.75rem;
+  margin: 0;
+}
+
+.footerLink {
+  color: #6366f1;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.footerLink:hover {
+  text-decoration: underline;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .loginPage {
+    padding: 0.5rem;
+  }
+  
+  .loginCard {
+    border-radius: 12px;
+  }
+  
+  .loginHeader {
+    padding: 2rem 1.5rem 1.5rem;
+  }
+  
+  .loginFormContainer {
+    padding: 2rem 1.5rem;
+  }
+  
+  .logo {
+    flex-direction: column;
+    text-align: center;
+  }
+  
+  .logoText {
+    align-items: center;
+  }
+}
+
+/* Loading Animation */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.loginCard {
+  animation: fadeIn 0.5s ease-out;
+}
