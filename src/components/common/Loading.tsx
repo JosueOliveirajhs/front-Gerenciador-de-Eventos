@@ -1,10 +1,8 @@
 import React from 'react';
 
-export const Loading: React.FC = () => {
-  return (
-    <div className="loading">
-      <div className="spinner"></div>
-      <p>Carregando...</p>
-    </div>
-  );
+const LoadingComponent = () => {
+  return <div>Carregando...</div>;
 };
+
+export default LoadingComponent;
+export const Loading = LoadingComponent;
