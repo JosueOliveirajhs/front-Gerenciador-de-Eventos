@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { LoginData } from '../../types/User';
 import { authService } from '../../services/auth';
 import { useAuth } from '../../context/AuthContext';
 import styles from './LoginForm.module.css';
