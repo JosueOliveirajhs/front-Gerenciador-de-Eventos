@@ -1,8 +1,20 @@
-import React, { useState, useEffect } from 'react';
-import { Event } from '../../types/Event';
-import { dashboardService, DashboardStats } from '../../services/dashboard';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line, Cell } from 'recharts';
-import styles from './OwnerDashboard.module.css';
+import React, { useState, useEffect } from "react";
+import { Event } from "../../types/Event";
+import { dashboardService, DashboardStats } from "../../services/dashboard";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+  LineChart,
+  Line,
+  Cell,
+} from "recharts";
+import styles from "./OwnerDashboard.module.css";
 
 export const OwnerDashboard: React.FC = () => {
   const [stats, setStats] = useState<DashboardStats>({
@@ -18,52 +30,52 @@ export const OwnerDashboard: React.FC = () => {
     upcomingEvents: [],
     eventsByStatus: {},
     eventsByMonth: {},
-    revenueByMonth: {}
+    revenueByMonth: {},
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   // Funções auxiliares
   const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL'
+    return new Intl.NumberFormat("pt-BR", {
+      style: "currency",
+      currency: "BRL",
     }).format(value);
   };
 
   const getStatusLabel = (status: string) => {
     const labels: { [key: string]: string } = {
-      'QUOTE': 'Orçamento',
-      'CONFIRMED': 'Confirmado',
-      'COMPLETED': 'Concluído',
-      'CANCELLED': 'Cancelado'
+      QUOTE: "Orçamento",
+      CONFIRMED: "Confirmado",
+      COMPLETED: "Concluído",
+      CANCELLED: "Cancelado",
     };
     return labels[status] || status;
   };
 
   const getStatusColor = (status: string) => {
     const colors: { [key: string]: string } = {
-      'QUOTE': '#0088FE',
-      'CONFIRMED': '#00C49F',
-      'COMPLETED': '#FFBB28',
-      'CANCELLED': '#FF8042'
+      QUOTE: "#0088FE",
+      CONFIRMED: "#00C49F",
+      COMPLETED: "#FFBB28",
+      CANCELLED: "#FF8042",
     };
-    return colors[status] || '#8884d8';
+    return colors[status] || "#8884d8";
   };
 
   const formatDate = (dateString: string) => {
     // Corrigir problema de timezone - adicionar timezone do Brasil
-    const date = new Date(dateString + 'T00:00:00-03:00');
-    return date.toLocaleDateString('pt-BR', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric'
+    const date = new Date(dateString + "T00:00:00-03:00");
+    return date.toLocaleDateString("pt-BR", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
     });
   };
 
   // Função para corrigir datas ao exibir
   const getCorrectedDate = (dateString: string): Date => {
-    return new Date(dateString + 'T00:00:00-03:00');
+    return new Date(dateString + "T00:00:00-03:00");
   };
 
   useEffect(() => {
@@ -74,16 +86,16 @@ export const OwnerDashboard: React.FC = () => {
     try {
       setLoading(true);
       setError(null);
-      console.log('🔄 Carregando dados do dashboard...');
-      
+      console.log("🔄 Carregando dados do dashboard...");
+
       const dashboardStats = await dashboardService.getDashboardStats();
-      console.log('✅ Dados recebidos:', dashboardStats);
-      console.log('📅 Próximos eventos:', dashboardStats.upcomingEvents);
-      
+      console.log("✅ Dados recebidos:", dashboardStats);
+      console.log("📅 Próximos eventos:", dashboardStats.upcomingEvents);
+
       setStats(dashboardStats);
     } catch (error) {
-      console.error('❌ Erro ao carregar dashboard:', error);
-      setError('Erro ao carregar dados do dashboard. Tente novamente.');
+      console.error("❌ Erro ao carregar dashboard:", error);
+      setError("Erro ao carregar dados do dashboard. Tente novamente.");
     } finally {
       setLoading(false);
     }
@@ -94,21 +106,25 @@ export const OwnerDashboard: React.FC = () => {
     .map(([name, value]) => ({
       name: getStatusLabel(name),
       Quantidade: value,
-      cor: getStatusColor(name)
+      cor: getStatusColor(name),
     }))
     .sort((a, b) => b.Quantidade - a.Quantidade); // Ordenar do maior para o menor
 
   // Dados para gráfico de barras VERTICAL (Eventos por Mês)
-  const monthlyEventsData = Object.entries(stats.eventsByMonth).map(([name, value]) => ({
-    name,
-    Eventos: value
-  }));
+  const monthlyEventsData = Object.entries(stats.eventsByMonth).map(
+    ([name, value]) => ({
+      name,
+      Eventos: value,
+    }),
+  );
 
   // Dados para gráfico de linha (Receita por Mês)
-  const monthlyRevenueData = Object.entries(stats.revenueByMonth).map(([name, value]) => ({
-    name,
-    Receita: typeof value === 'number' ? value : 0
-  }));
+  const monthlyRevenueData = Object.entries(stats.revenueByMonth).map(
+    ([name, value]) => ({
+      name,
+      Receita: typeof value === "number" ? value : 0,
+    }),
+  );
 
   if (loading) {
     return (
@@ -154,7 +170,7 @@ export const OwnerDashboard: React.FC = () => {
             </div>
           </div>
         </div>
-        
+
         <div className={`${styles.statCard} ${styles.card}`}>
           <div className={styles.statIcon}>💰</div>
           <div className={styles.statContent}>
@@ -167,7 +183,7 @@ export const OwnerDashboard: React.FC = () => {
             </div>
           </div>
         </div>
-        
+
         <div className={`${styles.statCard} ${styles.card}`}>
           <div className={styles.statIcon}>⏳</div>
           <div className={styles.statContent}>
@@ -182,13 +198,14 @@ export const OwnerDashboard: React.FC = () => {
             </div>
           </div>
         </div>
-        
+
         <div className={`${styles.statCard} ${styles.card}`}>
           <div className={styles.statIcon}>✅</div>
           <div className={styles.statContent}>
             <h3 className={styles.statLabel}>Concluídos/Cancelados</h3>
             <p className={styles.statNumber}>
-              {stats.completedEvents}<span className={styles.cancelled}>/{stats.cancelledEvents}</span>
+              {stats.completedEvents}
+              <span className={styles.cancelled}>/{stats.cancelledEvents}</span>
             </p>
             <div className={styles.statBreakdown}>
               <span>🎉 {stats.completedEvents} concluídos</span>
@@ -211,21 +228,18 @@ export const OwnerDashboard: React.FC = () => {
             >
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis type="number" />
-              <YAxis 
-                type="category" 
-                dataKey="name" 
+              <YAxis
+                type="category"
+                dataKey="name"
                 width={80}
                 tick={{ fontSize: 12 }}
               />
-              <Tooltip 
-                formatter={(value) => [`${value} eventos`, 'Quantidade']}
+              <Tooltip
+                formatter={(value) => [`${value} eventos`, "Quantidade"]}
                 labelFormatter={(label) => `Status: ${label}`}
               />
               <Legend />
-              <Bar 
-                dataKey="Quantidade" 
-                name="Eventos"
-              >
+              <Bar dataKey="Quantidade" name="Eventos">
                 {statusChartData.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={entry.cor} />
                 ))}
@@ -236,13 +250,17 @@ export const OwnerDashboard: React.FC = () => {
 
         {/* Gráfico de Barras VERTICAL - Eventos por Mês */}
         <div className={`${styles.chartCard} ${styles.card}`}>
-          <h3 className={styles.chartTitle}>Eventos por Mês (Últimos 6 meses)</h3>
+          <h3 className={styles.chartTitle}>
+            Eventos por Mês (Últimos 6 meses)
+          </h3>
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={monthlyEventsData}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="name" />
               <YAxis />
-              <Tooltip formatter={(value) => [`${value} eventos`, 'Quantidade']} />
+              <Tooltip
+                formatter={(value) => [`${value} eventos`, "Quantidade"]}
+              />
               <Legend />
               <Bar dataKey="Eventos" fill="#8884d8" />
             </BarChart>
@@ -251,15 +269,27 @@ export const OwnerDashboard: React.FC = () => {
 
         {/* Gráfico de Linha - Receita por Mês */}
         <div className={`${styles.chartCard} ${styles.card}`}>
-          <h3 className={styles.chartTitle}>Receita por Mês (Últimos 6 meses)</h3>
+          <h3 className={styles.chartTitle}>
+            Receita por Mês (Últimos 6 meses)
+          </h3>
           <ResponsiveContainer width="100%" height={300}>
             <LineChart data={monthlyRevenueData}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="name" />
               <YAxis tickFormatter={(value) => `R$ ${value / 1000}k`} />
-              <Tooltip formatter={(value) => [formatCurrency(Number(value)), 'Receita']} />
+              <Tooltip
+                formatter={(value) => [
+                  formatCurrency(Number(value)),
+                  "Receita",
+                ]}
+              />
               <Legend />
-              <Line type="monotone" dataKey="Receita" stroke="#00C49F" strokeWidth={2} />
+              <Line
+                type="monotone"
+                dataKey="Receita"
+                stroke="#00C49F"
+                strokeWidth={2}
+              />
             </LineChart>
           </ResponsiveContainer>
         </div>
@@ -269,16 +299,20 @@ export const OwnerDashboard: React.FC = () => {
       <div className={`${styles.upcomingEvents} ${styles.card}`}>
         <div className={styles.sectionHeader}>
           <h2 className={styles.sectionTitle}>Próximos Eventos</h2>
-          <span className={styles.sectionBadge}>{stats.upcomingEvents.length}</span>
+          <span className={styles.sectionBadge}>
+            {stats.upcomingEvents.length}
+          </span>
         </div>
-        
+
         {stats.upcomingEvents.length === 0 ? (
           <div className={styles.emptyState}>
             <div className={styles.emptyIcon}>📅</div>
             <h4 className={styles.emptyTitle}>Nenhum evento próximo</h4>
             <p className={styles.emptyText}>
-              Não há eventos confirmados para os próximos dias.<br />
-              Verifique se existem eventos com status "CONFIRMED" e datas futuras.
+              Não há eventos confirmados para os próximos dias.
+              <br />
+              Verifique se existem eventos com status "CONFIRMED" e datas
+              futuras.
             </p>
             <button onClick={loadDashboardData} className={styles.retryButton}>
               🔄 Verificar Novamente
@@ -286,14 +320,20 @@ export const OwnerDashboard: React.FC = () => {
           </div>
         ) : (
           <div className={styles.eventsList}>
-            {stats.upcomingEvents.map(event => (
-              <div key={event.id} className={`${styles.eventCard} ${styles.cardHover}`}>
+            {stats.upcomingEvents.map((event) => (
+              <div
+                key={event.id}
+                className={`${styles.eventCard} ${styles.cardHover}`}
+              >
                 <div className={styles.eventDate}>
                   <span className={styles.dateDay}>
                     {getCorrectedDate(event.eventDate).getDate()}
                   </span>
                   <span className={styles.dateMonth}>
-                    {getCorrectedDate(event.eventDate).toLocaleDateString('pt-BR', { month: 'short' })}
+                    {getCorrectedDate(event.eventDate).toLocaleDateString(
+                      "pt-BR",
+                      { month: "short" },
+                    )}
                   </span>
                   <span className={styles.dateYear}>
                     {getCorrectedDate(event.eventDate).getFullYear()}
@@ -308,14 +348,17 @@ export const OwnerDashboard: React.FC = () => {
                     📅 {formatDate(event.eventDate)}
                   </p>
                   <p className={styles.clientName}>
-                    <strong>Cliente:</strong> {event.client?.name || 'N/A'}
+                    <strong>Cliente:</strong> {event.client?.name || "N/A"}
                   </p>
                 </div>
                 <div className={styles.eventValue}>
                   <span className={styles.valueAmount}>
                     {formatCurrency(event.totalValue)}
                   </span>
-                  <span className={styles.eventStatus} data-status={event.status.toLowerCase()}>
+                  <span
+                    className={styles.eventStatus}
+                    data-status={event.status.toLowerCase()}
+                  >
                     {getStatusLabel(event.status)}
                   </span>
                 </div>
