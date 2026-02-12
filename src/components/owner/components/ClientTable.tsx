@@ -1,0 +1,229 @@
+// src/components/admin/clients/components/ClientTable.tsx
+
+import React, { useState, useMemo } from 'react';
+import { User } from '../types';
+import styles from './ClientTable.module.css';
+
+interface ClientTableProps {
+    clients: User[];
+    onEdit: (client: User) => void;
+    onDelete: (id: number) => void;
+    onViewReceipts: (client: User) => void;
+    onViewBoletos: (client: User) => void;
+    isLoading?: boolean;
+}
+
+type SortField = 'name' | 'cpf' | 'email' | 'phone';
+type SortDirection = 'asc' | 'desc';
+
+export const ClientTable: React.FC<ClientTableProps> = ({
+    clients,
+    onEdit,
+    onDelete,
+    onViewReceipts,
+    onViewBoletos,
+    isLoading = false
+}) => {
+    const [sortField, setSortField] = useState<SortField>('name');
+    const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
+
+    const sortedClients = useMemo(() => {
+        return [...clients].sort((a, b) => {
+            const aValue = a[sortField] || '';
+            const bValue = b[sortField] || '';
+            
+            if (sortDirection === 'asc') {
+                return aValue.localeCompare(bValue);
+            }
+            return bValue.localeCompare(aValue);
+        });
+    }, [clients, sortField, sortDirection]);
+
+    const handleSort = (field: SortField) => {
+        if (field === sortField) {
+            setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
+        } else {
+            setSortField(field);
+            setSortDirection('asc');
+        }
+    };
+
+    const formatCPF = (cpf: string) => {
+        return cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+    };
+
+    const formatPhone = (phone: string | null) => {
+        if (!phone) return '-';
+        const numbers = phone.replace(/\D/g, '');
+        if (numbers.length === 11) {
+            return numbers.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
+        }
+        if (numbers.length === 10) {
+            return numbers.replace(/(\d{2})(\d{4})(\d{4})/, '($1) $2-$3');
+        }
+        return phone;
+    };
+
+    if (isLoading) {
+        return (
+            <div className={styles.loadingContainer}>
+                <div className={styles.loadingSpinner}></div>
+                <p>Carregando clientes...</p>
+            </div>
+        );
+    }
+
+    if (clients.length === 0) {
+        return null;
+    }
+
+    return (
+        <div className={styles.container}>
+            <div className={styles.tableWrapper}>
+                <table className={styles.table}>
+                    <thead className={styles.thead}>
+                        <tr>
+                            <th 
+                                onClick={() => handleSort('cpf')}
+                                className={`${styles.headerCell} ${styles.sortable}`}
+                            >
+                                <div className={styles.headerContent}>
+                                    CPF
+                                    {sortField === 'cpf' && (
+                                        <span className={styles.sortIcon}>
+                                            {sortDirection === 'asc' ? '↑' : '↓'}
+                                        </span>
+                                    )}
+                                </div>
+                            </th>
+                            <th 
+                                onClick={() => handleSort('name')}
+                                className={`${styles.headerCell} ${styles.sortable}`}
+                            >
+                                <div className={styles.headerContent}>
+                                    Nome
+                                    {sortField === 'name' && (
+                                        <span className={styles.sortIcon}>
+                                            {sortDirection === 'asc' ? '↑' : '↓'}
+                                        </span>
+                                    )}
+                                </div>
+                            </th>
+                            <th 
+                                onClick={() => handleSort('email')}
+                                className={`${styles.headerCell} ${styles.sortable} ${styles.hideMobile}`}
+                            >
+                                <div className={styles.headerContent}>
+                                    E-mail
+                                    {sortField === 'email' && (
+                                        <span className={styles.sortIcon}>
+                                            {sortDirection === 'asc' ? '↑' : '↓'}
+                                        </span>
+                                    )}
+                                </div>
+                            </th>
+                            <th 
+                                onClick={() => handleSort('phone')}
+                                className={`${styles.headerCell} ${styles.sortable} ${styles.hideMobile}`}
+                            >
+                                <div className={styles.headerContent}>
+                                    Telefone
+                                    {sortField === 'phone' && (
+                                        <span className={styles.sortIcon}>
+                                            {sortDirection === 'asc' ? '↑' : '↓'}
+                                        </span>
+                                    )}
+                                </div>
+                            </th>
+                            <th className={styles.headerCell}>
+                                Documentos
+                            </th>
+                            <th className={styles.headerCell}>
+                                Ações
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {sortedClients.map((client, index) => (
+                            <tr 
+                                key={client.id} 
+                                className={`${styles.row} ${index % 2 === 0 ? styles.rowEven : ''}`}
+                            >
+                                <td className={styles.cell}>
+                                    <span className={styles.cpf}>
+                                        {formatCPF(client.cpf)}
+                                    </span>
+                                </td>
+                                <td className={styles.cell}>
+                                    <div className={styles.nameCell}>
+                                        <span className={styles.name}>
+                                            {client.name}
+                                        </span>
+                                        <span className={styles.emailMobile}>
+                                            {client.email || '-'}
+                                        </span>
+                                        <span className={styles.phoneMobile}>
+                                            {formatPhone(client.phone)}
+                                        </span>
+                                    </div>
+                                </td>
+                                <td className={`${styles.cell} ${styles.hideMobile}`}>
+                                    {client.email || '-'}
+                                </td>
+                                <td className={`${styles.cell} ${styles.hideMobile}`}>
+                                    {formatPhone(client.phone)}
+                                </td>
+                                <td className={styles.cell}>
+                                    <div className={styles.documentActions}>
+                                        <button
+                                            onClick={() => onViewBoletos(client)}
+                                            className={styles.documentButton}
+                                            title="Acessar boletos"
+                                        >
+                                            <span className={styles.documentIcon}>📄</span>
+                                            <span className={styles.documentLabel}>Boletos</span>
+                                        </button>
+                                        <button
+                                            onClick={() => onViewReceipts(client)}
+                                            className={styles.documentButton}
+                                            title="Ver comprovantes"
+                                        >
+                                            <span className={styles.documentIcon}>🧾</span>
+                                            <span className={styles.documentLabel}>Comprovantes</span>
+                                        </button>
+                                    </div>
+                                </td>
+                                <td className={styles.cell}>
+                                    <div className={styles.actionButtons}>
+                                        <button
+                                            onClick={() => onEdit(client)}
+                                            className={styles.actionButton}
+                                            title="Editar cliente"
+                                        >
+                                            <span className={styles.actionIcon}>✏️</span>
+                                            <span className={styles.actionLabel}>Editar</span>
+                                        </button>
+                                        <button
+                                            onClick={() => onDelete(client.id)}
+                                            className={`${styles.actionButton} ${styles.deleteButton}`}
+                                            title="Excluir cliente"
+                                        >
+                                            <span className={styles.actionIcon}>🗑️</span>
+                                            <span className={styles.actionLabel}>Excluir</span>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+            
+            <div className={styles.footer}>
+                <span className={styles.totalCount}>
+                    Total: {clients.length} {clients.length === 1 ? 'cliente' : 'clientes'}
+                </span>
+            </div>
+        </div>
+    );
+};

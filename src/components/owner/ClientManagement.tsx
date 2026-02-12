@@ -1,30 +1,111 @@
-import React, { useState, useEffect } from 'react';
-import { User } from '../../types/User';
+// src/components/admin/clients/ClientManagement.tsx
+
+import React, { useState, useEffect, useCallback } from 'react';
+import { User, Filters, Receipt, Boleto } from './types';
 import { userService } from '../../services/users';
+import { receiptService } from '../../services/receipts';
+import { boletoService } from '../../services/boletos';
+
+import { LoadingSpinner } from '../common/LoadingSpinner';
+import { EmptyState } from '../common/EmptyState';
+import { ClientFilters } from './components/ClientFilters';
+import { ClientTable } from './components/ClientTable';
+import { ClientForm } from './components/ClientForm';
+import { ReceiptModal } from './components/ReceiptModal';
+import { BoletoModal } from './components/BoletoModal';
+
 import styles from './ClientManagement.module.css';
 
 export const ClientManagement: React.FC = () => {
+    // Estados
     const [clients, setClients] = useState<User[]>([]);
+    const [filteredClients, setFilteredClients] = useState<User[]>([]);
     const [loading, setLoading] = useState(true);
     const [showForm, setShowForm] = useState(false);
     const [editingClient, setEditingClient] = useState<User | null>(null);
+    const [showFilters, setShowFilters] = useState(true);
+    const [selectedClient, setSelectedClient] = useState<User | null>(null);
+    const [showReceiptModal, setShowReceiptModal] = useState(false);
+    const [showBoletoModal, setShowBoletoModal] = useState(false);
+    const [receipts, setReceipts] = useState<Receipt[]>([]);
+    const [filters, setFilters] = useState<Filters>({
+        cpf: '',
+        name: '',
+        email: '',
+        phone: ''
+    });
 
-    useEffect(() => {
-        loadClients();
-    }, []);
-
-    const loadClients = async () => {
+    // Carregar clientes
+    const loadClients = useCallback(async () => {
         try {
+            setLoading(true);
             const clientsData = await userService.getAllClients();
             setClients(clientsData);
+            setFilteredClients(clientsData);
         } catch (error) {
             console.error('Erro ao carregar clientes:', error);
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
 
-    const handleCreateClient = async (clientData: Omit<User, 'id' | 'createdAt'>) => {
+    useEffect(() => {
+        loadClients();
+    }, [loadClients]);
+
+    // Aplicar filtros
+    useEffect(() => {
+        applyFilters();
+    }, [filters, clients]);
+
+    const applyFilters = useCallback(() => {
+        let result = [...clients];
+
+        if (filters.cpf) {
+            const cpfClean = filters.cpf.replace(/\D/g, '');
+            result = result.filter(client => 
+                client.cpf.includes(cpfClean)
+            );
+        }
+
+        if (filters.name) {
+            result = result.filter(client => 
+                client.name.toLowerCase().includes(filters.name.toLowerCase())
+            );
+        }
+
+        if (filters.email) {
+            result = result.filter(client => 
+                client.email?.toLowerCase().includes(filters.email.toLowerCase())
+            );
+        }
+
+        if (filters.phone) {
+            const phoneClean = filters.phone.replace(/\D/g, '');
+            result = result.filter(client => 
+                client.phone?.replace(/\D/g, '').includes(phoneClean)
+            );
+        }
+
+        setFilteredClients(result);
+    }, [filters, clients]);
+
+    // Handlers de filtro
+    const handleFilterChange = useCallback((field: keyof Filters, value: string) => {
+        setFilters(prev => ({ ...prev, [field]: value }));
+    }, []);
+
+    const handleClearFilters = useCallback(() => {
+        setFilters({
+            cpf: '',
+            name: '',
+            email: '',
+            phone: ''
+        });
+    }, []);
+
+    // Handlers de cliente
+    const handleCreateClient = async (clientData: any) => {
         try {
             await userService.createClient(clientData);
             await loadClients();
@@ -35,7 +116,7 @@ export const ClientManagement: React.FC = () => {
         }
     };
 
-    const handleUpdateClient = async (id: number, clientData: Partial<User>) => {
+    const handleUpdateClient = async (id: number, clientData: any) => {
         try {
             await userService.updateClient(id, clientData);
             await loadClients();
@@ -58,319 +139,223 @@ export const ClientManagement: React.FC = () => {
         }
     };
 
+    // Handlers de comprovantes
+    const handleViewReceipts = async (client: User) => {
+        setSelectedClient(client);
+        try {
+            const receiptsData = await receiptService.getClientReceipts(client.id);
+            setReceipts(receiptsData);
+            setShowReceiptModal(true);
+        } catch (error) {
+            console.error('Erro ao carregar comprovantes:', error);
+        }
+    };
+
+    const handleUploadReceipt = async (file: File, description: string, value?: number) => {
+        if (!selectedClient) return;
+        
+        try {
+            await receiptService.uploadReceipt({
+                clientId: selectedClient.id,
+                file,
+                description,
+                value
+            });
+            // Recarregar comprovantes
+            const receiptsData = await receiptService.getClientReceipts(selectedClient.id);
+            setReceipts(receiptsData);
+        } catch (error) {
+            console.error('Erro ao fazer upload:', error);
+            throw error;
+        }
+    };
+
+    const handleDeleteReceipt = async (receiptId: number) => {
+        if (window.confirm('Tem certeza que deseja excluir este comprovante?')) {
+            try {
+                await receiptService.deleteReceipt(receiptId);
+                if (selectedClient) {
+                    const receiptsData = await receiptService.getClientReceipts(selectedClient.id);
+                    setReceipts(receiptsData);
+                }
+            } catch (error) {
+                console.error('Erro ao excluir comprovante:', error);
+            }
+        }
+    };
+
+    // Handlers de boletos
+    const handleViewBoletos = async (client: User) => {
+        setSelectedClient(client);
+        setShowBoletoModal(true);
+    };
+
+    const handleGenerateBoleto = async (data: any) => {
+        if (!selectedClient) return;
+        
+        try {
+            await boletoService.generateBoleto({
+                clientId: selectedClient.id,
+                ...data
+            });
+            // Modal será recarregado com os novos boletos
+        } catch (error) {
+            console.error('Erro ao gerar boleto:', error);
+            throw error;
+        }
+    };
+
+    const handleSendBoletoEmail = async (boletoId: number) => {
+        try {
+            await boletoService.sendBoletoByEmail(boletoId);
+        } catch (error) {
+            console.error('Erro ao enviar boleto:', error);
+            throw error;
+        }
+    };
+
+    const handleMarkBoletoAsPaid = async (boletoId: number) => {
+        try {
+            await boletoService.markAsPaid(boletoId);
+            if (selectedClient) {
+                // Recarregar boletos
+                // await loadBoletos(selectedClient.id);
+            }
+        } catch (error) {
+            console.error('Erro ao marcar boleto como pago:', error);
+            throw error;
+        }
+    };
+
     if (loading) {
-        return (
-            <div className={styles.loading}>
-                <div className={styles.spinner}></div>
-                <p>Carregando clientes...</p>
-            </div>
-        );
+        return <LoadingSpinner text="Carregando clientes..." fullScreen />;
     }
 
-    return (
-        <div className={styles.clientManagement}>
-            <div className={styles.pageHeader}>
-                <div className={styles.headerContent}>
-                    <button 
-                        onClick={() => setShowForm(true)}
-                        className={styles.primaryButton}
-                    >
-                        + Novo Cliente
-                    </button>
-                </div>
-            </div>
-
-            {showForm && (
-                <ClientForm
-                    onSubmit={handleCreateClient}
-                    onCancel={() => setShowForm(false)}
-                />
-            )}
-
-            {editingClient && (
-                <ClientForm
-                    client={editingClient}
-                    onSubmit={(data) => handleUpdateClient(editingClient.id, data)}
-                    onCancel={() => setEditingClient(null)}
-                />
-            )}
-
-            <div className={`${styles.clientsTable} ${styles.card}`}>
-                <div className={styles.tableContainer}>
-                    <table className={styles.table}>
-                        <thead>
-                            <tr>
-                                <th>CPF</th>
-                                <th>Nome</th>
-                                <th>E-mail</th>
-                                <th>Telefone</th>
-                                <th>Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {clients.map(client => (
-                                <tr key={client.id}>
-                                    <td>
-                                        <div className={styles.cpfCell}>
-                                            {formatCPF(client.cpf)}
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <div className={styles.nameCell}>
-                                            <strong>{client.name}</strong>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <div className={styles.emailCell}>
-                                            {client.email || '-'}
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <div className={styles.phoneCell}>
-                                            {client.phone || '-'}
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <div className={styles.actionsCell}>
-                                            <button
-                                                onClick={() => setEditingClient(client)}
-                                                className={styles.editButton}
-                                            >
-                                                Editar
-                                            </button>
-                                            <button
-                                                onClick={() => handleDeleteClient(client.id)}
-                                                className={styles.deleteButton}
-                                            >
-                                                Excluir
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-
-                {clients.length === 0 && (
-                    <div className={styles.emptyState}>
-                        <div className={styles.emptyIcon}>👥</div>
-                        <h3 className={styles.emptyTitle}>Nenhum cliente cadastrado</h3>
-                        <p className={styles.emptyText}>
-                            Comece cadastrando seu primeiro cliente para ver a lista aqui.
-                        </p>
-                        <button 
-                            onClick={() => setShowForm(true)}
-                            className={styles.primaryButton}
-                        >
-                            + Cadastrar Primeiro Cliente
-                        </button>
-                    </div>
-                )}
-            </div>
-        </div>
-    );
-};
-
-// Componente de Formulário
-interface ClientFormProps {
-    client?: User;
-    onSubmit: (clientData: any) => void;
-    onCancel: () => void;
-}
-
-const ClientForm: React.FC<ClientFormProps> = ({ client, onSubmit, onCancel }) => {
-    const [formData, setFormData] = useState({
-        cpf: client?.cpf || '',
-        name: client?.name || '',
-        email: client?.email || '',
-        phone: client?.phone || '',
-        password: '',
-        confirmPassword: ''
-    });
-
-    const [errors, setErrors] = useState<{ [key: string]: string }>({});
-    const [loading, setLoading] = useState(false);
-
-    const validateForm = () => {
-        const newErrors: { [key: string]: string } = {};
-
-        if (!formData.cpf || formData.cpf.replace(/\D/g, '').length !== 11) {
-            newErrors.cpf = 'CPF deve ter 11 dígitos';
-        }
-
-        if (!formData.name.trim()) {
-            newErrors.name = 'Nome é obrigatório';
-        }
-
-        if (formData.email && !/\S+@\S+\.\S+/.test(formData.email)) {
-            newErrors.email = 'E-mail inválido';
-        }
-
-        if (!client && !formData.password) {
-            newErrors.password = 'Senha é obrigatória';
-        }
-
-        if (formData.password && formData.password.length < 6) {
-            newErrors.password = 'Senha deve ter pelo menos 6 caracteres';
-        }
-
-        if (formData.password !== formData.confirmPassword) {
-            newErrors.confirmPassword = 'Senhas não conferem';
-        }
-
-        setErrors(newErrors);
-        return Object.keys(newErrors).length === 0;
-    };
-
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!validateForm()) return;
-
-        setLoading(true);
-        try {
-            const submitData = {
-                cpf: formData.cpf.replace(/\D/g, ''),
-                name: formData.name,
-                email: formData.email || null,
-                phone: formData.phone || null,
-                password: formData.password || undefined
-            };
-            await onSubmit(submitData);
-        } catch (error) {
-            // Error handling is done in the parent component
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const formatCPF = (value: string) => {
-        const numbers = value.replace(/\D/g, '');
-        if (numbers.length <= 11) {
-            return numbers.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
-        }
-        return numbers.slice(0, 11).replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
-    };
-
-    const handleCPFChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const formattedCPF = formatCPF(e.target.value);
-        setFormData({ ...formData, cpf: formattedCPF });
-    };
+    const hasActiveFilters = Object.values(filters).some(v => v.trim() !== '');
+    const showEmptyState = filteredClients.length === 0;
 
     return (
-        <div className={styles.modalOverlay}>
-            <div className={`${styles.modal} ${styles.card}`}>
-                <div className={styles.modalHeader}>
-                    <h3 className={styles.modalTitle}>
-                        {client ? 'Editar Cliente' : 'Novo Cliente'}
-                    </h3>
-                    <button onClick={onCancel} className={styles.closeButton}>
-                        ×
-                    </button>
+        <div className={styles.container}>
+            {/* Header */}
+            <div className={styles.header}>
+                <div className={styles.headerLeft}>
+                    <h1 className={styles.title}>Gestão de Clientes</h1>
+                    {!showEmptyState && (
+                        <span className={styles.clientCount}>
+                            {filteredClients.length} {filteredClients.length === 1 ? 'cliente' : 'clientes'}
+                        </span>
+                    )}
                 </div>
                 
-                <form onSubmit={handleSubmit} className={styles.form}>
-                    <div className={styles.formGrid}>
-                        <div className={styles.formGroup}>
-                            <label className={styles.formLabel}>CPF *</label>
-                            <input
-                                type="text"
-                                placeholder="000.000.000-00"
-                                value={formData.cpf}
-                                onChange={handleCPFChange}
-                                disabled={!!client}
-                                className={styles.formInput}
-                            />
-                            {errors.cpf && <span className={styles.error}>{errors.cpf}</span>}
-                        </div>
-                        <div className={styles.formGroup}>
-                            <label className={styles.formLabel}>Nome *</label>
-                            <input
-                                type="text"
-                                placeholder="Nome completo do cliente"
-                                value={formData.name}
-                                onChange={(e) => setFormData({...formData, name: e.target.value})}
-                                className={styles.formInput}
-                            />
-                            {errors.name && <span className={styles.error}>{errors.name}</span>}
-                        </div>
-                    </div>
-
-                    <div className={styles.formGrid}>
-                        <div className={styles.formGroup}>
-                            <label className={styles.formLabel}>E-mail</label>
-                            <input
-                                type="email"
-                                placeholder="cliente@email.com"
-                                value={formData.email}
-                                onChange={(e) => setFormData({...formData, email: e.target.value})}
-                                className={styles.formInput}
-                            />
-                            {errors.email && <span className={styles.error}>{errors.email}</span>}
-                        </div>
-                        <div className={styles.formGroup}>
-                            <label className={styles.formLabel}>Telefone</label>
-                            <input
-                                type="text"
-                                placeholder="(11) 99999-9999"
-                                value={formData.phone}
-                                onChange={(e) => setFormData({...formData, phone: e.target.value})}
-                                className={styles.formInput}
-                            />
-                        </div>
-                    </div>
-
-                    {!client && (
-                        <div className={styles.formGrid}>
-                            <div className={styles.formGroup}>
-                                <label className={styles.formLabel}>Senha *</label>
-                                <input
-                                    type="password"
-                                    placeholder="Mínimo 6 caracteres"
-                                    value={formData.password}
-                                    onChange={(e) => setFormData({...formData, password: e.target.value})}
-                                    className={styles.formInput}
-                                />
-                                {errors.password && <span className={styles.error}>{errors.password}</span>}
-                            </div>
-                            <div className={styles.formGroup}>
-                                <label className={styles.formLabel}>Confirmar Senha *</label>
-                                <input
-                                    type="password"
-                                    placeholder="Digite novamente a senha"
-                                    value={formData.confirmPassword}
-                                    onChange={(e) => setFormData({...formData, confirmPassword: e.target.value})}
-                                    className={styles.formInput}
-                                />
-                                {errors.confirmPassword && <span className={styles.error}>{errors.confirmPassword}</span>}
-                            </div>
-                        </div>
-                    )}
-
-                    <div className={styles.formActions}>
-                        <button 
-                            type="button" 
-                            onClick={onCancel} 
-                            className={styles.secondaryButton}
-                            disabled={loading}
-                        >
-                            Cancelar
-                        </button>
-                        <button 
-                            type="submit" 
-                            className={styles.primaryButton}
-                            disabled={loading}
-                        >
-                            {loading ? 'Salvando...' : (client ? 'Atualizar' : 'Cadastrar')}
-                        </button>
-                    </div>
-                </form>
+                <div className={styles.headerActions}>
+                    <button 
+                        onClick={() => setShowFilters(!showFilters)}
+                        className={`${styles.filterToggle} ${showFilters ? styles.active : ''}`}
+                        aria-label="Alternar filtros"
+                    >
+                        <span className={styles.filterToggleIcon}>🔍</span>
+                        <span className={styles.filterToggleText}>
+                            {showFilters ? 'Ocultar filtros' : 'Mostrar filtros'}
+                        </span>
+                    </button>
+                    
+                    <button 
+                        onClick={() => {
+                            setEditingClient(null);
+                            setShowForm(true);
+                        }}
+                        className={styles.primaryButton}
+                    >
+                        <span className={styles.buttonIcon}>+</span>
+                        <span>Novo Cliente</span>
+                    </button>
+                </div>
             </div>
+
+            {/* Filtros */}
+            {showFilters && (
+                <ClientFilters
+                    filters={filters}
+                    onFilterChange={handleFilterChange}
+                    onClearFilters={handleClearFilters}
+                    totalResults={filteredClients.length}
+                />
+            )}
+
+            {/* Formulários */}
+            <ClientForm
+                client={editingClient || undefined}
+                onSubmit={editingClient 
+                    ? (data) => handleUpdateClient(editingClient.id, data)
+                    : handleCreateClient
+                }
+                onCancel={() => {
+                    setShowForm(false);
+                    setEditingClient(null);
+                }}
+                isOpen={showForm || !!editingClient}
+            />
+
+            {/* Modais */}
+            {showReceiptModal && selectedClient && (
+                <ReceiptModal
+                    client={selectedClient}
+                    receipts={receipts}
+                    onClose={() => {
+                        setShowReceiptModal(false);
+                        setSelectedClient(null);
+                        setReceipts([]);
+                    }}
+                    onUpload={handleUploadReceipt}
+                    onDelete={handleDeleteReceipt}
+                />
+            )}
+
+            {showBoletoModal && selectedClient && (
+                <BoletoModal
+                    client={selectedClient}
+                    onClose={() => {
+                        setShowBoletoModal(false);
+                        setSelectedClient(null);
+                    }}
+                    onGenerate={handleGenerateBoleto}
+                    onSendEmail={handleSendBoletoEmail}
+                    onMarkAsPaid={handleMarkBoletoAsPaid}
+                />
+            )}
+
+            {/* Tabela ou Empty State */}
+            {showEmptyState ? (
+                <div className={styles.emptyStateWrapper}>
+                    <EmptyState
+                        icon={hasActiveFilters ? '🔍' : '👥'}
+                        title={hasActiveFilters 
+                            ? 'Nenhum cliente encontrado' 
+                            : 'Nenhum cliente cadastrado'
+                        }
+                        description={hasActiveFilters
+                            ? 'Tente ajustar os filtros de busca para encontrar clientes.'
+                            : 'Comece cadastrando seu primeiro cliente para começar a gerenciar.'
+                        }
+                        action={hasActiveFilters ? {
+                            label: 'Limpar Filtros',
+                            onClick: handleClearFilters
+                        } : {
+                            label: 'Cadastrar Primeiro Cliente',
+                            onClick: () => setShowForm(true)
+                        }}
+                        secondaryAction={hasActiveFilters ? undefined : undefined}
+                    />
+                </div>
+            ) : (
+                <ClientTable
+                    clients={filteredClients}
+                    onEdit={setEditingClient}
+                    onDelete={handleDeleteClient}
+                    onViewReceipts={handleViewReceipts}
+                    onViewBoletos={handleViewBoletos}
+                />
+            )}
         </div>
     );
-};
-
-// Função para formatar CPF
-const formatCPF = (cpf: string) => {
-    return cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
 };
