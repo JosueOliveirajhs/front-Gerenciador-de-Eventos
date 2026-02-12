@@ -3,7 +3,7 @@ import { Event, CreateEventData } from '../../types/Event';
 import { User } from '../../types/User';
 import { eventService } from '../../services/events';
 import { userService } from '../../services/users';
-import styles from './EventManagement.module.css';
+import styles from './EventManagement.module.css'
 
 export const EventManagement: React.FC = () => {
   const [events, setEvents] = useState<Event[]>([]);
@@ -262,15 +262,6 @@ export const EventManagement: React.FC = () => {
     return variants[status];
   };
 
-  const getStatusText = (status: Event['status']) => {
-    const texts = {
-      QUOTE: 'Cotação',
-      CONFIRMED: 'Confirmado',
-      COMPLETED: 'Realizado',
-      CANCELLED: 'Cancelado'
-    };
-    return texts[status];
-  };
 
   const formatCurrency = (value: string | number): string => {
     const numValue = typeof value === 'string' ? parseFloat(value) : value;
