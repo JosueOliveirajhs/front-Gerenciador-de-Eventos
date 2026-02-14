@@ -86,23 +86,15 @@ const getPageTitle = (view: string): string => {
   return titles[view] || "Dashboard";
 };
 
+
 const renderPageActions = (view: string) => {
   switch (view) {
-<<<<<<< Updated upstream
     case "events":
       return <button className={styles.primaryButton}>+ Novo Evento</button>;
     case "clients":
       return <button className={styles.primaryButton}>+ Novo Cliente</button>;
-=======
-    case 'events':
-      return (
-        ""
-      );
-    case 'clients':
-      return (
-        ""
-      );
->>>>>>> Stashed changes
+    case "itens":
+      return <button className={styles.primaryButton}>+ Novo Item</button>;
     default:
       return null;
   }
