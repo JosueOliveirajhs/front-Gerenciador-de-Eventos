@@ -1,6 +1,21 @@
 // src/components/admin/clients/components/ReceiptModal.tsx
 
 import React, { useState, useEffect } from 'react';
+import { 
+  FiX, 
+  FiUpload, 
+  FiDownload, 
+  FiTrash2,
+  FiFile,
+  FiFileText,
+  FiImage
+} from 'react-icons/fi';
+import { 
+  MdReceipt, 
+  MdAttachMoney,
+  MdDescription,
+  MdDateRange
+} from 'react-icons/md';
 import { User, Receipt, UploadReceiptData } from '../types';
 import { receiptService } from '../../../services/receipts';
 import { LoadingSpinner } from '../../common/LoadingSpinner';
@@ -151,16 +166,16 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
     const getFileIcon = (fileName: string) => {
         const ext = fileName.split('.').pop()?.toLowerCase();
         switch (ext) {
-            case 'pdf': return '📄';
+            case 'pdf': return <FiFileText size={24} />;
             case 'jpg':
             case 'jpeg':
             case 'png':
-            case 'gif': return '🖼️';
+            case 'gif': return <FiImage size={24} />;
             case 'doc':
-            case 'docx': return '📝';
+            case 'docx': return <FiFileText size={24} />;
             case 'xls':
-            case 'xlsx': return '📊';
-            default: return '📎';
+            case 'xlsx': return <FiFileText size={24} />;
+            default: return <FiFile size={24} />;
         }
     };
 
@@ -170,7 +185,7 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
                 <div className={styles.modalHeader}>
                     <div className={styles.headerContent}>
                         <h2 className={styles.modalTitle}>
-                            <span className={styles.titleIcon}>🧾</span>
+                            <MdReceipt className={styles.titleIcon} />
                             Comprovantes - {client.name}
                         </h2>
                         <p className={styles.modalSubtitle}>
@@ -178,7 +193,7 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
                         </p>
                     </div>
                     <button className={styles.closeButton} onClick={onClose}>
-                        ×
+                        <FiX size={20} />
                     </button>
                 </div>
 
@@ -188,13 +203,13 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
                             className={styles.uploadButton}
                             onClick={() => setShowUploadForm(true)}
                         >
-                            <span className={styles.uploadIcon}>📤</span>
+                            <FiUpload className={styles.uploadIcon} />
                             Anexar Novo Comprovante
                         </button>
                     ) : (
                         <div className={styles.uploadContainer}>
                             <h3 className={styles.uploadTitle}>
-                                <span className={styles.uploadTitleIcon}>📎</span>
+                                <FiUpload className={styles.uploadTitleIcon} />
                                 Anexar Comprovante
                             </h3>
                             
@@ -230,7 +245,7 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
                                             </>
                                         ) : (
                                             <>
-                                                <span className={styles.dropZoneIcon}>📁</span>
+                                                <FiUpload className={styles.dropZoneIcon} />
                                                 <span className={styles.dropZoneText}>
                                                     Arraste e solte ou clique para selecionar
                                                 </span>
@@ -245,6 +260,7 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
                                 <div className={styles.formRow}>
                                     <div className={styles.formGroup}>
                                         <label className={styles.formLabel}>
+                                            <MdDescription size={16} />
                                             Descrição
                                         </label>
                                         <input
@@ -258,6 +274,7 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
 
                                     <div className={styles.formGroup}>
                                         <label className={styles.formLabel}>
+                                            <MdAttachMoney size={16} />
                                             Valor (opcional)
                                         </label>
                                         <input
@@ -297,7 +314,7 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
                                             </>
                                         ) : (
                                             <>
-                                                <span className={styles.buttonIcon}>📤</span>
+                                                <FiUpload className={styles.buttonIcon} />
                                                 Enviar Comprovante
                                             </>
                                         )}
@@ -309,13 +326,14 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
 
                     <div className={styles.receiptsList}>
                         <h3 className={styles.listTitle}>
+                            <MdReceipt size={18} />
                             Comprovantes Anexados
                             <span className={styles.listCount}>{localReceipts.length}</span>
                         </h3>
 
                         {localReceipts.length === 0 ? (
                             <EmptyState
-                                icon="📭"
+                                icon={<MdReceipt size={48} />}
                                 title="Nenhum comprovante"
                                 description="Este cliente ainda não possui comprovantes anexados."
                             />
@@ -347,6 +365,7 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
                                             
                                             <div className={styles.receiptMeta}>
                                                 <span className={styles.receiptDate}>
+                                                    <MdDateRange size={12} />
                                                     {formatDate(receipt.uploadDate)}
                                                 </span>
                                                 {receipt.fileSize && (
@@ -363,7 +382,7 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
                                                 onClick={() => handleDownload(receipt)}
                                                 title="Download"
                                             >
-                                                <span className={styles.actionIcon}>⬇️</span>
+                                                <FiDownload size={18} />
                                             </button>
                                             
                                             {onDelete && (
@@ -372,7 +391,7 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
                                                     onClick={() => handleDelete(receipt.id)}
                                                     title="Excluir"
                                                 >
-                                                    <span className={styles.actionIcon}>🗑️</span>
+                                                    <FiTrash2 size={18} />
                                                 </button>
                                             )}
                                         </div>

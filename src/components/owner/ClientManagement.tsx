@@ -1,6 +1,20 @@
 // src/components/admin/clients/ClientManagement.tsx
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { 
+  FiSearch, 
+  FiPlus, 
+  FiFilter,
+  FiX,
+  FiUsers,
+  FiUserPlus
+} from 'react-icons/fi';
+import { 
+  MdPeople, 
+  MdPerson, 
+  MdReceipt, 
+  MdPayment 
+} from 'react-icons/md';
 import { User, Filters, Receipt, Boleto } from './types';
 import { userService } from '../../services/users';
 import { receiptService } from '../../services/receipts';
@@ -8,9 +22,9 @@ import { boletoService } from '../../services/boletos';
 
 import { LoadingSpinner } from '../common/LoadingSpinner';
 import { EmptyState } from '../common/EmptyState';
-import { ClientFilters } from './components/ClientFilters';
-import { ClientTable } from './components/ClientTable';
-import { ClientForm } from './components/ClientForm';
+import { ClientFilters } from './clients/ClientFilters';
+import { ClientTable } from './clients/ClientTable';
+import { ClientForm } from './clients/ClientForm';
 import { ReceiptModal } from './components/ReceiptModal';
 import { BoletoModal } from './components/BoletoModal';
 
@@ -239,9 +253,13 @@ export const ClientManagement: React.FC = () => {
             {/* Header */}
             <div className={styles.header}>
                 <div className={styles.headerLeft}>
-                    <h1 className={styles.title}>Gestão de Clientes</h1>
+                    <h1 className={styles.title}>
+                        <MdPeople size={28} />
+                        Gestão de Clientes
+                    </h1>
                     {!showEmptyState && (
                         <span className={styles.clientCount}>
+                            <FiUsers size={14} />
                             {filteredClients.length} {filteredClients.length === 1 ? 'cliente' : 'clientes'}
                         </span>
                     )}
@@ -253,7 +271,7 @@ export const ClientManagement: React.FC = () => {
                         className={`${styles.filterToggle} ${showFilters ? styles.active : ''}`}
                         aria-label="Alternar filtros"
                     >
-                        <span className={styles.filterToggleIcon}>🔍</span>
+                        <FiFilter size={18} />
                         <span className={styles.filterToggleText}>
                             {showFilters ? 'Ocultar filtros' : 'Mostrar filtros'}
                         </span>
@@ -266,7 +284,7 @@ export const ClientManagement: React.FC = () => {
                         }}
                         className={styles.primaryButton}
                     >
-                        <span className={styles.buttonIcon}>+</span>
+                        <FiUserPlus size={18} />
                         <span>Novo Cliente</span>
                     </button>
                 </div>
@@ -328,7 +346,7 @@ export const ClientManagement: React.FC = () => {
             {showEmptyState ? (
                 <div className={styles.emptyStateWrapper}>
                     <EmptyState
-                        icon={hasActiveFilters ? '🔍' : '👥'}
+                        icon={hasActiveFilters ? <FiSearch size={48} /> : <MdPeople size={48} />}
                         title={hasActiveFilters 
                             ? 'Nenhum cliente encontrado' 
                             : 'Nenhum cliente cadastrado'
@@ -339,12 +357,13 @@ export const ClientManagement: React.FC = () => {
                         }
                         action={hasActiveFilters ? {
                             label: 'Limpar Filtros',
-                            onClick: handleClearFilters
+                            onClick: handleClearFilters,
+                            icon: <FiX />
                         } : {
                             label: 'Cadastrar Primeiro Cliente',
-                            onClick: () => setShowForm(true)
+                            onClick: () => setShowForm(true),
+                            icon: <FiUserPlus />
                         }}
-                        secondaryAction={hasActiveFilters ? undefined : undefined}
                     />
                 </div>
             ) : (

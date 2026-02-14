@@ -1,6 +1,22 @@
 // src/components/admin/clients/components/BoletoModal.tsx
 
 import React, { useState, useEffect } from 'react';
+import { 
+  FiX, 
+  FiMail, 
+  FiDownload,
+  FiDollarSign,
+  FiCalendar,
+  FiFileText
+} from 'react-icons/fi';
+import { 
+  MdPayment, 
+  MdAttachMoney,
+  MdDateRange,
+  MdWarning,
+  MdCheckCircle,
+  MdCancel
+} from 'react-icons/md';
 import { User, Boleto, GenerateBoletoData } from '../types';
 import { boletoService } from '../../../services/boletos';
 import { LoadingSpinner } from '../../common/LoadingSpinner';
@@ -179,13 +195,23 @@ export const BoletoModal: React.FC<BoletoModalProps> = ({
         }
     };
 
+    const getStatusIcon = (status: string) => {
+        switch (status) {
+            case 'paid': return <MdCheckCircle size={16} />;
+            case 'pending': return <MdWarning size={16} />;
+            case 'overdue': return <MdWarning size={16} />;
+            case 'cancelled': return <MdCancel size={16} />;
+            default: return <MdPayment size={16} />;
+        }
+    };
+
     return (
         <div className={styles.modalOverlay} onClick={onClose}>
             <div className={styles.modal} onClick={e => e.stopPropagation()}>
                 <div className={styles.modalHeader}>
                     <div className={styles.headerContent}>
                         <h2 className={styles.modalTitle}>
-                            <span className={styles.titleIcon}>📄</span>
+                            <MdPayment className={styles.titleIcon} />
                             Boletos - {client.name}
                         </h2>
                         <p className={styles.modalSubtitle}>
@@ -193,7 +219,7 @@ export const BoletoModal: React.FC<BoletoModalProps> = ({
                         </p>
                     </div>
                     <button className={styles.closeButton} onClick={onClose}>
-                        ×
+                        <FiX size={20} />
                     </button>
                 </div>
 
@@ -203,7 +229,7 @@ export const BoletoModal: React.FC<BoletoModalProps> = ({
                             className={styles.generateButton}
                             onClick={() => setShowGenerateForm(true)}
                         >
-                            <span className={styles.buttonIcon}>➕</span>
+                            <FiFileText className={styles.buttonIcon} />
                             Gerar Novo Boleto
                         </button>
                     ) : (
@@ -212,6 +238,7 @@ export const BoletoModal: React.FC<BoletoModalProps> = ({
                             <form onSubmit={handleSubmit} className={styles.form}>
                                 <div className={styles.formGroup}>
                                     <label className={styles.formLabel}>
+                                        <FiFileText size={16} />
                                         Descrição <span className={styles.required}>*</span>
                                     </label>
                                     <input
@@ -222,13 +249,17 @@ export const BoletoModal: React.FC<BoletoModalProps> = ({
                                         onChange={(e) => setFormData({...formData, description: e.target.value})}
                                     />
                                     {formErrors.description && (
-                                        <span className={styles.errorMessage}>{formErrors.description}</span>
+                                        <span className={styles.errorMessage}>
+                                            <MdWarning size={14} />
+                                            {formErrors.description}
+                                        </span>
                                     )}
                                 </div>
 
                                 <div className={styles.formRow}>
                                     <div className={styles.formGroup}>
                                         <label className={styles.formLabel}>
+                                            <MdAttachMoney size={16} />
                                             Valor <span className={styles.required}>*</span>
                                         </label>
                                         <input
@@ -241,12 +272,16 @@ export const BoletoModal: React.FC<BoletoModalProps> = ({
                                             onChange={(e) => setFormData({...formData, value: e.target.value})}
                                         />
                                         {formErrors.value && (
-                                            <span className={styles.errorMessage}>{formErrors.value}</span>
+                                            <span className={styles.errorMessage}>
+                                                <MdWarning size={14} />
+                                                {formErrors.value}
+                                            </span>
                                         )}
                                     </div>
 
                                     <div className={styles.formGroup}>
                                         <label className={styles.formLabel}>
+                                            <MdDateRange size={16} />
                                             Vencimento <span className={styles.required}>*</span>
                                         </label>
                                         <input
@@ -256,7 +291,10 @@ export const BoletoModal: React.FC<BoletoModalProps> = ({
                                             onChange={(e) => setFormData({...formData, dueDate: e.target.value})}
                                         />
                                         {formErrors.dueDate && (
-                                            <span className={styles.errorMessage}>{formErrors.dueDate}</span>
+                                            <span className={styles.errorMessage}>
+                                                <MdWarning size={14} />
+                                                {formErrors.dueDate}
+                                            </span>
                                         )}
                                     </div>
                                 </div>
@@ -283,6 +321,7 @@ export const BoletoModal: React.FC<BoletoModalProps> = ({
 
                     <div className={styles.boletosList}>
                         <h3 className={styles.listTitle}>
+                            <MdPayment size={18} />
                             Boletos Gerados
                             <span className={styles.listCount}>{boletos.length}</span>
                         </h3>
@@ -291,7 +330,7 @@ export const BoletoModal: React.FC<BoletoModalProps> = ({
                             <LoadingSpinner text="Carregando boletos..." />
                         ) : boletos.length === 0 ? (
                             <EmptyState
-                                icon="📭"
+                                icon={<MdPayment size={48} />}
                                 title="Nenhum boleto gerado"
                                 description="Este cliente ainda não possui boletos cadastrados."
                             />
@@ -305,6 +344,7 @@ export const BoletoModal: React.FC<BoletoModalProps> = ({
                                                     {boleto.description}
                                                 </h4>
                                                 <span className={`${styles.boletoStatus} ${getStatusClass(boleto.status)}`}>
+                                                    {getStatusIcon(boleto.status)}
                                                     {getStatusText(boleto.status)}
                                                 </span>
                                             </div>
@@ -315,14 +355,20 @@ export const BoletoModal: React.FC<BoletoModalProps> = ({
 
                                         <div className={styles.boletoInfo}>
                                             <div className={styles.infoRow}>
-                                                <span className={styles.infoLabel}>Vencimento:</span>
+                                                <span className={styles.infoLabel}>
+                                                    <MdDateRange size={14} />
+                                                    Vencimento:
+                                                </span>
                                                 <span className={styles.infoValue}>
                                                     {formatDate(boleto.dueDate)}
                                                 </span>
                                             </div>
                                             {boleto.nossoNumero && (
                                                 <div className={styles.infoRow}>
-                                                    <span className={styles.infoLabel}>Nosso Número:</span>
+                                                    <span className={styles.infoLabel}>
+                                                        <FiFileText size={14} />
+                                                        Nosso Número:
+                                                    </span>
                                                     <span className={styles.infoValue}>
                                                         {boleto.nossoNumero}
                                                     </span>
@@ -330,7 +376,10 @@ export const BoletoModal: React.FC<BoletoModalProps> = ({
                                             )}
                                             {boleto.paidAt && (
                                                 <div className={styles.infoRow}>
-                                                    <span className={styles.infoLabel}>Data de Pagamento:</span>
+                                                    <span className={styles.infoLabel}>
+                                                        <MdCheckCircle size={14} />
+                                                        Data de Pagamento:
+                                                    </span>
                                                     <span className={styles.infoValue}>
                                                         {formatDate(boleto.paidAt)}
                                                     </span>
@@ -353,7 +402,7 @@ export const BoletoModal: React.FC<BoletoModalProps> = ({
                                                 onClick={() => handleDownloadPDF(boleto.id)}
                                                 title="Baixar PDF"
                                             >
-                                                <span className={styles.actionIcon}>📥</span>
+                                                <FiDownload size={16} />
                                                 <span>PDF</span>
                                             </button>
                                             
@@ -363,7 +412,7 @@ export const BoletoModal: React.FC<BoletoModalProps> = ({
                                                 title="Enviar por E-mail"
                                                 disabled={!onSendEmail}
                                             >
-                                                <span className={styles.actionIcon}>📧</span>
+                                                <FiMail size={16} />
                                                 <span>E-mail</span>
                                             </button>
                                             
@@ -374,7 +423,7 @@ export const BoletoModal: React.FC<BoletoModalProps> = ({
                                                     title="Marcar como Pago"
                                                     disabled={!onMarkAsPaid}
                                                 >
-                                                    <span className={styles.actionIcon}>💰</span>
+                                                    <FiDollarSign size={16} />
                                                     <span>Pagar</span>
                                                 </button>
                                             )}

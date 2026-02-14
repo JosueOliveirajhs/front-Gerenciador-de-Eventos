@@ -5,7 +5,7 @@ import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import { Login } from './pages/Login';
 import { Owner } from './pages/Owner';
 import { Client } from './pages/Client';
-import { Loading } from './components/common/Loading';
+import { LoadingSpinner as Loading } from './components/common/LoadingSpinner';
 import styles from './App.module.css';
 
 const AppRoutes: React.FC = () => {

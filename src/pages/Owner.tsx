@@ -1,3 +1,5 @@
+// src/pages/Owner.tsx
+
 import React, { useState } from "react";
 import { Header } from "../components/common/Header";
 import { Sidebar } from "../components/common/Sidebar";
@@ -5,8 +7,9 @@ import { OwnerDashboard } from "../components/owner/OwnerDashboard";
 import { EventManagement } from "../components/owner/EventManagement";
 import { FinancialReports } from "../components/owner/FinancialReports";
 import { ClientManagement } from "../components/owner/ClientManagement";
-import styles from "./Owner.module.css";
 import { ItemsManagement } from "../components/owner/ItemsManagement";
+import ChecklistManagement from "../components/owner/checklist/ChecklistManagement"; // ✅ Import correto
+import styles from "./Owner.module.css";
 
 export const Owner: React.FC = () => {
   const [activeView, setActiveView] = useState("dashboard");
@@ -20,6 +23,8 @@ export const Owner: React.FC = () => {
     switch (activeView) {
       case "dashboard":
         return <OwnerDashboard />;
+      case "checklist":
+        return <ChecklistManagement />; // ✅ CORRIGIDO: nome correto do componente
       case "events":
         return <EventManagement />;
       case "financial":
@@ -82,10 +87,10 @@ const getPageTitle = (view: string): string => {
     itens: "Gestão de Itens",
     financial: "Relatórios Financeiros",
     reports: "Relatórios Detalhados",
+    checklist: "Checklists de Eventos",
   };
   return titles[view] || "Dashboard";
 };
-
 
 const renderPageActions = (view: string) => {
   switch (view) {
@@ -95,6 +100,8 @@ const renderPageActions = (view: string) => {
       return <button className={styles.primaryButton}>+ Novo Cliente</button>;
     case "itens":
       return <button className={styles.primaryButton}>+ Novo Item</button>;
+    case "checklist": // ✅ Botão para criar novo checklist
+      return <button className={styles.primaryButton}>+ Novo Checklist</button>;
     default:
       return null;
   }

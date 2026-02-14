@@ -1,6 +1,19 @@
 // src/components/admin/clients/components/ClientTable.tsx
 
 import React, { useState, useMemo } from 'react';
+import { 
+  FiEdit2, 
+  FiTrash2, 
+  FiPhone, 
+  FiMail,
+  FiUser
+} from 'react-icons/fi';
+import { 
+  MdReceipt, 
+  MdPayment,
+  MdPerson,
+  MdCreditCard 
+} from 'react-icons/md';
 import { User } from '../types';
 import styles from './ClientTable.module.css';
 
@@ -64,6 +77,15 @@ export const ClientTable: React.FC<ClientTableProps> = ({
         return phone;
     };
 
+    const getInitials = (name: string): string => {
+        return name
+            .split(' ')
+            .map(word => word[0])
+            .slice(0, 2)
+            .join('')
+            .toUpperCase();
+    };
+
     if (isLoading) {
         return (
             <div className={styles.loadingContainer}>
@@ -88,6 +110,7 @@ export const ClientTable: React.FC<ClientTableProps> = ({
                                 className={`${styles.headerCell} ${styles.sortable}`}
                             >
                                 <div className={styles.headerContent}>
+                                    <MdCreditCard size={14} />
                                     CPF
                                     {sortField === 'cpf' && (
                                         <span className={styles.sortIcon}>
@@ -101,6 +124,7 @@ export const ClientTable: React.FC<ClientTableProps> = ({
                                 className={`${styles.headerCell} ${styles.sortable}`}
                             >
                                 <div className={styles.headerContent}>
+                                    <MdPerson size={14} />
                                     Nome
                                     {sortField === 'name' && (
                                         <span className={styles.sortIcon}>
@@ -114,6 +138,7 @@ export const ClientTable: React.FC<ClientTableProps> = ({
                                 className={`${styles.headerCell} ${styles.sortable} ${styles.hideMobile}`}
                             >
                                 <div className={styles.headerContent}>
+                                    <FiMail size={14} />
                                     E-mail
                                     {sortField === 'email' && (
                                         <span className={styles.sortIcon}>
@@ -127,6 +152,7 @@ export const ClientTable: React.FC<ClientTableProps> = ({
                                 className={`${styles.headerCell} ${styles.sortable} ${styles.hideMobile}`}
                             >
                                 <div className={styles.headerContent}>
+                                    <FiPhone size={14} />
                                     Telefone
                                     {sortField === 'phone' && (
                                         <span className={styles.sortIcon}>
@@ -156,15 +182,20 @@ export const ClientTable: React.FC<ClientTableProps> = ({
                                 </td>
                                 <td className={styles.cell}>
                                     <div className={styles.nameCell}>
-                                        <span className={styles.name}>
-                                            {client.name}
-                                        </span>
-                                        <span className={styles.emailMobile}>
-                                            {client.email || '-'}
-                                        </span>
-                                        <span className={styles.phoneMobile}>
-                                            {formatPhone(client.phone)}
-                                        </span>
+                                        <div className={styles.clientAvatar}>
+                                            {getInitials(client.name)}
+                                        </div>
+                                        <div className={styles.clientInfo}>
+                                            <span className={styles.name}>
+                                                {client.name}
+                                            </span>
+                                            <span className={styles.emailMobile}>
+                                                <FiMail size={12} /> {client.email || '-'}
+                                            </span>
+                                            <span className={styles.phoneMobile}>
+                                                <FiPhone size={12} /> {formatPhone(client.phone)}
+                                            </span>
+                                        </div>
                                     </div>
                                 </td>
                                 <td className={`${styles.cell} ${styles.hideMobile}`}>
@@ -180,7 +211,7 @@ export const ClientTable: React.FC<ClientTableProps> = ({
                                             className={styles.documentButton}
                                             title="Acessar boletos"
                                         >
-                                            <span className={styles.documentIcon}>📄</span>
+                                            <MdPayment size={18} />
                                             <span className={styles.documentLabel}>Boletos</span>
                                         </button>
                                         <button
@@ -188,7 +219,7 @@ export const ClientTable: React.FC<ClientTableProps> = ({
                                             className={styles.documentButton}
                                             title="Ver comprovantes"
                                         >
-                                            <span className={styles.documentIcon}>🧾</span>
+                                            <MdReceipt size={18} />
                                             <span className={styles.documentLabel}>Comprovantes</span>
                                         </button>
                                     </div>
@@ -200,7 +231,7 @@ export const ClientTable: React.FC<ClientTableProps> = ({
                                             className={styles.actionButton}
                                             title="Editar cliente"
                                         >
-                                            <span className={styles.actionIcon}>✏️</span>
+                                            <FiEdit2 size={16} />
                                             <span className={styles.actionLabel}>Editar</span>
                                         </button>
                                         <button
@@ -208,7 +239,7 @@ export const ClientTable: React.FC<ClientTableProps> = ({
                                             className={`${styles.actionButton} ${styles.deleteButton}`}
                                             title="Excluir cliente"
                                         >
-                                            <span className={styles.actionIcon}>🗑️</span>
+                                            <FiTrash2 size={16} />
                                             <span className={styles.actionLabel}>Excluir</span>
                                         </button>
                                     </div>
@@ -221,6 +252,7 @@ export const ClientTable: React.FC<ClientTableProps> = ({
             
             <div className={styles.footer}>
                 <span className={styles.totalCount}>
+                    <FiUser size={14} />
                     Total: {clients.length} {clients.length === 1 ? 'cliente' : 'clientes'}
                 </span>
             </div>

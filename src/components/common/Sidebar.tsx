@@ -1,6 +1,6 @@
 import React from "react";
 import { useAuth } from "../../context/AuthContext";
-import { FiCalendar, FiPlusCircle, FiX } from "react-icons/fi";
+import { FiCalendar, FiPlusCircle, FiX, FiCheckSquare } from "react-icons/fi"; // ✅ Adicionado FiCheckSquare
 import {
   MdEvent,
   MdDashboard,
@@ -51,6 +51,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
       label: "Itens",
       icon: <FaBox size={20} />,
       description: "Gerencie seus itens",
+    },
+    // ✅ NOVO: Item Checklist adicionado
+    {
+      id: "checklist",
+      label: "Checklists",
+      icon: <FiCheckSquare size={20} />,
+      description: "Gerencie checklists de eventos",
     },
     {
       id: "financial",
