@@ -6,7 +6,8 @@ import {
   FiTrash2, 
   FiPhone, 
   FiMail,
-  FiUser
+  FiUser,
+  FiEye
 } from 'react-icons/fi';
 import { 
   MdReceipt, 
@@ -15,6 +16,7 @@ import {
   MdCreditCard 
 } from 'react-icons/md';
 import { User } from '../types';
+import { ClientDetailsModal } from './ClientDetailsModal'; // ✅ NOVO IMPORT
 import styles from './ClientTable.module.css';
 
 interface ClientTableProps {
@@ -39,6 +41,7 @@ export const ClientTable: React.FC<ClientTableProps> = ({
 }) => {
     const [sortField, setSortField] = useState<SortField>('name');
     const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
+    const [selectedClientForDetails, setSelectedClientForDetails] = useState<User | null>(null); // ✅ NOVO ESTADO
 
     const sortedClients = useMemo(() => {
         return [...clients].sort((a, b) => {
@@ -181,7 +184,11 @@ export const ClientTable: React.FC<ClientTableProps> = ({
                                     </span>
                                 </td>
                                 <td className={styles.cell}>
-                                    <div className={styles.nameCell}>
+                                    <div 
+                                        className={styles.nameCell}
+                                        onClick={() => setSelectedClientForDetails(client)} // ✅ CLICK PARA DETALHES
+                                        style={{ cursor: 'pointer' }}
+                                    >
                                         <div className={styles.clientAvatar}>
                                             {getInitials(client.name)}
                                         </div>
@@ -227,6 +234,14 @@ export const ClientTable: React.FC<ClientTableProps> = ({
                                 <td className={styles.cell}>
                                     <div className={styles.actionButtons}>
                                         <button
+                                            onClick={() => setSelectedClientForDetails(client)}
+                                            className={styles.actionButton}
+                                            title="Ver detalhes"
+                                        >
+                                            <FiEye size={16} />
+                                            <span className={styles.actionLabel}>Detalhes</span>
+                                        </button>
+                                        <button
                                             onClick={() => onEdit(client)}
                                             className={styles.actionButton}
                                             title="Editar cliente"
@@ -256,6 +271,26 @@ export const ClientTable: React.FC<ClientTableProps> = ({
                     Total: {clients.length} {clients.length === 1 ? 'cliente' : 'clientes'}
                 </span>
             </div>
+
+            {/* ✅ MODAL DE DETALHES */}
+            {selectedClientForDetails && (
+                <ClientDetailsModal
+                    client={selectedClientForDetails}
+                    onClose={() => setSelectedClientForDetails(null)}
+                    onEdit={(client) => {
+                        setSelectedClientForDetails(null);
+                        onEdit(client);
+                    }}
+                    onViewReceipts={(client) => {
+                        setSelectedClientForDetails(null);
+                        onViewReceipts(client);
+                    }}
+                    onViewBoletos={(client) => {
+                        setSelectedClientForDetails(null);
+                        onViewBoletos(client);
+                    }}
+                />
+            )}
         </div>
     );
 };

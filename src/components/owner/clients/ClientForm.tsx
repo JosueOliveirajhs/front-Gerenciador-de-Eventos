@@ -8,7 +8,9 @@ import {
   FiMail, 
   FiPhone,
   FiLock,
-  FiCheck
+  FiCheck,
+  FiEdit2,        // ✅ IMPORT ADICIONADO!
+  FiUserPlus
 } from 'react-icons/fi';
 import { 
   MdPerson, 
@@ -163,7 +165,7 @@ export const ClientForm: React.FC<ClientFormProps> = ({
                 cpf: formData.cpf.replace(/\D/g, ''),
                 name: formData.name.trim(),
                 email: formData.email.trim() || null,
-                phone: formData.phone.trim() || null,
+                phone: formData.phone ? formData.phone.replace(/\D/g, '') : null,
                 ...(formData.password && { password: formData.password })
             };
             await onSubmit(submitData);

@@ -1,3 +1,5 @@
+// src/types/Event.ts
+
 export interface Event {
   id: number;
   title: string;
@@ -8,19 +10,18 @@ export interface Event {
   eventType: string;
   status: 'QUOTE' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED';
   clientId: number;
-  totalValue: number;    // Mudei para number
-  depositValue: number;  // Mudei para number
-  balanceValue: number;  // Mudei para number
-  balanceDueDate: string;
-  notes: string;
-  createdAt: string;
   client?: {
     id: number;
     name: string;
-    cpf: string;
-    phone?: string;
     email?: string;
+    phone?: string;
   };
+  totalValue: number;
+  depositValue: number;
+  balanceValue: number;
+  balanceDueDate?: string;
+  notes?: string;
+  createdAt: string;
 }
 
 export interface CreateEventData {
