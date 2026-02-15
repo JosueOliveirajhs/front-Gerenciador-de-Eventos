@@ -1,0 +1,197 @@
+/* src/components/admin/events/EventCalendar.module.css */
+
+.container {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr;
+  gap: 24px;
+  background: white;
+  border-radius: 20px;
+  padding: 24px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e2e8f0;
+}
+
+.calendarWrapper {
+  background: #f8fafc;
+  padding: 20px;
+  border-radius: 16px;
+}
+
+.calendarWrapper :global(.react-calendar) {
+  width: 100%;
+  border: none;
+  background: transparent;
+  font-family: inherit;
+}
+
+.calendarWrapper :global(.react-calendar__tile) {
+  position: relative;
+  padding: 12px 6px;
+  border-radius: 10px;
+  transition: all 0.2s;
+}
+
+.calendarWrapper :global(.react-calendar__tile:hover) {
+  background: #e2e8f0 !important;
+}
+
+.calendarWrapper :global(.react-calendar__tile--active) {
+  background: #3b82f6 !important;
+  color: white;
+}
+
+.eventDay {
+  background-color: #dbeafe !important;
+  font-weight: 600;
+  color: #1e40af !important;
+}
+
+.eventCount {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  background: #3b82f6;
+  color: white;
+  font-size: 10px;
+  padding: 2px 4px;
+  border-radius: 9999px;
+  min-width: 18px;
+  text-align: center;
+  font-weight: 600;
+}
+
+.dayEvents {
+  background: #f8fafc;
+  border-radius: 16px;
+  padding: 20px;
+}
+
+.dayEventsTitle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 18px;
+  font-weight: 600;
+  color: #0f172a;
+  margin: 0 0 16px 0;
+  padding-bottom: 12px;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.dayEventsList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: 400px;
+  overflow-y: auto;
+  padding-right: 8px;
+}
+
+.dayEventsList::-webkit-scrollbar {
+  width: 6px;
+}
+
+.dayEventsList::-webkit-scrollbar-track {
+  background: #e2e8f0;
+  border-radius: 10px;
+}
+
+.dayEventsList::-webkit-scrollbar-thumb {
+  background: #94a3b8;
+  border-radius: 10px;
+}
+
+.noDayEvents {
+  text-align: center;
+  padding: 40px;
+  color: #64748b;
+  font-size: 14px;
+  background: white;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.noDayEvents svg {
+  opacity: 0.5;
+}
+
+.dayEventCard {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s;
+  border: 1px solid #e2e8f0;
+  cursor: pointer;
+}
+
+.dayEventCard:hover {
+  transform: translateX(4px);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  border-color: #3b82f6;
+}
+
+.dayEventStatus {
+  min-width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  font-size: 20px;
+  color: white;
+}
+
+.dayEventInfo {
+  flex: 1;
+}
+
+.dayEventTitle {
+  font-size: 15px;
+  font-weight: 600;
+  color: #0f172a;
+  margin: 0 0 4px 0;
+}
+
+.dayEventTime,
+.dayEventClient {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  color: #64748b;
+  margin: 0 0 2px 0;
+}
+
+.eventType {
+  display: inline-block;
+  padding: 2px 8px;
+  background: #f1f5f9;
+  border-radius: 9999px;
+  font-size: 11px;
+  color: #475569;
+  margin-top: 4px;
+}
+
+.dayEventValue {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #059669;
+  min-width: 100px;
+  text-align: right;
+}
+
+@media (max-width: 768px) {
+  .container {
+    grid-template-columns: 1fr;
+  }
+}

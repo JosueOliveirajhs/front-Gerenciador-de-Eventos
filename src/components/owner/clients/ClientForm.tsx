@@ -1,6 +1,20 @@
 // src/components/admin/clients/components/ClientForm.tsx
 
 import React, { useState, useEffect } from 'react';
+import { 
+  FiX, 
+  FiSave, 
+  FiUser, 
+  FiMail, 
+  FiPhone,
+  FiLock,
+  FiCheck
+} from 'react-icons/fi';
+import { 
+  MdPerson, 
+  MdCreditCard,
+  MdWarning 
+} from 'react-icons/md';
 import { User } from '../types';
 import styles from './ClientForm.module.css';
 
@@ -205,12 +219,12 @@ export const ClientForm: React.FC<ClientFormProps> = ({
                         <h3 className={styles.title}>
                             {client ? (
                                 <>
-                                    <span className={styles.titleIcon}>✏️</span>
+                                    <FiEdit2 className={styles.titleIcon} />
                                     Editar Cliente
                                 </>
                             ) : (
                                 <>
-                                    <span className={styles.titleIcon}>➕</span>
+                                    <FiUserPlus className={styles.titleIcon} />
                                     Novo Cliente
                                 </>
                             )}
@@ -226,7 +240,7 @@ export const ClientForm: React.FC<ClientFormProps> = ({
                         className={styles.closeButton}
                         aria-label="Fechar"
                     >
-                        ×
+                        <FiX size={20} />
                     </button>
                 </div>
                 
@@ -234,6 +248,7 @@ export const ClientForm: React.FC<ClientFormProps> = ({
                     <div className={styles.formGrid}>
                         <div className={styles.formGroup}>
                             <label className={styles.label}>
+                                <MdCreditCard size={16} />
                                 CPF <span className={styles.required}>*</span>
                             </label>
                             <div className={styles.inputWrapper}>
@@ -246,13 +261,10 @@ export const ClientForm: React.FC<ClientFormProps> = ({
                                     disabled={!!client}
                                     className={`${styles.input} ${touched.cpf && errors.cpf ? styles.inputError : ''} ${client ? styles.inputDisabled : ''}`}
                                 />
-                                {!client && (
-                                    <span className={styles.inputIcon}>🆔</span>
-                                )}
                             </div>
                             {touched.cpf && errors.cpf && (
                                 <span className={styles.errorMessage}>
-                                    <span className={styles.errorIcon}>⚠️</span>
+                                    <MdWarning size={14} />
                                     {errors.cpf}
                                 </span>
                             )}
@@ -260,6 +272,7 @@ export const ClientForm: React.FC<ClientFormProps> = ({
 
                         <div className={styles.formGroup}>
                             <label className={styles.label}>
+                                <MdPerson size={16} />
                                 Nome <span className={styles.required}>*</span>
                             </label>
                             <div className={styles.inputWrapper}>
@@ -274,18 +287,20 @@ export const ClientForm: React.FC<ClientFormProps> = ({
                                     onBlur={() => handleBlur('name')}
                                     className={`${styles.input} ${touched.name && errors.name ? styles.inputError : ''}`}
                                 />
-                                <span className={styles.inputIcon}>👤</span>
                             </div>
                             {touched.name && errors.name && (
                                 <span className={styles.errorMessage}>
-                                    <span className={styles.errorIcon}>⚠️</span>
+                                    <MdWarning size={14} />
                                     {errors.name}
                                 </span>
                             )}
                         </div>
 
                         <div className={styles.formGroup}>
-                            <label className={styles.label}>E-mail</label>
+                            <label className={styles.label}>
+                                <FiMail size={16} />
+                                E-mail
+                            </label>
                             <div className={styles.inputWrapper}>
                                 <input
                                     type="email"
@@ -298,18 +313,20 @@ export const ClientForm: React.FC<ClientFormProps> = ({
                                     onBlur={() => handleBlur('email')}
                                     className={`${styles.input} ${touched.email && errors.email ? styles.inputError : ''}`}
                                 />
-                                <span className={styles.inputIcon}>📧</span>
                             </div>
                             {touched.email && errors.email && (
                                 <span className={styles.errorMessage}>
-                                    <span className={styles.errorIcon}>⚠️</span>
+                                    <MdWarning size={14} />
                                     {errors.email}
                                 </span>
                             )}
                         </div>
 
                         <div className={styles.formGroup}>
-                            <label className={styles.label}>Telefone</label>
+                            <label className={styles.label}>
+                                <FiPhone size={16} />
+                                Telefone
+                            </label>
                             <div className={styles.inputWrapper}>
                                 <input
                                     type="text"
@@ -319,11 +336,10 @@ export const ClientForm: React.FC<ClientFormProps> = ({
                                     onBlur={() => handleBlur('phone')}
                                     className={`${styles.input} ${touched.phone && errors.phone ? styles.inputError : ''}`}
                                 />
-                                <span className={styles.inputIcon}>📱</span>
                             </div>
                             {touched.phone && errors.phone && (
                                 <span className={styles.errorMessage}>
-                                    <span className={styles.errorIcon}>⚠️</span>
+                                    <MdWarning size={14} />
                                     {errors.phone}
                                 </span>
                             )}
@@ -333,13 +349,14 @@ export const ClientForm: React.FC<ClientFormProps> = ({
                     {!client && (
                         <div className={styles.passwordSection}>
                             <div className={styles.passwordHeader}>
-                                <span className={styles.passwordIcon}>🔒</span>
+                                <FiLock className={styles.passwordIcon} />
                                 <h4 className={styles.passwordTitle}>Credenciais de Acesso</h4>
                             </div>
                             
                             <div className={styles.formGrid}>
                                 <div className={styles.formGroup}>
                                     <label className={styles.label}>
+                                        <FiLock size={16} />
                                         Senha <span className={styles.required}>*</span>
                                     </label>
                                     <div className={styles.inputWrapper}>
@@ -354,11 +371,10 @@ export const ClientForm: React.FC<ClientFormProps> = ({
                                             onBlur={() => handleBlur('password')}
                                             className={`${styles.input} ${touched.password && errors.password ? styles.inputError : ''}`}
                                         />
-                                        <span className={styles.inputIcon}>🔑</span>
                                     </div>
                                     {touched.password && errors.password && (
                                         <span className={styles.errorMessage}>
-                                            <span className={styles.errorIcon}>⚠️</span>
+                                            <MdWarning size={14} />
                                             {errors.password}
                                         </span>
                                     )}
@@ -366,6 +382,7 @@ export const ClientForm: React.FC<ClientFormProps> = ({
 
                                 <div className={styles.formGroup}>
                                     <label className={styles.label}>
+                                        <FiCheck size={16} />
                                         Confirmar Senha <span className={styles.required}>*</span>
                                     </label>
                                     <div className={styles.inputWrapper}>
@@ -380,11 +397,10 @@ export const ClientForm: React.FC<ClientFormProps> = ({
                                             onBlur={() => handleBlur('confirmPassword')}
                                             className={`${styles.input} ${touched.confirmPassword && errors.confirmPassword ? styles.inputError : ''}`}
                                         />
-                                        <span className={styles.inputIcon}>✓</span>
                                     </div>
                                     {touched.confirmPassword && errors.confirmPassword && (
                                         <span className={styles.errorMessage}>
-                                            <span className={styles.errorIcon}>⚠️</span>
+                                            <MdWarning size={14} />
                                             {errors.confirmPassword}
                                         </span>
                                     )}
@@ -393,7 +409,7 @@ export const ClientForm: React.FC<ClientFormProps> = ({
                             
                             <div className={styles.passwordHint}>
                                 <span className={styles.hintIcon}>ℹ️</span>
-                                A senha deve ter no mínimo 6 caracteres e ser forte
+                                A senha deve ter no mínimo 6 caracteres
                             </div>
                         </div>
                     )}
@@ -405,6 +421,7 @@ export const ClientForm: React.FC<ClientFormProps> = ({
                             className={styles.cancelButton}
                             disabled={loading}
                         >
+                            <FiX size={18} />
                             Cancelar
                         </button>
                         <button 
@@ -419,9 +436,7 @@ export const ClientForm: React.FC<ClientFormProps> = ({
                                 </>
                             ) : (
                                 <>
-                                    <span className={styles.buttonIcon}>
-                                        {client ? '✓' : '➕'}
-                                    </span>
+                                    <FiSave size={18} />
                                     {client ? 'Atualizar Cliente' : 'Cadastrar Cliente'}
                                 </>
                             )}

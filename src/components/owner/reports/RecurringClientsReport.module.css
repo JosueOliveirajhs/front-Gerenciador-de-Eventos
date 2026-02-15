@@ -1,0 +1,303 @@
+/* src/components/admin/reports/RecurringClientsReport.module.css */
+
+.container {
+    padding: 24px;
+    max-width: 1400px;
+    margin: 0 auto;
+    background-color: #f3f4f6;
+    min-height: 100vh;
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+    gap: 16px;
+}
+
+.title {
+    font-size: 28px;
+    font-weight: 600;
+    color: #111827;
+    margin: 0 0 4px 0;
+}
+
+.subtitle {
+    font-size: 14px;
+    color: #6b7280;
+    margin: 0;
+}
+
+.filters {
+    display: flex;
+    gap: 12px;
+}
+
+.filterSelect {
+    padding: 10px 16px;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    font-size: 14px;
+    background-color: white;
+    cursor: pointer;
+    min-width: 200px;
+}
+
+.filterSelect:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.statsOverview {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    margin-bottom: 32px;
+}
+
+.statCard {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 20px;
+    background-color: white;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.statIcon {
+    font-size: 32px;
+}
+
+.statValue {
+    display: block;
+    font-size: 24px;
+    font-weight: 600;
+    color: #111827;
+    line-height: 1.2;
+}
+
+.statLabel {
+    font-size: 13px;
+    color: #6b7280;
+}
+
+.clientsGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 20px;
+}
+
+.clientCard {
+    background-color: white;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    transition: all 0.2s;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.clientCard:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+.cardHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.loyaltyBadge {
+    padding: 4px 12px;
+    border-radius: 9999px;
+    color: white;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.moreButton {
+    background: none;
+    border: none;
+    font-size: 20px;
+    color: #9ca3af;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 4px;
+}
+
+.moreButton:hover {
+    background-color: #f3f4f6;
+    color: #374151;
+}
+
+.clientInfo {
+    margin-bottom: 8px;
+}
+
+.clientName {
+    font-size: 18px;
+    font-weight: 600;
+    color: #111827;
+    margin: 0 0 4px 0;
+}
+
+.clientContact {
+    font-size: 13px;
+    color: #6b7280;
+    margin: 0;
+}
+
+.statsGrid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    padding: 12px 0;
+    border-top: 1px solid #e5e7eb;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.stat {
+    text-align: center;
+}
+
+.statNumber {
+    display: block;
+    font-size: 16px;
+    font-weight: 600;
+    color: #111827;
+}
+
+.statDesc {
+    font-size: 11px;
+    color: #6b7280;
+}
+
+.timeline {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    font-size: 13px;
+}
+
+.timelineItem {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.timelineLabel {
+    color: #6b7280;
+}
+
+.timelineValue {
+    font-weight: 500;
+    color: #111827;
+}
+
+.preferences {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.preferenceTag {
+    padding: 4px 10px;
+    background-color: #f3f4f6;
+    color: #4b5563;
+    border-radius: 9999px;
+    font-size: 12px;
+}
+
+.vipTag {
+    background-color: #fef3c7;
+    color: #92400e;
+}
+
+.cardFooter {
+    display: flex;
+    gap: 12px;
+    margin-top: 8px;
+}
+
+.viewProfileButton,
+.contactButton {
+    flex: 1;
+    padding: 10px;
+    border: none;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.viewProfileButton {
+    background-color: #3b82f6;
+    color: white;
+}
+
+.viewProfileButton:hover {
+    background-color: #2563eb;
+}
+
+.contactButton {
+    background-color: #f3f4f6;
+    color: #374151;
+}
+
+.contactButton:hover {
+    background-color: #e5e7eb;
+}
+
+.emptyState {
+    text-align: center;
+    padding: 60px;
+    background-color: white;
+    border-radius: 12px;
+}
+
+.emptyIcon {
+    font-size: 48px;
+    margin-bottom: 16px;
+}
+
+.emptyState h3 {
+    font-size: 18px;
+    font-weight: 600;
+    color: #111827;
+    margin: 0 0 8px 0;
+}
+
+.emptyState p {
+    color: #6b7280;
+    margin: 0;
+}
+
+@media (max-width: 768px) {
+    .container {
+        padding: 16px;
+    }
+
+    .header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .filterSelect {
+        width: 100%;
+    }
+
+    .clientsGrid {
+        grid-template-columns: 1fr;
+    }
+
+    .statsOverview {
+        grid-template-columns: 1fr;
+    }
+}

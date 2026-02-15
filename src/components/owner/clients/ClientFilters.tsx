@@ -1,6 +1,15 @@
 // src/components/admin/clients/components/ClientFilters.tsx
 
 import React, { useState, useEffect } from 'react';
+import { 
+  FiSearch, 
+  FiUser, 
+  FiMail, 
+  FiPhone,
+  FiX,
+  FiFilter
+} from 'react-icons/fi';
+import { MdPerson, MdCreditCard } from 'react-icons/md';
 import { Filters } from '../types';
 import styles from './ClientFilters.module.css';
 
@@ -50,7 +59,7 @@ export const ClientFilters: React.FC<ClientFiltersProps> = ({
                         <span className={styles.toggleIcon}>
                             {isExpanded ? '▼' : '▶'}
                         </span>
-                        <span className={styles.filterIcon}>🔍</span>
+                        <FiFilter className={styles.filterIcon} />
                         <h3 className={styles.title}>Filtros de Busca</h3>
                     </button>
                     {hasActiveFilters && (
@@ -61,6 +70,7 @@ export const ClientFilters: React.FC<ClientFiltersProps> = ({
                 </div>
                 <div className={styles.headerRight}>
                     <span className={styles.resultCount}>
+                        <FiSearch size={14} />
                         {totalResults} {totalResults === 1 ? 'resultado' : 'resultados'}
                     </span>
                     {hasActiveFilters && (
@@ -68,7 +78,7 @@ export const ClientFilters: React.FC<ClientFiltersProps> = ({
                             onClick={onClearFilters}
                             className={styles.clearButton}
                         >
-                            <span className={styles.clearIcon}>✕</span>
+                            <FiX size={16} />
                             Limpar filtros
                         </button>
                     )}
@@ -79,7 +89,7 @@ export const ClientFilters: React.FC<ClientFiltersProps> = ({
                 <div className={styles.filtersGrid}>
                     <div className={styles.filterGroup}>
                         <label className={styles.filterLabel}>
-                            <span className={styles.labelIcon}>🆔</span>
+                            <MdCreditCard size={16} />
                             CPF
                         </label>
                         <div className={styles.inputWrapper}>
@@ -95,7 +105,7 @@ export const ClientFilters: React.FC<ClientFiltersProps> = ({
                                     className={styles.clearInput}
                                     onClick={() => handleChange('cpf', '')}
                                 >
-                                    ✕
+                                    <FiX size={14} />
                                 </button>
                             )}
                         </div>
@@ -103,7 +113,7 @@ export const ClientFilters: React.FC<ClientFiltersProps> = ({
 
                     <div className={styles.filterGroup}>
                         <label className={styles.filterLabel}>
-                            <span className={styles.labelIcon}>👤</span>
+                            <MdPerson size={16} />
                             Nome
                         </label>
                         <div className={styles.inputWrapper}>
@@ -119,7 +129,7 @@ export const ClientFilters: React.FC<ClientFiltersProps> = ({
                                     className={styles.clearInput}
                                     onClick={() => handleChange('name', '')}
                                 >
-                                    ✕
+                                    <FiX size={14} />
                                 </button>
                             )}
                         </div>
@@ -127,7 +137,7 @@ export const ClientFilters: React.FC<ClientFiltersProps> = ({
 
                     <div className={styles.filterGroup}>
                         <label className={styles.filterLabel}>
-                            <span className={styles.labelIcon}>📧</span>
+                            <FiMail size={16} />
                             E-mail
                         </label>
                         <div className={styles.inputWrapper}>
@@ -143,7 +153,7 @@ export const ClientFilters: React.FC<ClientFiltersProps> = ({
                                     className={styles.clearInput}
                                     onClick={() => handleChange('email', '')}
                                 >
-                                    ✕
+                                    <FiX size={14} />
                                 </button>
                             )}
                         </div>
@@ -151,7 +161,7 @@ export const ClientFilters: React.FC<ClientFiltersProps> = ({
 
                     <div className={styles.filterGroup}>
                         <label className={styles.filterLabel}>
-                            <span className={styles.labelIcon}>📱</span>
+                            <FiPhone size={16} />
                             Telefone
                         </label>
                         <div className={styles.inputWrapper}>
@@ -167,7 +177,7 @@ export const ClientFilters: React.FC<ClientFiltersProps> = ({
                                     className={styles.clearInput}
                                     onClick={() => handleChange('phone', '')}
                                 >
-                                    ✕
+                                    <FiX size={14} />
                                 </button>
                             )}
                         </div>
