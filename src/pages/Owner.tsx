@@ -1,5 +1,3 @@
-// src/pages/Owner.tsx
-
 import React, { useState } from "react";
 import { Header } from "../components/common/Header";
 import { Sidebar } from "../components/common/Sidebar";
@@ -8,7 +6,10 @@ import { EventManagement } from "../components/owner/EventManagement";
 import { FinancialReports } from "../components/owner/FinancialReports";
 import { ClientManagement } from "../components/owner/ClientManagement";
 import { ItemsManagement } from "../components/owner/ItemsManagement";
-import ChecklistManagement from "../components/owner/checklist/ChecklistManagement"; // ✅ Import correto
+import ChecklistManagement from "../components/owner/checklist/ChecklistManagement";
+import { SettingsPage } from "../components/owner/settings/SettingsPage";
+import { ProfilePage } from "../components/owner/settings/ProfilePage";
+import { NotificationsPage } from "../components/owner/settings/NotificationsPage";
 import styles from "./Owner.module.css";
 
 export const Owner: React.FC = () => {
@@ -19,12 +20,17 @@ export const Owner: React.FC = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
   };
 
+  const handleViewChange = (view: string) => {
+    console.log('📱 Mudando view para:', view);
+    setActiveView(view);
+  };
+
   const renderActiveView = () => {
     switch (activeView) {
       case "dashboard":
         return <OwnerDashboard />;
       case "checklist":
-        return <ChecklistManagement />; // ✅ CORRIGIDO: nome correto do componente
+        return <ChecklistManagement />;
       case "events":
         return <EventManagement />;
       case "financial":
@@ -33,6 +39,12 @@ export const Owner: React.FC = () => {
         return <ClientManagement />;
       case "itens":
         return <ItemsManagement />;
+      case "configuracoes":
+        return <SettingsPage />;
+      case "perfil":
+        return <ProfilePage />;
+      case "notificacoes":
+        return <NotificationsPage />;
       case "reports":
         return (
           <div className={styles.placeholderPage}>
@@ -61,7 +73,10 @@ export const Owner: React.FC = () => {
       />
 
       <div className={styles.mainContent}>
-        <Header onMenuToggle={handleMenuToggle} />
+        <Header 
+          onMenuToggle={handleMenuToggle} 
+          onViewChange={handleViewChange} // Passando a função para o Header
+        />
 
         <main className={styles.contentArea}>
           <div className={styles.pageHeader}>
@@ -88,6 +103,9 @@ const getPageTitle = (view: string): string => {
     financial: "Relatórios Financeiros",
     reports: "Relatórios Detalhados",
     checklist: "Checklists de Eventos",
+    configuracoes: "Configurações do Sistema",
+    perfil: "Meu Perfil",
+    notificacoes: "Notificações",
   };
   return titles[view] || "Dashboard";
 };
@@ -100,7 +118,7 @@ const renderPageActions = (view: string) => {
       return "";
     case "itens":
       return "";
-    case "checklist": // ✅ Botão para criar novo checklist
+    case "checklist":
       return "";
     default:
       return null;
