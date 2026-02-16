@@ -942,6 +942,73 @@
   line-height: 1.6;
 }
 
+/* ========== MODAL DE SUCESSO ========== */
+.successModal {
+  max-width: 400px;
+  text-align: center;
+  padding: 32px 24px;
+}
+
+.successIconContainer {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.successIcon {
+  color: #10b981;
+  animation: successPop 0.5s ease;
+}
+
+@keyframes successPop {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.successTitle {
+  font-size: 24px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 12px 0;
+}
+
+.successMessage {
+  font-size: 16px;
+  color: #475569;
+  margin: 0 0 24px 0;
+}
+
+.successButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 32px;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  border: none;
+  border-radius: 12px;
+  color: white;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.successButton:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(16, 185, 129, 0.4);
+}
+
 /* ========== RESPONSIVIDADE ========== */
 @media (max-width: 1200px) {
   .statsHeader {
@@ -1032,5 +1099,22 @@
   .modalActions button {
     width: 100%;
     justify-content: center;
+  }
+
+  .successModal {
+    margin: 16px;
+    padding: 24px 16px;
+  }
+  
+  .successTitle {
+    font-size: 20px;
+  }
+  
+  .successMessage {
+    font-size: 14px;
+  }
+  
+  .successButton {
+    width: 100%;
   }
 }

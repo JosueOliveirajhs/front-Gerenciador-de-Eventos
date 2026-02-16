@@ -3,18 +3,92 @@
 .container {
   display: grid;
   grid-template-columns: 1fr 1.2fr;
-  gap: 24px;
+  gap: 20px;
+  width: 81rem;
   background: white;
-  border-radius: 20px;
-  padding: 24px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  border-radius: 24px;
+  padding: 20px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.02);
+  border: 1px solid #f1f5f9;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* ===== HEADER DO CALENDÁRIO ===== */
+.calendarHeader {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding: 0 4px;
+}
+
+.calendarTitle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 20px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+}
+
+.calendarTitle svg {
+  color: #3b82f6;
+}
+
+.legend {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  background: #f8fafc;
+  padding: 8px 16px;
+  border-radius: 40px;
   border: 1px solid #e2e8f0;
 }
 
+.legendItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #334155;
+}
+
+.legendDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.legendDot.quote {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+}
+
+.legendDot.confirmed {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+}
+
+.legendDot.completed {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+}
+
+.legendDot.cancelled {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+}
+
+/* ===== CALENDÁRIO ===== */
 .calendarWrapper {
-  background: #f8fafc;
+  background: white;
   padding: 20px;
-  border-radius: 16px;
+  border-radius: 20px;
+  border: 1px solid #f1f5f9;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02);
 }
 
 .calendarWrapper :global(.react-calendar) {
@@ -24,46 +98,127 @@
   font-family: inherit;
 }
 
-.calendarWrapper :global(.react-calendar__tile) {
-  position: relative;
-  padding: 12px 6px;
-  border-radius: 10px;
+.calendarWrapper :global(.react-calendar__navigation) {
+  margin-bottom: 16px;
+}
+
+.calendarWrapper :global(.react-calendar__navigation button) {
+  min-width: 36px;
+  background: none;
+  font-size: 15px;
+  color: #334155;
+  border-radius: 8px;
   transition: all 0.2s;
 }
 
+.calendarWrapper :global(.react-calendar__navigation button:hover) {
+  background: #f1f5f9 !important;
+}
+
+.calendarWrapper :global(.react-calendar__navigation button:enabled:hover) {
+  background: #f1f5f9;
+}
+
+.calendarWrapper :global(.react-calendar__navigation button:enabled:focus) {
+  background: #e2e8f0;
+}
+
+.calendarWrapper :global(.react-calendar__month-view__weekdays) {
+  color: #64748b;
+  font-weight: 500;
+  font-size: 13px;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.calendarWrapper :global(.react-calendar__month-view__weekdays__weekday) {
+  padding: 8px;
+}
+
+.calendarWrapper :global(.react-calendar__month-view__weekdays abbr) {
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.calendarWrapper :global(.react-calendar__tile) {
+  position: relative;
+  padding: 14px 6px;
+  border-radius: 12px;
+  transition: all 0.2s;
+  font-size: 14px;
+  font-weight: 500;
+  color: #1e293b;
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .calendarWrapper :global(.react-calendar__tile:hover) {
-  background: #e2e8f0 !important;
+  background: #f1f5f9 !important;
+  transform: scale(0.95);
 }
 
 .calendarWrapper :global(.react-calendar__tile--active) {
-  background: #3b82f6 !important;
-  color: white;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%) !important;
+  color: white !important;
+  box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.3);
+}
+
+.calendarWrapper :global(.react-calendar__tile--now) {
+  background: #fef3c7;
+  color: #92400e;
+  font-weight: 700;
+}
+
+.calendarWrapper :global(.react-calendar__tile--now:hover) {
+  background: #fde68a !important;
 }
 
 .eventDay {
-  background-color: #dbeafe !important;
-  font-weight: 600;
+  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%) !important;
+  font-weight: 700;
   color: #1e40af !important;
+  box-shadow: inset 0 -2px 0 #3b82f6;
 }
 
 .eventCount {
   position: absolute;
-  top: 2px;
-  right: 2px;
-  background: #3b82f6;
+  top: 4px;
+  right: 4px;
+  background: #ef4444;
   color: white;
-  font-size: 10px;
+  font-size: 9px;
+  font-weight: 700;
   padding: 2px 4px;
   border-radius: 9999px;
   min-width: 18px;
-  text-align: center;
-  font-weight: 600;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 4px rgba(239, 68, 68, 0.3);
 }
 
+/* ===== LISTA DE EVENTOS DO DIA ===== */
 .dayEvents {
-  background: #f8fafc;
-  border-radius: 16px;
+  background: white;
+  border-radius: 20px;
   padding: 20px;
+  border: 1px solid #f1f5f9;
+  display: flex;
+  flex-direction: column;
+  height: fit-content;
+  max-height: 600px;
+}
+
+.dayEventsHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 2px solid #f1f5f9;
 }
 
 .dayEventsTitle {
@@ -71,20 +226,32 @@
   align-items: center;
   gap: 8px;
   font-size: 18px;
-  font-weight: 600;
+  font-weight: 700;
   color: #0f172a;
-  margin: 0 0 16px 0;
-  padding-bottom: 12px;
-  border-bottom: 2px solid #e2e8f0;
+  margin: 0;
+}
+
+.dayEventsTitle svg {
+  color: #3b82f6;
+}
+
+.eventCountBadge {
+  padding: 6px 14px;
+  background: #f1f5f9;
+  color: #334155;
+  border-radius: 40px;
+  font-size: 13px;
+  font-weight: 600;
+  border: 1px solid #e2e8f0;
 }
 
 .dayEventsList {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  max-height: 400px;
   overflow-y: auto;
   padding-right: 8px;
+  flex: 1;
 }
 
 .dayEventsList::-webkit-scrollbar {
@@ -92,106 +259,405 @@
 }
 
 .dayEventsList::-webkit-scrollbar-track {
-  background: #e2e8f0;
+  background: #f1f5f9;
   border-radius: 10px;
 }
 
 .dayEventsList::-webkit-scrollbar-thumb {
-  background: #94a3b8;
+  background: #cbd5e1;
   border-radius: 10px;
 }
 
-.noDayEvents {
-  text-align: center;
-  padding: 40px;
-  color: #64748b;
-  font-size: 14px;
-  background: white;
-  border-radius: 12px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
+.dayEventsList::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
 }
 
-.noDayEvents svg {
-  opacity: 0.5;
-}
-
+/* ===== CARDS DE EVENTOS ===== */
 .dayEventCard {
   display: flex;
-  align-items: center;
   gap: 16px;
   padding: 16px;
   background: white;
-  border-radius: 12px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-  transition: all 0.2s;
-  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  transition: all 0.3s;
+  border: 1px solid #f1f5f9;
   cursor: pointer;
+  position: relative;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
 }
 
 .dayEventCard:hover {
-  transform: translateX(4px);
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  transform: translateX(6px) translateY(-2px);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.02);
   border-color: #3b82f6;
 }
 
 .dayEventStatus {
-  min-width: 40px;
-  height: 40px;
+  min-width: 48px;
+  height: 48px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 10px;
+  border-radius: 14px;
   font-size: 20px;
   color: white;
+  box-shadow: 0 8px 12px -4px rgba(0, 0, 0, 0.2);
 }
 
 .dayEventInfo {
   flex: 1;
 }
 
+.eventHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  gap: 8px;
+}
+
 .dayEventTitle {
-  font-size: 15px;
-  font-weight: 600;
+  font-size: 16px;
+  font-weight: 700;
   color: #0f172a;
-  margin: 0 0 4px 0;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.eventStatusBadge {
+  padding: 4px 10px;
+  border-radius: 40px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.eventStatusBadge.quote {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.eventStatusBadge.confirmed {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.eventStatusBadge.completed {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.eventStatusBadge.cancelled {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.eventDetails {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
 .dayEventTime,
 .dayEventClient {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
   font-size: 13px;
-  color: #64748b;
-  margin: 0 0 2px 0;
-}
-
-.eventType {
-  display: inline-block;
-  padding: 2px 8px;
-  background: #f1f5f9;
-  border-radius: 9999px;
-  font-size: 11px;
   color: #475569;
-  margin-top: 4px;
+  margin: 0;
 }
 
+.dayEventTime svg,
+.dayEventClient svg {
+  color: #64748b;
+}
+
+.eventMeta {
+  display: flex;
+  gap: 16px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+
+.eventGuests,
+.eventType {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #64748b;
+  background: #f8fafc;
+  padding: 4px 10px;
+  border-radius: 40px;
+  border: 1px solid #f1f5f9;
+}
+
+.eventGuests svg,
+.eventType svg {
+  color: #64748b;
+}
+
+/* ===== VALORES ===== */
 .dayEventValue {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 4px;
+  min-width: 110px;
+  padding-left: 8px;
+  border-left: 2px solid #f1f5f9;
+}
+
+.dayEventValue strong {
   display: flex;
   align-items: center;
   gap: 4px;
   font-size: 16px;
-  font-weight: 600;
+  font-weight: 700;
   color: #059669;
-  min-width: 100px;
-  text-align: right;
+}
+
+.dayEventValue svg {
+  color: #10b981;
+}
+
+.depositInfo {
+  font-size: 11px;
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+/* ===== INDICADORES ===== */
+.paymentPending {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  background: #fef3c7;
+  color: #f59e0b;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  border: 2px solid white;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  cursor: help;
+}
+
+/* ===== ESTADOS VAZIOS ===== */
+.noDayEvents {
+  text-align: center;
+  padding: 48px 24px;
+  color: #64748b;
+  font-size: 14px;
+  background: #f8fafc;
+  border-radius: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  border: 2px dashed #e2e8f0;
+}
+
+.noDayEvents svg {
+  color: #94a3b8;
+  opacity: 0.5;
+}
+
+.noEventsHint {
+  font-size: 13px;
+  color: #94a3b8;
+  margin-top: 4px;
+}
+
+/* ===== RESPONSIVIDADE ===== */
+@media (max-width: 1024px) {
+  .container {
+    gap: 16px;
+    padding: 16px;
+  }
+
+  .calendarWrapper {
+    padding: 16px;
+  }
+
+  .calendarWrapper :global(.react-calendar__tile) {
+    padding: 12px 4px;
+    font-size: 13px;
+  }
 }
 
 @media (max-width: 768px) {
   .container {
     grid-template-columns: 1fr;
   }
+
+  .calendarHeader {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .calendarTitle {
+    justify-content: center;
+  }
+
+  .legend {
+    width: 100%;
+    justify-content: center;
+    padding: 8px 12px;
+  }
+
+  .legendItem {
+    font-size: 12px;
+  }
+
+  .calendarWrapper {
+    width: 100%;
+  }
+
+  .calendarWrapper :global(.react-calendar) {
+    max-width: 100%;
+  }
+
+  .dayEvents {
+    max-height: none;
+  }
+
+  .dayEventsList {
+    max-height: 350px;
+  }
+
+  .dayEventCard {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .eventHeader {
+    width: 100%;
+    flex-direction: row;
+    justify-content: space-between;
+  }
+
+  .dayEventStatus {
+    align-self: flex-start;
+  }
+
+  .dayEventValue {
+    width: 100%;
+    align-items: flex-start;
+    border-left: none;
+    border-top: 2px solid #f1f5f9;
+    padding-left: 0;
+    padding-top: 12px;
+    margin-top: 4px;
+  }
+
+  .dayEventValue strong {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .eventMeta {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .paymentPending {
+    top: -4px;
+    right: -4px;
+    width: 24px;
+    height: 24px;
+  }
+}
+
+@media (max-width: 480px) {
+  .container {
+    padding: 12px;
+    border-radius: 16px;
+  }
+
+  .calendarWrapper {
+    padding: 12px;
+  }
+
+  .calendarWrapper :global(.react-calendar__tile) {
+    padding: 10px 2px;
+    font-size: 12px;
+  }
+
+  .dayEvents {
+    padding: 16px;
+  }
+
+  .dayEventsTitle {
+    font-size: 16px;
+  }
+
+  .eventCountBadge {
+    padding: 4px 10px;
+    font-size: 12px;
+  }
+
+  .dayEventCard {
+    padding: 14px;
+  }
+
+  .dayEventTitle {
+    font-size: 15px;
+  }
+
+  .eventMeta {
+    gap: 8px;
+  }
+
+  .eventGuests,
+  .eventType {
+    font-size: 11px;
+    padding: 3px 8px;
+  }
+
+  .legend {
+    gap: 12px;
+  }
+
+  .legendItem {
+    font-size: 11px;
+  }
+}
+
+/* ===== ANIMAÇÕES ===== */
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.dayEventCard {
+  animation: slideIn 0.3s ease;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+.paymentPending {
+  animation: pulse 2s infinite;
 }

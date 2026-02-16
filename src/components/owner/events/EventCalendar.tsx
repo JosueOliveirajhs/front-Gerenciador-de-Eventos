@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Calendar from 'react-calendar';
-import { Event } from '../../types/Event';
+import { Event } from '../../../types/Event';
 import { 
   FiCalendar, 
   FiClock, 

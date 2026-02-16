@@ -95,13 +95,13 @@ const getPageTitle = (view: string): string => {
 const renderPageActions = (view: string) => {
   switch (view) {
     case "events":
-      return <button className={styles.primaryButton}>+ Novo Evento</button>;
+      return "";
     case "clients":
-      return <button className={styles.primaryButton}>+ Novo Cliente</button>;
+      return "";
     case "itens":
-      return <button className={styles.primaryButton}>+ Novo Item</button>;
+      return "";
     case "checklist": // ✅ Botão para criar novo checklist
-      return <button className={styles.primaryButton}>+ Novo Checklist</button>;
+      return "";
     default:
       return null;
   }

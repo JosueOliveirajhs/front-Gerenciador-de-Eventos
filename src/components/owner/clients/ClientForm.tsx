@@ -1,5 +1,3 @@
-// src/components/admin/clients/components/ClientForm.tsx
-
 import React, { useState, useEffect } from 'react';
 import { 
   FiX, 
@@ -9,15 +7,18 @@ import {
   FiPhone,
   FiLock,
   FiCheck,
-  FiEdit2,        // ✅ IMPORT ADICIONADO!
+  FiEdit2,
   FiUserPlus
 } from 'react-icons/fi';
 import { 
   MdPerson, 
   MdCreditCard,
-  MdWarning 
+  MdWarning,
+  MdCheckCircle
 } from 'react-icons/md';
 import { User } from '../types';
+import { ConfirmationModal } from '../../common/Alerts/ConfirmationModal';
+import { ErrorModal } from '../../common/ALerts/ErrorModal';
 import styles from './ClientForm.module.css';
 
 interface ClientFormProps {
@@ -45,6 +46,12 @@ export const ClientForm: React.FC<ClientFormProps> = ({
     const [errors, setErrors] = useState<{ [key: string]: string }>({});
     const [loading, setLoading] = useState(false);
     const [touched, setTouched] = useState<{ [key: string]: boolean }>({});
+    
+    const [showSuccess, setShowSuccess] = useState(false);
+    const [successMessage, setSuccessMessage] = useState('');
+    
+    const [showError, setShowError] = useState(false);
+    const [errorMessage, setErrorMessage] = useState('');
 
     useEffect(() => {
         if (client) {
@@ -68,12 +75,13 @@ export const ClientForm: React.FC<ClientFormProps> = ({
         }
         setErrors({});
         setTouched({});
+        setShowError(false); // Resetar erro ao abrir o form
+        setErrorMessage('');
     }, [client, isOpen]);
 
     const validateForm = () => {
         const newErrors: { [key: string]: string } = {};
 
-        // Validação de CPF
         const cpfNumbers = formData.cpf.replace(/\D/g, '');
         if (!cpfNumbers) {
             newErrors.cpf = 'CPF é obrigatório';
@@ -83,19 +91,16 @@ export const ClientForm: React.FC<ClientFormProps> = ({
             newErrors.cpf = 'CPF inválido';
         }
 
-        // Validação de Nome
         if (!formData.name.trim()) {
             newErrors.name = 'Nome é obrigatório';
         } else if (formData.name.trim().length < 3) {
             newErrors.name = 'Nome deve ter pelo menos 3 caracteres';
         }
 
-        // Validação de E-mail
         if (formData.email && !/\S+@\S+\.\S+/.test(formData.email)) {
             newErrors.email = 'E-mail inválido';
         }
 
-        // Validação de Telefone
         if (formData.phone) {
             const phoneNumbers = formData.phone.replace(/\D/g, '');
             if (phoneNumbers.length < 10 || phoneNumbers.length > 11) {
@@ -103,7 +108,6 @@ export const ClientForm: React.FC<ClientFormProps> = ({
             }
         }
 
-        // Validação de Senha (apenas para criação)
         if (!client) {
             if (!formData.password) {
                 newErrors.password = 'Senha é obrigatória';
@@ -122,11 +126,8 @@ export const ClientForm: React.FC<ClientFormProps> = ({
 
     const validateCPF = (cpf: string) => {
         if (cpf.length !== 11) return false;
-        
-        // Elimina CPFs conhecidos inválidos
         if (/^(\d)\1+$/.test(cpf)) return false;
         
-        // Validação do primeiro dígito
         let sum = 0;
         for (let i = 0; i < 9; i++) {
             sum += parseInt(cpf.charAt(i)) * (10 - i);
@@ -135,7 +136,6 @@ export const ClientForm: React.FC<ClientFormProps> = ({
         if (rev === 10 || rev === 11) rev = 0;
         if (rev !== parseInt(cpf.charAt(9))) return false;
         
-        // Validação do segundo dígito
         sum = 0;
         for (let i = 0; i < 10; i++) {
             sum += parseInt(cpf.charAt(i)) * (11 - i);
@@ -150,7 +150,6 @@ export const ClientForm: React.FC<ClientFormProps> = ({
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         
-        // Marcar todos os campos como tocados
         const allTouched = Object.keys(formData).reduce((acc, key) => {
             acc[key] = true;
             return acc;
@@ -169,11 +168,42 @@ export const ClientForm: React.FC<ClientFormProps> = ({
                 ...(formData.password && { password: formData.password })
             };
             await onSubmit(submitData);
-        } catch (error) {
+            
+            setSuccessMessage(client 
+                ? 'Cliente atualizado com sucesso!' 
+                : 'Cliente cadastrado com sucesso!'
+            );
+            setShowSuccess(true);
+            
+        } catch (error: any) {
             console.error('Erro ao salvar cliente:', error);
-        } finally {
-            setLoading(false);
+            
+            // Tratar diferentes tipos de erro
+            let message = 'Erro ao salvar cliente. Tente novamente.';
+            
+            if (error.message) {
+                message = error.message;
+            } else if (error.response?.data?.message) {
+                message = error.response.data.message;
+            } else if (error.response?.data?.error) {
+                message = error.response.data.error;
+            }
+            
+            setErrorMessage(message);
+            setShowError(true);
+            setLoading(false); // Garantir que loading seja false em caso de erro
         }
+    };
+
+    const handleSuccessClose = () => {
+        setShowSuccess(false);
+        onCancel();
+    };
+
+    const handleErrorClose = () => {
+        setShowError(false);
+        setErrorMessage('');
+        // Não fecha o formulário - permite o usuário corrigir os dados
     };
 
     const handleBlur = (field: string) => {
@@ -214,238 +244,229 @@ export const ClientForm: React.FC<ClientFormProps> = ({
     if (!isOpen) return null;
 
     return (
-        <div className={styles.modalOverlay}>
-            <div className={styles.modal}>
-                <div className={styles.header}>
-                    <div className={styles.headerContent}>
-                        <h3 className={styles.title}>
-                            {client ? (
-                                <>
-                                    <FiEdit2 className={styles.titleIcon} />
-                                    Editar Cliente
-                                </>
-                            ) : (
-                                <>
-                                    <FiUserPlus className={styles.titleIcon} />
-                                    Novo Cliente
-                                </>
-                            )}
-                        </h3>
-                        <p className={styles.subtitle}>
-                            {client 
-                                ? 'Atualize as informações do cliente abaixo'
-                                : 'Preencha os dados para cadastrar um novo cliente'}
-                        </p>
+        <>
+            <div className={styles.modalOverlay}>
+                <div className={styles.modal}>
+                    <div className={styles.header}>
+                        <div className={styles.headerContent}>
+                            <h3 className={styles.title}>
+                                {client ? (
+                                    <>
+                                        <FiEdit2 className={styles.titleIcon} />
+                                        Editar Cliente
+                                    </>
+                                ) : (
+                                    <>
+                                        <FiUserPlus className={styles.titleIcon} />
+                                        Novo Cliente
+                                    </>
+                                )}
+                            </h3>
+                            <p className={styles.subtitle}>
+                                {client 
+                                    ? 'Atualize as informações do cliente abaixo'
+                                    : 'Preencha os dados para cadastrar um novo cliente'}
+                            </p>
+                        </div>
+                        <button onClick={onCancel} className={styles.closeButton}>
+                            <FiX size={20} />
+                        </button>
                     </div>
-                    <button 
-                        onClick={onCancel} 
-                        className={styles.closeButton}
-                        aria-label="Fechar"
-                    >
-                        <FiX size={20} />
-                    </button>
+                    
+                    <form onSubmit={handleSubmit} className={styles.form}>
+                        <div className={styles.formGrid}>
+                            <div className={styles.formGroup}>
+                                <label className={styles.label}>
+                                    <MdCreditCard size={16} /> CPF <span className={styles.required}>*</span>
+                                </label>
+                                <div className={styles.inputWrapper}>
+                                    <input
+                                        type="text"
+                                        placeholder="000.000.000-00"
+                                        value={formData.cpf}
+                                        onChange={handleCPFChange}
+                                        onBlur={() => handleBlur('cpf')}
+                                        disabled={!!client}
+                                        className={`${styles.input} ${touched.cpf && errors.cpf ? styles.inputError : ''} ${client ? styles.inputDisabled : ''}`}
+                                    />
+                                </div>
+                                {touched.cpf && errors.cpf && (
+                                    <span className={styles.errorMessage}>
+                                        <MdWarning size={14} /> {errors.cpf}
+                                    </span>
+                                )}
+                            </div>
+
+                            <div className={styles.formGroup}>
+                                <label className={styles.label}>
+                                    <MdPerson size={16} /> Nome <span className={styles.required}>*</span>
+                                </label>
+                                <div className={styles.inputWrapper}>
+                                    <input
+                                        type="text"
+                                        placeholder="Nome completo"
+                                        value={formData.name}
+                                        onChange={(e) => {
+                                            setFormData({...formData, name: e.target.value});
+                                            if (touched.name) validateForm();
+                                        }}
+                                        onBlur={() => handleBlur('name')}
+                                        className={`${styles.input} ${touched.name && errors.name ? styles.inputError : ''}`}
+                                    />
+                                </div>
+                                {touched.name && errors.name && (
+                                    <span className={styles.errorMessage}>
+                                        <MdWarning size={14} /> {errors.name}
+                                    </span>
+                                )}
+                            </div>
+
+                            <div className={styles.formGroup}>
+                                <label className={styles.label}>
+                                    <FiMail size={16} /> E-mail
+                                </label>
+                                <div className={styles.inputWrapper}>
+                                    <input
+                                        type="email"
+                                        placeholder="cliente@email.com"
+                                        value={formData.email}
+                                        onChange={(e) => {
+                                            setFormData({...formData, email: e.target.value});
+                                            if (touched.email) validateForm();
+                                        }}
+                                        onBlur={() => handleBlur('email')}
+                                        className={`${styles.input} ${touched.email && errors.email ? styles.inputError : ''}`}
+                                    />
+                                </div>
+                                {touched.email && errors.email && (
+                                    <span className={styles.errorMessage}>
+                                        <MdWarning size={14} /> {errors.email}
+                                    </span>
+                                )}
+                            </div>
+
+                            <div className={styles.formGroup}>
+                                <label className={styles.label}>
+                                    <FiPhone size={16} /> Telefone
+                                </label>
+                                <div className={styles.inputWrapper}>
+                                    <input
+                                        type="text"
+                                        placeholder="(11) 99999-9999"
+                                        value={formData.phone}
+                                        onChange={handlePhoneChange}
+                                        onBlur={() => handleBlur('phone')}
+                                        className={`${styles.input} ${touched.phone && errors.phone ? styles.inputError : ''}`}
+                                    />
+                                </div>
+                                {touched.phone && errors.phone && (
+                                    <span className={styles.errorMessage}>
+                                        <MdWarning size={14} /> {errors.phone}
+                                    </span>
+                                )}
+                            </div>
+                        </div>
+
+                        {!client && (
+                            <div className={styles.passwordSection}>
+                                <div className={styles.passwordHeader}>
+                                    <FiLock className={styles.passwordIcon} />
+                                    <h4 className={styles.passwordTitle}>Credenciais de Acesso</h4>
+                                </div>
+                                
+                                <div className={styles.formGrid}>
+                                    <div className={styles.formGroup}>
+                                        <label className={styles.label}>
+                                            <FiLock size={16} /> Senha <span className={styles.required}>*</span>
+                                        </label>
+                                        <div className={styles.inputWrapper}>
+                                            <input
+                                                type="password"
+                                                placeholder="Mínimo 6 caracteres"
+                                                value={formData.password}
+                                                onChange={(e) => {
+                                                    setFormData({...formData, password: e.target.value});
+                                                    if (touched.password) validateForm();
+                                                }}
+                                                onBlur={() => handleBlur('password')}
+                                                className={`${styles.input} ${touched.password && errors.password ? styles.inputError : ''}`}
+                                            />
+                                        </div>
+                                        {touched.password && errors.password && (
+                                            <span className={styles.errorMessage}>
+                                                <MdWarning size={14} /> {errors.password}
+                                            </span>
+                                        )}
+                                    </div>
+
+                                    <div className={styles.formGroup}>
+                                        <label className={styles.label}>
+                                            <FiCheck size={16} /> Confirmar Senha <span className={styles.required}>*</span>
+                                        </label>
+                                        <div className={styles.inputWrapper}>
+                                            <input
+                                                type="password"
+                                                placeholder="Digite novamente"
+                                                value={formData.confirmPassword}
+                                                onChange={(e) => {
+                                                    setFormData({...formData, confirmPassword: e.target.value});
+                                                    if (touched.confirmPassword) validateForm();
+                                                }}
+                                                onBlur={() => handleBlur('confirmPassword')}
+                                                className={`${styles.input} ${touched.confirmPassword && errors.confirmPassword ? styles.inputError : ''}`}
+                                            />
+                                        </div>
+                                        {touched.confirmPassword && errors.confirmPassword && (
+                                            <span className={styles.errorMessage}>
+                                                <MdWarning size={14} /> {errors.confirmPassword}
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
+                                
+                                <div className={styles.passwordHint}>
+                                    <span className={styles.hintIcon}>ℹ️</span> A senha deve ter no mínimo 6 caracteres
+                                </div>
+                            </div>
+                        )}
+
+                        <div className={styles.formActions}>
+                            <button type="button" onClick={onCancel} className={styles.cancelButton} disabled={loading}>
+                                <FiX size={18} /> Cancelar
+                            </button>
+                            <button type="submit" className={styles.submitButton} disabled={loading}>
+                                {loading ? (
+                                    <>
+                                        <span className={styles.buttonSpinner}></span> Salvando...
+                                    </>
+                                ) : (
+                                    <>
+                                        <FiSave size={18} /> {client ? 'Atualizar Cliente' : 'Cadastrar Cliente'}
+                                    </>
+                                )}
+                            </button>
+                        </div>
+                    </form>
                 </div>
-                
-                <form onSubmit={handleSubmit} className={styles.form}>
-                    <div className={styles.formGrid}>
-                        <div className={styles.formGroup}>
-                            <label className={styles.label}>
-                                <MdCreditCard size={16} />
-                                CPF <span className={styles.required}>*</span>
-                            </label>
-                            <div className={styles.inputWrapper}>
-                                <input
-                                    type="text"
-                                    placeholder="000.000.000-00"
-                                    value={formData.cpf}
-                                    onChange={handleCPFChange}
-                                    onBlur={() => handleBlur('cpf')}
-                                    disabled={!!client}
-                                    className={`${styles.input} ${touched.cpf && errors.cpf ? styles.inputError : ''} ${client ? styles.inputDisabled : ''}`}
-                                />
-                            </div>
-                            {touched.cpf && errors.cpf && (
-                                <span className={styles.errorMessage}>
-                                    <MdWarning size={14} />
-                                    {errors.cpf}
-                                </span>
-                            )}
-                        </div>
-
-                        <div className={styles.formGroup}>
-                            <label className={styles.label}>
-                                <MdPerson size={16} />
-                                Nome <span className={styles.required}>*</span>
-                            </label>
-                            <div className={styles.inputWrapper}>
-                                <input
-                                    type="text"
-                                    placeholder="Nome completo"
-                                    value={formData.name}
-                                    onChange={(e) => {
-                                        setFormData({...formData, name: e.target.value});
-                                        if (touched.name) validateForm();
-                                    }}
-                                    onBlur={() => handleBlur('name')}
-                                    className={`${styles.input} ${touched.name && errors.name ? styles.inputError : ''}`}
-                                />
-                            </div>
-                            {touched.name && errors.name && (
-                                <span className={styles.errorMessage}>
-                                    <MdWarning size={14} />
-                                    {errors.name}
-                                </span>
-                            )}
-                        </div>
-
-                        <div className={styles.formGroup}>
-                            <label className={styles.label}>
-                                <FiMail size={16} />
-                                E-mail
-                            </label>
-                            <div className={styles.inputWrapper}>
-                                <input
-                                    type="email"
-                                    placeholder="cliente@email.com"
-                                    value={formData.email}
-                                    onChange={(e) => {
-                                        setFormData({...formData, email: e.target.value});
-                                        if (touched.email) validateForm();
-                                    }}
-                                    onBlur={() => handleBlur('email')}
-                                    className={`${styles.input} ${touched.email && errors.email ? styles.inputError : ''}`}
-                                />
-                            </div>
-                            {touched.email && errors.email && (
-                                <span className={styles.errorMessage}>
-                                    <MdWarning size={14} />
-                                    {errors.email}
-                                </span>
-                            )}
-                        </div>
-
-                        <div className={styles.formGroup}>
-                            <label className={styles.label}>
-                                <FiPhone size={16} />
-                                Telefone
-                            </label>
-                            <div className={styles.inputWrapper}>
-                                <input
-                                    type="text"
-                                    placeholder="(11) 99999-9999"
-                                    value={formData.phone}
-                                    onChange={handlePhoneChange}
-                                    onBlur={() => handleBlur('phone')}
-                                    className={`${styles.input} ${touched.phone && errors.phone ? styles.inputError : ''}`}
-                                />
-                            </div>
-                            {touched.phone && errors.phone && (
-                                <span className={styles.errorMessage}>
-                                    <MdWarning size={14} />
-                                    {errors.phone}
-                                </span>
-                            )}
-                        </div>
-                    </div>
-
-                    {!client && (
-                        <div className={styles.passwordSection}>
-                            <div className={styles.passwordHeader}>
-                                <FiLock className={styles.passwordIcon} />
-                                <h4 className={styles.passwordTitle}>Credenciais de Acesso</h4>
-                            </div>
-                            
-                            <div className={styles.formGrid}>
-                                <div className={styles.formGroup}>
-                                    <label className={styles.label}>
-                                        <FiLock size={16} />
-                                        Senha <span className={styles.required}>*</span>
-                                    </label>
-                                    <div className={styles.inputWrapper}>
-                                        <input
-                                            type="password"
-                                            placeholder="Mínimo 6 caracteres"
-                                            value={formData.password}
-                                            onChange={(e) => {
-                                                setFormData({...formData, password: e.target.value});
-                                                if (touched.password) validateForm();
-                                            }}
-                                            onBlur={() => handleBlur('password')}
-                                            className={`${styles.input} ${touched.password && errors.password ? styles.inputError : ''}`}
-                                        />
-                                    </div>
-                                    {touched.password && errors.password && (
-                                        <span className={styles.errorMessage}>
-                                            <MdWarning size={14} />
-                                            {errors.password}
-                                        </span>
-                                    )}
-                                </div>
-
-                                <div className={styles.formGroup}>
-                                    <label className={styles.label}>
-                                        <FiCheck size={16} />
-                                        Confirmar Senha <span className={styles.required}>*</span>
-                                    </label>
-                                    <div className={styles.inputWrapper}>
-                                        <input
-                                            type="password"
-                                            placeholder="Digite novamente"
-                                            value={formData.confirmPassword}
-                                            onChange={(e) => {
-                                                setFormData({...formData, confirmPassword: e.target.value});
-                                                if (touched.confirmPassword) validateForm();
-                                            }}
-                                            onBlur={() => handleBlur('confirmPassword')}
-                                            className={`${styles.input} ${touched.confirmPassword && errors.confirmPassword ? styles.inputError : ''}`}
-                                        />
-                                    </div>
-                                    {touched.confirmPassword && errors.confirmPassword && (
-                                        <span className={styles.errorMessage}>
-                                            <MdWarning size={14} />
-                                            {errors.confirmPassword}
-                                        </span>
-                                    )}
-                                </div>
-                            </div>
-                            
-                            <div className={styles.passwordHint}>
-                                <span className={styles.hintIcon}>ℹ️</span>
-                                A senha deve ter no mínimo 6 caracteres
-                            </div>
-                        </div>
-                    )}
-
-                    <div className={styles.formActions}>
-                        <button 
-                            type="button" 
-                            onClick={onCancel} 
-                            className={styles.cancelButton}
-                            disabled={loading}
-                        >
-                            <FiX size={18} />
-                            Cancelar
-                        </button>
-                        <button 
-                            type="submit" 
-                            className={styles.submitButton}
-                            disabled={loading}
-                        >
-                            {loading ? (
-                                <>
-                                    <span className={styles.buttonSpinner}></span>
-                                    Salvando...
-                                </>
-                            ) : (
-                                <>
-                                    <FiSave size={18} />
-                                    {client ? 'Atualizar Cliente' : 'Cadastrar Cliente'}
-                                </>
-                            )}
-                        </button>
-                    </div>
-                </form>
             </div>
-        </div>
+
+            {/* Modal de Sucesso */}
+            <ConfirmationModal
+                isOpen={showSuccess}
+                title="Sucesso!"
+                message={successMessage}
+                type="success"
+                onConfirm={handleSuccessClose}
+                onCancel={handleSuccessClose}
+                confirmText="OK"
+            />
+
+            {/* Modal de Erro */}
+            <ErrorModal
+                isOpen={showError}
+                message={errorMessage}
+                onClose={handleErrorClose}
+            />
+        </>
     );
 };

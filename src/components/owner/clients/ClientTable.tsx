@@ -16,13 +16,13 @@ import {
   MdCreditCard 
 } from 'react-icons/md';
 import { User } from '../types';
-import { ClientDetailsModal } from './ClientDetailsModal'; // ✅ NOVO IMPORT
+import { ClientDetailsModal } from './ClientDetailsModal';
 import styles from './ClientTable.module.css';
 
 interface ClientTableProps {
     clients: User[];
     onEdit: (client: User) => void;
-    onDelete: (id: number) => void;
+    onDelete: (client: User) => void; // ✅ AGORA RECEBE CLIENTE INTEIRO, NÃO SÓ O ID
     onViewReceipts: (client: User) => void;
     onViewBoletos: (client: User) => void;
     isLoading?: boolean;
@@ -41,7 +41,7 @@ export const ClientTable: React.FC<ClientTableProps> = ({
 }) => {
     const [sortField, setSortField] = useState<SortField>('name');
     const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
-    const [selectedClientForDetails, setSelectedClientForDetails] = useState<User | null>(null); // ✅ NOVO ESTADO
+    const [selectedClientForDetails, setSelectedClientForDetails] = useState<User | null>(null);
 
     const sortedClients = useMemo(() => {
         return [...clients].sort((a, b) => {
@@ -186,7 +186,7 @@ export const ClientTable: React.FC<ClientTableProps> = ({
                                 <td className={styles.cell}>
                                     <div 
                                         className={styles.nameCell}
-                                        onClick={() => setSelectedClientForDetails(client)} // ✅ CLICK PARA DETALHES
+                                        onClick={() => setSelectedClientForDetails(client)}
                                         style={{ cursor: 'pointer' }}
                                     >
                                         <div className={styles.clientAvatar}>
@@ -250,7 +250,7 @@ export const ClientTable: React.FC<ClientTableProps> = ({
                                             <span className={styles.actionLabel}>Editar</span>
                                         </button>
                                         <button
-                                            onClick={() => onDelete(client.id)}
+                                            onClick={() => onDelete(client)} // ✅ AGORA PASSA O CLIENTE INTEIRO
                                             className={`${styles.actionButton} ${styles.deleteButton}`}
                                             title="Excluir cliente"
                                         >
@@ -272,7 +272,6 @@ export const ClientTable: React.FC<ClientTableProps> = ({
                 </span>
             </div>
 
-            {/* ✅ MODAL DE DETALHES */}
             {selectedClientForDetails && (
                 <ClientDetailsModal
                     client={selectedClientForDetails}
