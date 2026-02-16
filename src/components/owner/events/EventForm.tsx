@@ -9,12 +9,13 @@ import {
   FiClock, 
   FiUsers,
   FiDollarSign,
-  FiFileText 
+  FiFileText
 } from 'react-icons/fi';
 import { MdEvent, MdAttachMoney, MdWarning } from 'react-icons/md';
 import { Event, CreateEventData } from '../../../types/Event';
 import { User } from '../../../types/User';
 import { EventConflictChecker } from './EventConflictChecker';
+import { ConfirmationModal } from '../../common/Alerts/ConfirmationModal';
 import styles from '../EventManagement.module.css';
 
 interface EventFormProps {
@@ -51,6 +52,15 @@ export const EventForm: React.FC<EventFormProps> = ({
   const [errors, setErrors] = useState<{[key: string]: string}>({});
   const [hasConflict, setHasConflict] = useState(false);
   const [loading, setLoading] = useState(false);
+  
+  // Estado para o modal de sucesso
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
+
+  // DEBUG: Monitorar mudanças no showSuccessModal
+  useEffect(() => {
+    console.log('🎯 [EventForm] showSuccessModal mudou para:', showSuccessModal);
+  }, [showSuccessModal]);
 
   useEffect(() => {
     if (editingEvent) {
@@ -150,211 +160,227 @@ export const EventForm: React.FC<EventFormProps> = ({
         depositValue: formData.depositValue
       };
       
+      console.log('📝 [EventForm] Enviando dados:', submitData);
+      
       await onSubmit(submitData);
+      
+      console.log('✅ [EventForm] onSubmit executado com sucesso');
+      
+      // DEBUG: Verificar se está chegando aqui
+      console.log('🔵 [EventForm] ANTES de setSuccessMessage');
+      setSuccessMessage(editingEvent 
+        ? 'Evento atualizado com sucesso!' 
+        : 'Evento criado com sucesso!'
+      );
+      console.log('🟡 [EventForm] ANTES de setShowSuccessModal');
+      setShowSuccessModal(true);
+      console.log('🟢 [EventForm] DEPOIS de setShowSuccessModal');
+      
     } catch (error) {
-      console.error('Erro ao salvar evento:', error);
+      console.error('❌ [EventForm] Erro ao salvar evento:', error);
+      alert('Erro ao salvar evento: ' + error);
     } finally {
       setLoading(false);
     }
   };
 
+  const handleSuccessClose = () => {
+    console.log('🔴 [EventForm] Fechando modal de sucesso');
+    setShowSuccessModal(false);
+    onCancel();
+  };
+
   return (
-    <div className={styles.modalOverlay}>
-      <div className={styles.modal}>
-        <div className={styles.modalHeader}>
-          <h3 className={styles.modalTitle}>
-            <MdEvent size={20} />
-            {editingEvent ? 'Editar Evento' : 'Novo Evento'}
-          </h3>
-          <button onClick={onCancel} className={styles.closeButton}>
-            <FiX size={20} />
-          </button>
+    <>
+      {/* Modal do Formulário */}
+      <div className={styles.modalOverlay}>
+        <div className={styles.modal}>
+          <div className={styles.modalHeader}>
+            <h3 className={styles.modalTitle}>
+              <MdEvent size={20} />
+              {editingEvent ? 'Editar Evento' : 'Novo Evento'}
+            </h3>
+            <button onClick={onCancel} className={styles.closeButton}>
+              <FiX size={20} />
+            </button>
+          </div>
+          
+          <form onSubmit={handleSubmit} className={styles.form}>
+            {formData.eventDate && formData.startTime && formData.endTime && (
+              <EventConflictChecker
+                eventId={editingEvent?.id}
+                date={formData.eventDate}
+                startTime={formData.startTime}
+                endTime={formData.endTime}
+                onConflictDetected={setHasConflict}
+              />
+            )}
+
+            {errors.general && (
+              <div className={styles.generalError}>
+                <MdWarning size={18} />
+                {errors.general}
+              </div>
+            )}
+
+            <div className={styles.formGrid}>
+              <div className={styles.formGroup}>
+                <label className={styles.formLabel}><MdEvent size={14} /> Título do Evento *</label>
+                <input
+                  type="text"
+                  value={formData.title}
+                  onChange={(e) => setFormData({...formData, title: e.target.value})}
+                  className={`${styles.formInput} ${errors.title ? styles.error : ''}`}
+                  placeholder="Ex: Aniversário João Silva"
+                />
+                {errors.title && <span className={styles.errorText}>{errors.title}</span>}
+              </div>
+              
+              <div className={styles.formGroup}>
+                <label className={styles.formLabel}><FiUser size={14} /> Cliente *</label>
+                <select
+                  value={formData.clientId || ''}
+                  onChange={(e) => setFormData({...formData, clientId: Number(e.target.value)})}
+                  className={`${styles.formInput} ${errors.clientId ? styles.error : ''}`}
+                >
+                  <option value="">Selecione um cliente</option>
+                  {clients.map(client => (
+                    <option key={client.id} value={client.id}>
+                      {client.name} - {client.cpf}
+                    </option>
+                  ))}
+                </select>
+                {errors.clientId && <span className={styles.errorText}>{errors.clientId}</span>}
+              </div>
+            </div>
+
+            <div className={styles.formGrid}>
+              <div className={styles.formGroup}>
+                <label className={styles.formLabel}><FiCalendar size={14} /> Data do Evento *</label>
+                <input
+                  type="date"
+                  value={formData.eventDate}
+                  onChange={(e) => setFormData({...formData, eventDate: e.target.value})}
+                  className={`${styles.formInput} ${errors.eventDate ? styles.error : ''}`}
+                  min={new Date().toISOString().split('T')[0]}
+                />
+                {errors.eventDate && <span className={styles.errorText}>{errors.eventDate}</span>}
+              </div>
+              
+              <div className={styles.formGroup}>
+                <label className={styles.formLabel}><FiClock size={14} /> Horário Início *</label>
+                <input
+                  type="time"
+                  value={formData.startTime}
+                  onChange={(e) => setFormData({...formData, startTime: e.target.value})}
+                  className={styles.formInput}
+                />
+              </div>
+              
+              <div className={styles.formGroup}>
+                <label className={styles.formLabel}><FiClock size={14} /> Horário Término *</label>
+                <input
+                  type="time"
+                  value={formData.endTime}
+                  onChange={(e) => setFormData({...formData, endTime: e.target.value})}
+                  className={styles.formInput}
+                />
+              </div>
+            </div>
+
+            <div className={styles.formGrid}>
+              <div className={styles.formGroup}>
+                <label className={styles.formLabel}><FiUsers size={14} /> Nº de Convidados *</label>
+                <input
+                  type="number"
+                  value={formData.guestCount}
+                  onChange={(e) => setFormData({...formData, guestCount: Number(e.target.value)})}
+                  className={`${styles.formInput} ${errors.guestCount ? styles.error : ''}`}
+                  min="1"
+                />
+                {errors.guestCount && <span className={styles.errorText}>{errors.guestCount}</span>}
+              </div>
+              
+              <div className={styles.formGroup}>
+                <label className={styles.formLabel}><MdEvent size={14} /> Tipo de Evento *</label>
+                <select
+                  value={formData.eventType}
+                  onChange={(e) => setFormData({...formData, eventType: e.target.value})}
+                  className={styles.formInput}
+                >
+                  <option value="ANIVERSARIO">Aniversário</option>
+                  <option value="CASAMENTO">Casamento</option>
+                  <option value="CORPORATIVO">Corporativo</option>
+                  <option value="FORMATURA">Formatura</option>
+                  <option value="OUTRO">Outro</option>
+                </select>
+              </div>
+            </div>
+
+            <div className={styles.formGrid}>
+              <div className={styles.formGroup}>
+                <label className={styles.formLabel}><MdAttachMoney size={14} /> Valor Total (R$) *</label>
+                <input
+                  type="text"
+                  value={displayCurrencyValue(formData.totalValue)}
+                  onChange={(e) => handleCurrencyInputChange('totalValue', e.target.value)}
+                  className={`${styles.formInput} ${errors.totalValue ? styles.error : ''}`}
+                  placeholder="0,00"
+                />
+                {errors.totalValue && <span className={styles.errorText}>{errors.totalValue}</span>}
+              </div>
+              
+              <div className={styles.formGroup}>
+                <label className={styles.formLabel}><FiDollarSign size={14} /> Sinal (R$) *</label>
+                <input
+                  type="text"
+                  value={displayCurrencyValue(formData.depositValue)}
+                  onChange={(e) => handleCurrencyInputChange('depositValue', e.target.value)}
+                  className={`${styles.formInput} ${errors.depositValue ? styles.error : ''}`}
+                  placeholder="0,00"
+                />
+                {errors.depositValue && <span className={styles.errorText}>{errors.depositValue}</span>}
+              </div>
+            </div>
+
+            <div className={styles.formGroup}>
+              <label className={styles.formLabel}><FiFileText size={14} /> Observações</label>
+              <textarea
+                value={formData.notes}
+                onChange={(e) => setFormData({...formData, notes: e.target.value})}
+                className={styles.formTextarea}
+                rows={3}
+                placeholder="Detalhes adicionais sobre o evento..."
+              />
+            </div>
+
+            <div className={styles.formActions}>
+              <button type="button" onClick={onCancel} className={styles.secondaryButton}>
+                Cancelar
+              </button>
+              <button 
+                type="submit" 
+                className={styles.primaryButton}
+                disabled={loading || (hasConflict && !editingEvent)}
+              >
+                <FiSave size={18} />
+                {loading ? 'Salvando...' : (editingEvent ? 'Salvar Alterações' : 'Criar Evento')}
+              </button>
+            </div>
+          </form>
         </div>
-        
-        <form onSubmit={handleSubmit} className={styles.form}>
-          {formData.eventDate && formData.startTime && formData.endTime && (
-            <EventConflictChecker
-              eventId={editingEvent?.id}
-              date={formData.eventDate}
-              startTime={formData.startTime}
-              endTime={formData.endTime}
-              onConflictDetected={setHasConflict}
-            />
-          )}
-
-          {errors.general && (
-            <div className={styles.generalError}>
-              <MdWarning size={18} />
-              {errors.general}
-            </div>
-          )}
-
-          <div className={styles.formGrid}>
-            <div className={styles.formGroup}>
-              <label className={styles.formLabel}>
-                <MdEvent size={14} /> Título do Evento *
-              </label>
-              <input
-                type="text"
-                value={formData.title}
-                onChange={(e) => setFormData({...formData, title: e.target.value})}
-                className={`${styles.formInput} ${errors.title ? styles.error : ''}`}
-                placeholder="Ex: Aniversário João Silva"
-              />
-              {errors.title && <span className={styles.errorText}>{errors.title}</span>}
-            </div>
-            
-            <div className={styles.formGroup}>
-              <label className={styles.formLabel}>
-                <FiUser size={14} /> Cliente *
-              </label>
-              <select
-                value={formData.clientId || ''}
-                onChange={(e) => setFormData({...formData, clientId: Number(e.target.value)})}
-                className={`${styles.formInput} ${errors.clientId ? styles.error : ''}`}
-              >
-                <option value="">Selecione um cliente</option>
-                {clients.map(client => (
-                  <option key={client.id} value={client.id}>
-                    {client.name} - {client.cpf}
-                  </option>
-                ))}
-              </select>
-              {errors.clientId && <span className={styles.errorText}>{errors.clientId}</span>}
-            </div>
-          </div>
-
-          <div className={styles.formGrid}>
-            <div className={styles.formGroup}>
-              <label className={styles.formLabel}>
-                <FiCalendar size={14} /> Data do Evento *
-              </label>
-              <input
-                type="date"
-                value={formData.eventDate}
-                onChange={(e) => setFormData({...formData, eventDate: e.target.value})}
-                className={`${styles.formInput} ${errors.eventDate ? styles.error : ''}`}
-                min={new Date().toISOString().split('T')[0]}
-              />
-              {errors.eventDate && <span className={styles.errorText}>{errors.eventDate}</span>}
-            </div>
-            
-            <div className={styles.formGroup}>
-              <label className={styles.formLabel}>
-                <FiClock size={14} /> Horário Início *
-              </label>
-              <input
-                type="time"
-                value={formData.startTime}
-                onChange={(e) => setFormData({...formData, startTime: e.target.value})}
-                className={styles.formInput}
-              />
-            </div>
-            
-            <div className={styles.formGroup}>
-              <label className={styles.formLabel}>
-                <FiClock size={14} /> Horário Término *
-              </label>
-              <input
-                type="time"
-                value={formData.endTime}
-                onChange={(e) => setFormData({...formData, endTime: e.target.value})}
-                className={styles.formInput}
-              />
-            </div>
-          </div>
-
-          <div className={styles.formGrid}>
-            <div className={styles.formGroup}>
-              <label className={styles.formLabel}>
-                <FiUsers size={14} /> Nº de Convidados *
-              </label>
-              <input
-                type="number"
-                value={formData.guestCount}
-                onChange={(e) => setFormData({...formData, guestCount: Number(e.target.value)})}
-                className={`${styles.formInput} ${errors.guestCount ? styles.error : ''}`}
-                min="1"
-              />
-              {errors.guestCount && <span className={styles.errorText}>{errors.guestCount}</span>}
-            </div>
-            
-            <div className={styles.formGroup}>
-              <label className={styles.formLabel}>
-                <MdEvent size={14} /> Tipo de Evento *
-              </label>
-              <select
-                value={formData.eventType}
-                onChange={(e) => setFormData({...formData, eventType: e.target.value})}
-                className={styles.formInput}
-              >
-                <option value="ANIVERSARIO">Aniversário</option>
-                <option value="CASAMENTO">Casamento</option>
-                <option value="CORPORATIVO">Corporativo</option>
-                <option value="FORMATURA">Formatura</option>
-                <option value="OUTRO">Outro</option>
-              </select>
-            </div>
-          </div>
-
-          <div className={styles.formGrid}>
-            <div className={styles.formGroup}>
-              <label className={styles.formLabel}>
-                <MdAttachMoney size={14} /> Valor Total (R$) *
-              </label>
-              <input
-                type="text"
-                value={displayCurrencyValue(formData.totalValue)}
-                onChange={(e) => handleCurrencyInputChange('totalValue', e.target.value)}
-                className={`${styles.formInput} ${errors.totalValue ? styles.error : ''}`}
-                placeholder="0,00"
-              />
-              {errors.totalValue && <span className={styles.errorText}>{errors.totalValue}</span>}
-            </div>
-            
-            <div className={styles.formGroup}>
-              <label className={styles.formLabel}>
-                <FiDollarSign size={14} /> Sinal (R$) *
-              </label>
-              <input
-                type="text"
-                value={displayCurrencyValue(formData.depositValue)}
-                onChange={(e) => handleCurrencyInputChange('depositValue', e.target.value)}
-                className={`${styles.formInput} ${errors.depositValue ? styles.error : ''}`}
-                placeholder="0,00"
-              />
-              {errors.depositValue && <span className={styles.errorText}>{errors.depositValue}</span>}
-            </div>
-          </div>
-
-          <div className={styles.formGroup}>
-            <label className={styles.formLabel}>
-              <FiFileText size={14} /> Observações
-            </label>
-            <textarea
-              value={formData.notes}
-              onChange={(e) => setFormData({...formData, notes: e.target.value})}
-              className={styles.formTextarea}
-              rows={3}
-              placeholder="Detalhes adicionais sobre o evento..."
-            />
-          </div>
-
-          <div className={styles.formActions}>
-            <button type="button" onClick={onCancel} className={styles.secondaryButton}>
-              Cancelar
-            </button>
-            <button 
-              type="submit" 
-              className={styles.primaryButton}
-              disabled={loading || (hasConflict && !editingEvent)}
-            >
-              <FiSave size={18} />
-              {loading ? 'Salvando...' : (editingEvent ? 'Salvar Alterações' : 'Criar Evento')}
-            </button>
-          </div>
-        </form>
       </div>
-    </div>
+
+      {/* Modal de Sucesso */}
+      <ConfirmationModal
+        isOpen={showSuccessModal}
+        title="Sucesso!"
+        message={successMessage}
+        type="success"
+        onConfirm={handleSuccessClose}
+        onCancel={handleSuccessClose}
+        confirmText="OK"
+      />
+    </>
   );
 };

@@ -1,6 +1,16 @@
-// src/components/admin/events/EventManagement.tsx
-
 import React, { useState, useEffect } from 'react';
+import { 
+  FiCalendar, 
+  FiList, 
+  FiPlus,
+  FiCheckCircle,
+  FiAlertCircle
+} from 'react-icons/fi';
+import { 
+  MdEvent, 
+  MdPeople,
+  MdWarning 
+} from 'react-icons/md';
 import { Event } from '../../types/Event';
 import { User } from '../../types/User';
 import { eventService } from '../../services/events';
@@ -11,6 +21,7 @@ import { EventCalendar } from './events/EventCalendar';
 import { EventList } from './events/EventList';
 import { EventForm } from './events/EventForm';
 import { DeleteConfirmationModal } from './events/DeleteConfirmationModal';
+import { ConfirmationModal } from '../common/Alerts/ConfirmationModal'; // ✅ IMPORT CORRETO
 import { useEvents } from './hooks/useEvents';
 import styles from './EventManagement.module.css';
 
@@ -28,6 +39,11 @@ export const EventManagement: React.FC = () => {
   const [filterStatus, setFilterStatus] = useState<string>('ALL');
   const [filterClient, setFilterClient] = useState<number | 'ALL'>('ALL');
   const [searchTerm, setSearchTerm] = useState('');
+  
+  // Estados para modal de sucesso
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
+  const [successType, setSuccessType] = useState<'create' | 'update' | 'delete'>('create');
 
   const {
     events,
@@ -70,13 +86,22 @@ export const EventManagement: React.FC = () => {
   };
 
   const handleFormSubmit = async (eventData: any) => {
-    if (editingEvent) {
-      await handleUpdateEvent(editingEvent.id, eventData);
-    } else {
-      await handleCreateEvent(eventData);
+    try {
+      if (editingEvent) {
+        await handleUpdateEvent(editingEvent.id, eventData);
+        setSuccessMessage(`Evento "${editingEvent.title}" atualizado com sucesso!`);
+        setSuccessType('update');
+      } else {
+        await handleCreateEvent(eventData);
+        setSuccessMessage('Evento criado com sucesso!');
+        setSuccessType('create');
+      }
+      setShowSuccessModal(true);
+      // Não fechar o formulário aqui - deixa o modal de sucesso decidir
+    } catch (error) {
+      console.error('Erro ao salvar evento:', error);
+      alert('Erro ao salvar evento: ' + error);
     }
-    setShowForm(false);
-    setEditingEvent(null);
   };
 
   const handleFormCancel = () => {
@@ -85,8 +110,28 @@ export const EventManagement: React.FC = () => {
   };
 
   const handleDeleteConfirm = async (eventId: number) => {
-    await handleDeleteEvent(eventId);
+    const event = events.find(e => e.id === eventId);
+    if (event) {
+      try {
+        await handleDeleteEvent(eventId);
+        setSuccessMessage(`Evento "${event.title}" excluído com sucesso!`);
+        setSuccessType('delete');
+        setShowSuccessModal(true);
+      } catch (error) {
+        console.error('Erro ao excluir evento:', error);
+        alert('Erro ao excluir evento: ' + error);
+      }
+    }
     setShowDeleteModal(null);
+  };
+
+  const handleSuccessClose = () => {
+    setShowSuccessModal(false);
+    // Só fecha o formulário se não for uma exclusão (exclusão já fecha automaticamente)
+    if (successType !== 'delete') {
+      setShowForm(false);
+      setEditingEvent(null);
+    }
   };
 
   const filteredEvents = getFilteredEvents(filterStatus, filterClient, searchTerm);
@@ -138,6 +183,17 @@ export const EventManagement: React.FC = () => {
         />
       )}
 
+      {/* ✅ MODAL DE SUCESSO - Agora usando ConfirmationModal */}
+      <ConfirmationModal
+        isOpen={showSuccessModal}
+        title="Sucesso!"
+        message={successMessage}
+        type="success"
+        onConfirm={handleSuccessClose}
+        onCancel={handleSuccessClose}
+        confirmText="OK"
+      />
+
       {viewMode === 'calendar' ? (
         <div className={styles.calendarView}>
           <EventCalendar
@@ -166,10 +222,10 @@ export const EventManagement: React.FC = () => {
             CANCELLED: 'cancelled'
           }[status])}
           getStatusIcon={(status) => ({
-            QUOTE: '📝',
-            CONFIRMED: '✅',
-            COMPLETED: '🎉',
-            CANCELLED: '❌'
+            QUOTE: <FiAlertCircle size={16} />,
+            CONFIRMED: <FiCheckCircle size={16} />,
+            COMPLETED: <FiCheckCircle size={16} />,
+            CANCELLED: <FiAlertCircle size={16} />
           }[status])}
         />
       )}

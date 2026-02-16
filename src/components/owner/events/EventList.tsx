@@ -161,10 +161,10 @@ export const EventList: React.FC<EventListProps> = ({
                         className={styles.statusSelect}
                         title="Alterar status"
                       >
-                        <option value="QUOTE">📝 Orçamento</option>
-                        <option value="CONFIRMED">✅ Confirmado</option>
-                        <option value="COMPLETED">🎉 Realizado</option>
-                        <option value="CANCELLED">❌ Cancelado</option>
+                        <option value="QUOTE">Orçamento</option>
+                        <option value="CONFIRMED">Confirmado</option>
+                        <option value="COMPLETED">Realizado</option>
+                        <option value="CANCELLED">Cancelado</option>
                       </select>
                     </div>
                   </td>

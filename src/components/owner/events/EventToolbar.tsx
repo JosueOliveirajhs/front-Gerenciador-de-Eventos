@@ -68,10 +68,10 @@ export const EventToolbar: React.FC<EventToolbarProps> = ({
             onChange={(e) => onFilterStatusChange(e.target.value)}
           >
             <option value="ALL">Todos os status</option>
-            <option value="QUOTE">📝 Orçamento</option>
-            <option value="CONFIRMED">✅ Confirmado</option>
-            <option value="COMPLETED">🎉 Realizado</option>
-            <option value="CANCELLED">❌ Cancelado</option>
+            <option value="QUOTE">Orçamento</option>
+            <option value="CONFIRMED">Confirmado</option>
+            <option value="COMPLETED">Realizado</option>
+            <option value="CANCELLED">Cancelado</option>
           </select>
 
           <select
