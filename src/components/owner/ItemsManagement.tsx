@@ -1,5 +1,3 @@
-// src/components/admin/items/ItemsManagement.tsx
-
 import React, { useState, useEffect } from "react";
 import { 
   FiPackage, 
@@ -15,7 +13,8 @@ import {
   FiLayers,
   FiTag,
   FiSave,
-  FiX
+  FiX,
+  FiSearch
 } from 'react-icons/fi';
 import { 
   MdCategory, 
@@ -33,8 +32,8 @@ import {
   FaPalette, 
   FaBoxes 
 } from 'react-icons/fa';
-import { itemService } from '../../services/items';
-import { eventService } from '../../services/events';
+import { ConfirmationModal } from '../common/Alerts/ConfirmationModal';
+import { ErrorModal } from '../common/Alerts/ErrorModal';
 import styles from "./ItemsManagement.module.css";
 
 export interface Item {
@@ -57,48 +56,214 @@ interface ItemReservation {
   status: 'RESERVED' | 'CONFIRMED' | 'RETURNED';
 }
 
+// Dados mocados
+const MOCK_ITEMS: Item[] = [
+  {
+    id: 1,
+    name: "Cadeira Tiffany Branca",
+    category: "FURNITURE",
+    quantityTotal: 100,
+    quantityAvailable: 85,
+    description: "Cadeira clássica para casamentos e eventos formais",
+    minStock: 20,
+    unitPrice: 15.00
+  },
+  {
+    id: 2,
+    name: "Mesa Redonda 1.80m",
+    category: "FURNITURE",
+    quantityTotal: 50,
+    quantityAvailable: 42,
+    description: "Mesa redonda para 10 pessoas",
+    minStock: 10,
+    unitPrice: 45.00
+  },
+  {
+    id: 3,
+    name: "Jogo de Talheres Inox",
+    category: "UTENSIL",
+    quantityTotal: 500,
+    quantityAvailable: 480,
+    description: "Jogo completo com garfo, faca e colher",
+    minStock: 100,
+    unitPrice: 2.50
+  },
+  {
+    id: 4,
+    name: "Arranjo de Flores Artificial",
+    category: "DECORATION",
+    quantityTotal: 30,
+    quantityAvailable: 12,
+    description: "Arranjo decorativo para centro de mesa",
+    minStock: 5,
+    unitPrice: 25.00
+  },
+  {
+    id: 5,
+    name: "Tapete Vermelho 10m",
+    category: "DECORATION",
+    quantityTotal: 5,
+    quantityAvailable: 2,
+    description: "Tapete para cerimônias e eventos especiais",
+    minStock: 2,
+    unitPrice: 80.00
+  },
+  {
+    id: 6,
+    name: "Sofá 3 Lugares",
+    category: "FURNITURE",
+    quantityTotal: 8,
+    quantityAvailable: 3,
+    description: "Sofá para lounge e áreas de espera",
+    minStock: 2,
+    unitPrice: 120.00
+  },
+  {
+    id: 7,
+    name: "Jogo de Pratos",
+    category: "UTENSIL",
+    quantityTotal: 400,
+    quantityAvailable: 350,
+    description: "Prato branco de porcelana 25cm",
+    minStock: 80,
+    unitPrice: 3.00
+  },
+  {
+    id: 8,
+    name: "Luminária Pendente",
+    category: "DECORATION",
+    quantityTotal: 12,
+    quantityAvailable: 4,
+    description: "Iluminação decorativa para ambientes",
+    minStock: 3,
+    unitPrice: 45.00
+  },
+  {
+    id: 9,
+    name: "Painel de Flores",
+    category: "DECORATION",
+    quantityTotal: 3,
+    quantityAvailable: 1,
+    description: "Painel decorativo 2x3m",
+    minStock: 1,
+    unitPrice: 250.00
+  },
+  {
+    id: 10,
+    name: "Banqueta Alta",
+    category: "FURNITURE",
+    quantityTotal: 40,
+    quantityAvailable: 25,
+    description: "Banqueta para bar e mesas altas",
+    minStock: 8,
+    unitPrice: 35.00
+  }
+];
+
+const MOCK_EVENTS = [
+  { id: 1, title: "Casamento João & Maria", eventDate: "2026-03-15", status: "CONFIRMED" },
+  { id: 2, title: "Aniversário de 15 anos - Sofia", eventDate: "2026-03-20", status: "CONFIRMED" },
+  { id: 3, title: "Formatura Direito", eventDate: "2026-04-05", status: "QUOTE" },
+  { id: 4, title: "Evento Corporativo - Empresa X", eventDate: "2026-03-25", status: "CONFIRMED" },
+  { id: 5, title: "Casamento Pedro & Ana", eventDate: "2026-04-10", status: "CONFIRMED" }
+];
+
+const MOCK_RESERVATIONS: ItemReservation[] = [
+  {
+    itemId: 1,
+    eventId: 1,
+    eventTitle: "Casamento João & Maria",
+    eventDate: "2026-03-15",
+    quantity: 50,
+    status: "CONFIRMED"
+  },
+  {
+    itemId: 1,
+    eventId: 4,
+    eventTitle: "Evento Corporativo - Empresa X",
+    eventDate: "2026-03-25",
+    quantity: 30,
+    status: "RESERVED"
+  },
+  {
+    itemId: 3,
+    eventId: 1,
+    eventTitle: "Casamento João & Maria",
+    eventDate: "2026-03-15",
+    quantity: 200,
+    status: "CONFIRMED"
+  },
+  {
+    itemId: 4,
+    eventId: 2,
+    eventTitle: "Aniversário de 15 anos - Sofia",
+    eventDate: "2026-03-20",
+    quantity: 15,
+    status: "RESERVED"
+  },
+  {
+    itemId: 5,
+    eventId: 1,
+    eventTitle: "Casamento João & Maria",
+    eventDate: "2026-03-15",
+    quantity: 1,
+    status: "CONFIRMED"
+  },
+  {
+    itemId: 6,
+    eventId: 4,
+    eventTitle: "Evento Corporativo - Empresa X",
+    eventDate: "2026-03-25",
+    quantity: 4,
+    status: "RESERVED"
+  },
+  {
+    itemId: 8,
+    eventId: 1,
+    eventTitle: "Casamento João & Maria",
+    eventDate: "2026-03-15",
+    quantity: 8,
+    status: "CONFIRMED"
+  },
+  {
+    itemId: 9,
+    eventId: 1,
+    eventTitle: "Casamento João & Maria",
+    eventDate: "2026-03-15",
+    quantity: 1,
+    status: "CONFIRMED"
+  }
+];
+
 export const ItemsManagement: React.FC = () => {
   const [items, setItems] = useState<Item[]>([]);
-  const [events, setEvents] = useState<Event[]>([]);
+  const [events] = useState(MOCK_EVENTS);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingItem, setEditingItem] = useState<Item | null>(null);
   const [filterCategory, setFilterCategory] = useState<string>("ALL");
   const [filterLowStock, setFilterLowStock] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
   const [reservations, setReservations] = useState<ItemReservation[]>([]);
   const [showReservationModal, setShowReservationModal] = useState(false);
   const [selectedItemForReservation, setSelectedItemForReservation] = useState<Item | null>(null);
 
+  // Estados para modais
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
+  const [showErrorModal, setShowErrorModal] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState<number | null>(null);
+
   useEffect(() => {
-    loadData();
-  }, []);
-
-  const loadData = async () => {
-    try {
-      setLoading(true);
-      const [itemsData, eventsData] = await Promise.all([
-        itemService.getAllItems(),
-        eventService.getAllEvents()
-      ]);
-      setItems(itemsData);
-      setEvents(eventsData);
-      
-      // Carregar reservas do localStorage
-      const savedReservations = localStorage.getItem('itemReservations');
-      if (savedReservations) {
-        setReservations(JSON.parse(savedReservations));
-      }
-    } catch (error) {
-      console.error("Erro ao carregar dados:", error);
-    } finally {
+    // Simular carregamento
+    setTimeout(() => {
+      setItems(MOCK_ITEMS);
+      setReservations(MOCK_RESERVATIONS);
       setLoading(false);
-    }
-  };
-
-  const saveReservations = (updatedReservations: ItemReservation[]) => {
-    setReservations(updatedReservations);
-    localStorage.setItem('itemReservations', JSON.stringify(updatedReservations));
-  };
+    }, 800);
+  }, []);
 
   const checkAvailability = (itemId: number, date: string, quantity: number): boolean => {
     const itemReservations = reservations.filter(r => 
@@ -173,35 +338,40 @@ export const ItemsManagement: React.FC = () => {
     return labels[cat] || cat;
   };
 
-  const handleCreateItem = async (itemData: Omit<Item, "id">) => {
-    try {
-      await itemService.createItem(itemData);
-      await loadData();
-      setShowForm(false);
-    } catch (error) {
-      console.error("Erro ao criar item:", error);
-    }
+  const handleCreateItem = (itemData: Omit<Item, "id">) => {
+    const newItem = {
+      ...itemData,
+      id: Math.max(...items.map(i => i.id), 0) + 1,
+      quantityAvailable: itemData.quantityTotal
+    };
+    setItems([...items, newItem as Item]);
+    setShowForm(false);
+    setSuccessMessage('Item criado com sucesso!');
+    setShowSuccessModal(true);
   };
 
-  const handleUpdateItem = async (id: number, itemData: Partial<Item>) => {
-    try {
-      await itemService.updateItem(id, itemData);
-      await loadData();
-      setEditingItem(null);
-    } catch (error) {
-      console.error("Erro ao atualizar item:", error);
-    }
+  const handleUpdateItem = (id: number, itemData: Partial<Item>) => {
+    setItems(items.map(item => 
+      item.id === id ? { ...item, ...itemData } : item
+    ));
+    setEditingItem(null);
+    setSuccessMessage('Item atualizado com sucesso!');
+    setShowSuccessModal(true);
   };
 
-  const handleDeleteItem = async (id: number) => {
-    if (window.confirm("Tem certeza que deseja excluir este item?")) {
-      try {
-        await itemService.deleteItem(id);
-        await loadData();
-      } catch (error) {
-        console.error("Erro ao excluir item:", error);
-      }
-    }
+  const handleDeleteItem = (id: number) => {
+    setItemToDelete(id);
+    setShowDeleteConfirm(true);
+  };
+
+  const confirmDeleteItem = () => {
+    if (!itemToDelete) return;
+    
+    setItems(items.filter(item => item.id !== itemToDelete));
+    setShowDeleteConfirm(false);
+    setItemToDelete(null);
+    setSuccessMessage('Item excluído com sucesso!');
+    setShowSuccessModal(true);
   };
 
   const handleReserveItem = (itemId: number, eventId: number, quantity: number) => {
@@ -209,7 +379,8 @@ export const ItemsManagement: React.FC = () => {
     if (!event) return;
 
     if (!checkAvailability(itemId, event.eventDate, quantity)) {
-      alert('Quantidade indisponível para esta data!');
+      setErrorMessage('Quantidade indisponível para esta data!');
+      setShowErrorModal(true);
       return;
     }
 
@@ -222,13 +393,20 @@ export const ItemsManagement: React.FC = () => {
       status: 'RESERVED'
     };
 
-    const updatedReservations = [...reservations, newReservation];
-    saveReservations(updatedReservations);
+    setReservations([...reservations, newReservation]);
     setSelectedItemForReservation(null);
-    alert('Item reservado com sucesso!');
+    setSuccessMessage('Item reservado com sucesso!');
+    setShowSuccessModal(true);
   };
 
   const filteredItems = items
+    .filter(item => {
+      if (searchTerm) {
+        return item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+               item.description?.toLowerCase().includes(searchTerm.toLowerCase());
+      }
+      return true;
+    })
     .filter(i => filterCategory === "ALL" || i.category === filterCategory)
     .filter(i => !filterLowStock || (() => {
       const reserved = reservations
@@ -258,11 +436,22 @@ export const ItemsManagement: React.FC = () => {
             </h2>
             <p className={styles.subtitle}>
               <FiBox size={14} />
-              {items.length} itens cadastrados
+              {items.length} itens cadastrados | {reservations.length} reservas ativas
             </p>
           </div>
 
           <div className={styles.headerActions}>
+            <div className={styles.searchBox}>
+              <FiSearch className={styles.searchIcon} />
+              <input
+                type="text"
+                placeholder="Buscar itens..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className={styles.searchInput}
+              />
+            </div>
+
             <select
               className={styles.filterSelect}
               value={filterCategory}
@@ -282,7 +471,7 @@ export const ItemsManagement: React.FC = () => {
                 onChange={(e) => setFilterLowStock(e.target.checked)}
               />
               <FiAlertCircle size={14} />
-              Mostrar apenas itens com estoque baixo
+              Apenas estoque baixo
             </label>
 
             <button
@@ -339,6 +528,7 @@ export const ItemsManagement: React.FC = () => {
               {filteredItems.map((item) => {
                 const alert = getAvailabilityAlert(item);
                 const itemReservations = getItemReservations(item.id);
+                const available = item.quantityTotal - itemReservations.reduce((sum, r) => sum + r.quantity, 0);
                 
                 return (
                   <tr key={item.id}>
@@ -355,7 +545,7 @@ export const ItemsManagement: React.FC = () => {
                           {item.minStock && (
                             <small>
                               <FiLayers size={12} />
-                              Estoque mínimo: {item.minStock} un.
+                              Mín: {item.minStock} un.
                             </small>
                           )}
                           {item.unitPrice && item.unitPrice > 0 && (
@@ -384,8 +574,8 @@ export const ItemsManagement: React.FC = () => {
                     </td>
                     <td>
                       <div className={styles.availableCell}>
-                        <FiCheckCircle size={14} />
-                        {item.quantityTotal - itemReservations.reduce((sum, r) => sum + r.quantity, 0)} un.
+                        <FiCheckCircle size={14} color={available > 0 ? "#10b981" : "#ef4444"} />
+                        {available} un.
                       </div>
                     </td>
                     <td>
@@ -443,6 +633,7 @@ export const ItemsManagement: React.FC = () => {
                           onClick={() => setSelectedItemForReservation(item)}
                           className={styles.reserveButton}
                           title="Reservar item"
+                          disabled={available === 0}
                         >
                           <FiCalendar size={16} />
                         </button>
@@ -476,11 +667,11 @@ export const ItemsManagement: React.FC = () => {
             </div>
             <h3 className={styles.emptyTitle}>Nenhum item encontrado</h3>
             <p className={styles.emptyText}>
-              {filterLowStock 
-                ? 'Não há itens com estoque baixo no momento.'
+              {searchTerm || filterCategory !== 'ALL' || filterLowStock
+                ? 'Tente ajustar os filtros para encontrar itens.'
                 : 'Cadastre itens no seu estoque para gerenciá-los aqui.'}
             </p>
-            {!filterLowStock && (
+            {!searchTerm && filterCategory === 'ALL' && !filterLowStock && (
               <button
                 onClick={() => setShowForm(true)}
                 className={styles.primaryButton}
@@ -492,6 +683,92 @@ export const ItemsManagement: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Cards de resumo */}
+      <div className={styles.summaryCards}>
+        <div className={styles.summaryCard}>
+          <div className={styles.summaryIcon} style={{ background: '#e0f2fe' }}>
+            <FiPackage color="#0284c7" size={24} />
+          </div>
+          <div className={styles.summaryInfo}>
+            <strong>{items.length}</strong>
+            <span>Total de Itens</span>
+          </div>
+        </div>
+        <div className={styles.summaryCard}>
+          <div className={styles.summaryIcon} style={{ background: '#dcfce7' }}>
+            <FiCheckCircle color="#10b981" size={24} />
+          </div>
+          <div className={styles.summaryInfo}>
+            <strong>{items.reduce((sum, item) => {
+              const reserved = reservations
+                .filter(r => r.itemId === item.id && r.status !== 'RETURNED')
+                .reduce((s, r) => s + r.quantity, 0);
+              return sum + (item.quantityTotal - reserved);
+            }, 0)}</strong>
+            <span>Disponíveis</span>
+          </div>
+        </div>
+        <div className={styles.summaryCard}>
+          <div className={styles.summaryIcon} style={{ background: '#fef3c7' }}>
+            <MdWarning color="#f59e0b" size={24} />
+          </div>
+          <div className={styles.summaryInfo}>
+            <strong>{items.filter(item => {
+              const reserved = reservations
+                .filter(r => r.itemId === item.id && r.status !== 'RETURNED')
+                .reduce((s, r) => s + r.quantity, 0);
+              const available = item.quantityTotal - reserved;
+              return item.minStock ? available <= item.minStock : available < item.quantityTotal * 0.2;
+            }).length}</strong>
+            <span>Estoque Baixo</span>
+          </div>
+        </div>
+        <div className={styles.summaryCard}>
+          <div className={styles.summaryIcon} style={{ background: '#fee2e2' }}>
+            <FiXCircle color="#ef4444" size={24} />
+          </div>
+          <div className={styles.summaryInfo}>
+            <strong>{items.filter(item => {
+              const reserved = reservations
+                .filter(r => r.itemId === item.id && r.status !== 'RETURNED')
+                .reduce((s, r) => s + r.quantity, 0);
+              return (item.quantityTotal - reserved) === 0;
+            }).length}</strong>
+            <span>Indisponíveis</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Modais de Feedback */}
+      <ConfirmationModal
+        isOpen={showSuccessModal}
+        title="Sucesso!"
+        message={successMessage}
+        type="success"
+        onConfirm={() => setShowSuccessModal(false)}
+        onCancel={() => setShowSuccessModal(false)}
+        confirmText="OK"
+      />
+
+      <ErrorModal
+        isOpen={showErrorModal}
+        message={errorMessage}
+        onClose={() => setShowErrorModal(false)}
+      />
+
+      <ConfirmationModal
+        isOpen={showDeleteConfirm}
+        title="Confirmar Exclusão"
+        message="Tem certeza que deseja excluir este item? Esta ação não pode ser desfeita."
+        type="warning"
+        onConfirm={confirmDeleteItem}
+        onCancel={() => {
+          setShowDeleteConfirm(false);
+          setItemToDelete(null);
+        }}
+        confirmText="Excluir"
+      />
     </div>
   );
 };
@@ -533,23 +810,10 @@ const ItemForm: React.FC<ItemFormProps> = ({ item, onSubmit, onCancel }) => {
     if (!validateForm()) return;
 
     setLoading(true);
-    try {
-      await onSubmit({
-        ...formData,
-        quantityAvailable: item ? item.quantityAvailable : formData.quantityTotal,
-      });
-    } finally {
+    setTimeout(() => {
+      onSubmit(formData);
       setLoading(false);
-    }
-  };
-
-  const getCategoryIcon = (category: string) => {
-    switch(category) {
-      case 'DECORATION': return <FaPalette size={16} />;
-      case 'FURNITURE': return <FaCouch size={16} />;
-      case 'UTENSIL': return <FaUtensils size={16} />;
-      default: return <FaBoxes size={16} />;
-    }
+    }, 500);
   };
 
   return (
@@ -579,10 +843,10 @@ const ItemForm: React.FC<ItemFormProps> = ({ item, onSubmit, onCancel }) => {
                 onChange={(e) =>
                   setFormData({ ...formData, name: e.target.value })
                 }
-                className={styles.formInput}
+                className={`${styles.formInput} ${errors.name ? styles.error : ''}`}
               />
               {errors.name && (
-                <span className={styles.error}>{errors.name}</span>
+                <span className={styles.errorText}>{errors.name}</span>
               )}
             </div>
 
@@ -622,10 +886,10 @@ const ItemForm: React.FC<ItemFormProps> = ({ item, onSubmit, onCancel }) => {
                     quantityTotal: parseInt(e.target.value),
                   })
                 }
-                className={styles.formInput}
+                className={`${styles.formInput} ${errors.quantityTotal ? styles.error : ''}`}
               />
               {errors.quantityTotal && (
-                <span className={styles.error}>{errors.quantityTotal}</span>
+                <span className={styles.errorText}>{errors.quantityTotal}</span>
               )}
             </div>
 
@@ -644,17 +908,17 @@ const ItemForm: React.FC<ItemFormProps> = ({ item, onSubmit, onCancel }) => {
                     minStock: parseInt(e.target.value),
                   })
                 }
-                className={styles.formInput}
+                className={`${styles.formInput} ${errors.minStock ? styles.error : ''}`}
               />
               {errors.minStock && (
-                <span className={styles.error}>{errors.minStock}</span>
+                <span className={styles.errorText}>{errors.minStock}</span>
               )}
             </div>
 
             <div className={styles.formGroup}>
               <label className={styles.formLabel}>
                 <MdAttachMoney size={14} />
-                Preço Unitário
+                Preço Unitário (R$)
               </label>
               <input
                 type="number"
@@ -725,7 +989,7 @@ const ItemForm: React.FC<ItemFormProps> = ({ item, onSubmit, onCancel }) => {
 
 interface ReservationModalProps {
   item: Item;
-  events: Event[];
+  events: any[];
   onConfirm: (itemId: number, eventId: number, quantity: number) => void;
   onCancel: () => void;
   checkAvailability: (itemId: number, date: string, quantity: number) => boolean;
@@ -742,6 +1006,15 @@ const ReservationModal: React.FC<ReservationModalProps> = ({
   const [quantity, setQuantity] = useState(1);
   const [selectedDate, setSelectedDate] = useState<string>('');
 
+  const reserved = events
+    .filter(e => e.id === selectedEventId)
+    .map(e => {
+      const itemReservations: any[] = [];
+      return itemReservations.reduce((sum, r) => sum + r.quantity, 0);
+    })[0] || 0;
+
+  const maxAvailable = item.quantityTotal - reserved;
+
   const selectedEvent = events.find(e => e.id === selectedEventId);
 
   const handleEventChange = (eventId: number) => {
@@ -757,7 +1030,7 @@ const ReservationModal: React.FC<ReservationModalProps> = ({
     : true;
 
   const handleConfirm = () => {
-    if (selectedEventId && isAvailable) {
+    if (selectedEventId && isAvailable && quantity > 0) {
       onConfirm(item.id, selectedEventId, quantity);
     }
   };
@@ -784,7 +1057,7 @@ const ReservationModal: React.FC<ReservationModalProps> = ({
               <strong>{item.name}</strong>
               <span>
                 <FiLayers size={12} />
-                Total disponível: {item.quantityTotal} un.
+                Total: {item.quantityTotal} un.
               </span>
               {item.unitPrice && item.unitPrice > 0 && (
                 <span>
@@ -825,23 +1098,26 @@ const ReservationModal: React.FC<ReservationModalProps> = ({
             <input
               type="number"
               min="1"
-              max={item.quantityTotal}
+              max={maxAvailable}
               value={quantity}
               onChange={(e) => setQuantity(parseInt(e.target.value))}
               className={styles.formInput}
             />
+            <small className={styles.helpText}>
+              Disponível: {maxAvailable} unidades
+            </small>
           </div>
 
           {selectedEventId && selectedDate && (
             <div className={styles.availabilityInfo}>
               {isAvailable ? (
                 <div className={styles.availableMessage}>
-                  <FiCheckCircle size={18} />
+                  <FiCheckCircle size={18} color="#10b981" />
                   Disponível para esta data
                 </div>
               ) : (
                 <div className={styles.unavailableMessage}>
-                  <FiXCircle size={18} />
+                  <FiXCircle size={18} color="#ef4444" />
                   Quantidade indisponível para esta data
                 </div>
               )}
@@ -872,3 +1148,5 @@ const ReservationModal: React.FC<ReservationModalProps> = ({
     </div>
   );
 };
+
+export default ItemsManagement;

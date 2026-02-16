@@ -93,7 +93,7 @@
 
 .checklistHeader {
     padding: 24px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: #495bbe;
     color: white;
 }
 
@@ -105,6 +105,7 @@
     font-size: 28px;
     font-weight: 600;
     margin: 0 0 8px 0;
+    color: #fff;
 }
 
 .checklistDescription {
@@ -147,7 +148,7 @@
 
 .progressFill {
     height: 100%;
-    background-color: #10b981;
+    background-color: #027c21;
     border-radius: 4px;
     transition: width 0.3s ease;
 }

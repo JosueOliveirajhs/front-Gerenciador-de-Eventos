@@ -1,13 +1,318 @@
-// src/components/admin/checklist/ChecklistManagement.tsx
-
 import React, { useState, useEffect } from 'react';
 import { Event } from '../../../types/Event';
 import { Checklist, ChecklistTask, CreateChecklistData, TASK_CATEGORIES, TASK_PRIORITIES } from '../../../types/Checklist';
 import { eventService } from '../../../services/events';
-import { checklistService } from '../../../services/checklist';
 import { LoadingSpinner } from '../../common/LoadingSpinner';
 import { EmptyState } from '../../common/EmptyState';
+import { ConfirmationModal } from '../../common/Alerts/ConfirmationModal';
+import { ErrorModal } from '../../common/Alerts/ErrorModal';
+import { FiX, FiSave, FiPlus, FiEdit2, FiTrash2, FiCalendar, FiCheckCircle, FiAlertCircle } from 'react-icons/fi';
+import { MdEvent, MdDescription, MdCategory, MdPerson, MdWarning } from 'react-icons/md';
 import styles from './ChecklistManagement.module.css';
+
+// Dados mocados de eventos
+const MOCK_EVENTS: Event[] = [
+  {
+    id: 1,
+    title: "Casamento João e Maria",
+    eventDate: "2026-03-15",
+    startTime: "18:00",
+    endTime: "23:00",
+    guestCount: 150,
+    eventType: "CASAMENTO",
+    status: "CONFIRMED",
+    clientId: 1,
+    client: { id: 1, name: "João Silva", cpf: "123.456.789-00" },
+    totalValue: 15000,
+    depositValue: 5000,
+    notes: "Casamento na igreja e festa no salão"
+  },
+  {
+    id: 2,
+    title: "Aniversário de 15 anos - Sofia",
+    eventDate: "2026-03-20",
+    startTime: "19:00",
+    endTime: "23:00",
+    guestCount: 200,
+    eventType: "ANIVERSARIO",
+    status: "CONFIRMED",
+    clientId: 2,
+    client: { id: 2, name: "Sofia Oliveira", cpf: "987.654.321-00" },
+    totalValue: 8000,
+    depositValue: 3000,
+    notes: "Tema: Paris"
+  },
+  {
+    id: 3,
+    title: "Formatura Direito",
+    eventDate: "2026-04-05",
+    startTime: "20:00",
+    endTime: "02:00",
+    guestCount: 300,
+    eventType: "FORMATURA",
+    status: "QUOTE",
+    clientId: 3,
+    client: { id: 3, name: "Turma de Direito", cpf: "111.222.333-44" },
+    totalValue: 25000,
+    depositValue: 5000,
+    notes: "Formatura na faculdade"
+  },
+  {
+    id: 4,
+    title: "Evento Corporativo - Empresa X",
+    eventDate: "2026-03-25",
+    startTime: "09:00",
+    endTime: "18:00",
+    guestCount: 100,
+    eventType: "CORPORATIVO",
+    status: "CONFIRMED",
+    clientId: 4,
+    client: { id: 4, name: "Empresa X", cpf: "555.666.777-88" },
+    totalValue: 5000,
+    depositValue: 2000,
+    notes: "Workshop de inovação"
+  },
+  {
+    id: 5,
+    title: "Casamento Pedro & Ana",
+    eventDate: "2026-04-10",
+    startTime: "17:00",
+    endTime: "23:00",
+    guestCount: 180,
+    eventType: "CASAMENTO",
+    status: "CONFIRMED",
+    clientId: 5,
+    client: { id: 5, name: "Pedro Santos", cpf: "999.888.777-66" },
+    totalValue: 18000,
+    depositValue: 6000,
+    notes: "Cerimônia ao ar livre"
+  }
+];
+
+// Dados mocados de checklists
+const MOCK_CHECKLISTS: { [key: number]: Checklist } = {
+  1: {
+    id: 1,
+    title: "Checklist - Casamento João e Maria",
+    description: "Checklist completo para casamento",
+    eventId: 1,
+    eventType: "CASAMENTO",
+    createdAt: "2026-02-01T10:00:00Z",
+    updatedAt: "2026-02-15T14:30:00Z",
+    tasks: [
+      {
+        id: 101,
+        title: "Contratar Cerimonialista",
+        description: "Pesquisar e contratar cerimonialista para o dia do evento",
+        category: "CONTRATOS",
+        status: "COMPLETED",
+        priority: "HIGH",
+        order: 1,
+        responsible: "Noiva",
+        dueDate: "2026-02-10",
+        completedAt: "2026-02-08T15:00:00Z",
+        completedBy: "Maria"
+      },
+      {
+        id: 102,
+        title: "Escolher Decoração",
+        description: "Definir cores, flores e estilo da decoração",
+        category: "DECORACAO",
+        status: "COMPLETED",
+        priority: "HIGH",
+        order: 2,
+        responsible: "Noiva",
+        dueDate: "2026-02-15",
+        completedAt: "2026-02-12T10:30:00Z",
+        completedBy: "Maria"
+      },
+      {
+        id: 103,
+        title: "Contratar Buffet",
+        description: "Fechar contrato com buffet e definir cardápio",
+        category: "ALIMENTACAO",
+        status: "IN_PROGRESS",
+        priority: "URGENT",
+        order: 3,
+        responsible: "João",
+        dueDate: "2026-02-20"
+      },
+      {
+        id: 104,
+        title: "Enviar Convites",
+        description: "Imprimir e enviar convites para os convidados",
+        category: "COMUNICACAO",
+        status: "PENDING",
+        priority: "MEDIUM",
+        order: 4,
+        responsible: "Ambos",
+        dueDate: "2026-03-01"
+      },
+      {
+        id: 105,
+        title: "Prova de Vestido",
+        description: "Última prova do vestido de noiva",
+        category: "VESTUARIO",
+        status: "PENDING",
+        priority: "HIGH",
+        order: 5,
+        responsible: "Noiva",
+        dueDate: "2026-03-05"
+      },
+      {
+        id: 106,
+        title: "Reunião com Fotógrafo",
+        description: "Definir cronograma de fotos e locais",
+        category: "CONTRATOS",
+        status: "PENDING",
+        priority: "MEDIUM",
+        order: 6,
+        responsible: "João",
+        dueDate: "2026-03-08"
+      },
+      {
+        id: 107,
+        title: "Organizar Lista de Músicas",
+        description: "Selecionar músicas para cerimônia e festa",
+        category: "MUSICA",
+        status: "PENDING",
+        priority: "LOW",
+        order: 7,
+        responsible: "Ambos",
+        dueDate: "2026-03-10"
+      }
+    ]
+  },
+  2: {
+    id: 2,
+    title: "Checklist - Aniversário Sofia",
+    description: "Preparativos para festa de 15 anos",
+    eventId: 2,
+    eventType: "ANIVERSARIO",
+    createdAt: "2026-02-05T09:00:00Z",
+    updatedAt: "2026-02-14T11:20:00Z",
+    tasks: [
+      {
+        id: 201,
+        title: "Escolher Tema da Festa",
+        description: "Definir tema e cores da decoração",
+        category: "DECORACAO",
+        status: "COMPLETED",
+        priority: "HIGH",
+        order: 1,
+        responsible: "Sofia",
+        dueDate: "2026-02-10",
+        completedAt: "2026-02-08T16:00:00Z",
+        completedBy: "Sofia"
+      },
+      {
+        id: 202,
+        title: "Contratar Buffet",
+        description: "Fechar buffet e definir cardápio",
+        category: "ALIMENTACAO",
+        status: "COMPLETED",
+        priority: "HIGH",
+        order: 2,
+        responsible: "Mãe",
+        dueDate: "2026-02-15",
+        completedAt: "2026-02-12T14:30:00Z",
+        completedBy: "Mãe"
+      },
+      {
+        id: 203,
+        title: "Escolher Vestido",
+        description: "Provas e escolha do vestido de debutante",
+        category: "VESTUARIO",
+        status: "IN_PROGRESS",
+        priority: "URGENT",
+        order: 3,
+        responsible: "Sofia",
+        dueDate: "2026-02-25"
+      },
+      {
+        id: 204,
+        title: "Contratar Banda/DJ",
+        description: "Pesquisar e contratar música ao vivo",
+        category: "MUSICA",
+        status: "PENDING",
+        priority: "HIGH",
+        order: 4,
+        responsible: "Pai",
+        dueDate: "2026-03-01"
+      },
+      {
+        id: 205,
+        title: "Enviar Convites",
+        description: "Lista de convidados e envio de convites",
+        category: "COMUNICACAO",
+        status: "PENDING",
+        priority: "MEDIUM",
+        order: 5,
+        responsible: "Mãe",
+        dueDate: "2026-03-05"
+      }
+    ]
+  },
+  4: {
+    id: 4,
+    title: "Checklist - Evento Corporativo",
+    description: "Organização para workshop da empresa",
+    eventId: 4,
+    eventType: "CORPORATIVO",
+    createdAt: "2026-02-10T08:30:00Z",
+    updatedAt: "2026-02-13T09:45:00Z",
+    tasks: [
+      {
+        id: 401,
+        title: "Reservar Sala",
+        description: "Confirmar reserva do espaço",
+        category: "LOGISTICA",
+        status: "COMPLETED",
+        priority: "HIGH",
+        order: 1,
+        responsible: "RH",
+        dueDate: "2026-02-12",
+        completedAt: "2026-02-11T11:00:00Z",
+        completedBy: "RH"
+      },
+      {
+        id: 402,
+        title: "Coffee Break",
+        description: "Contratar serviço de coffee break",
+        category: "ALIMENTACAO",
+        status: "COMPLETED",
+        priority: "MEDIUM",
+        order: 2,
+        responsible: "RH",
+        dueDate: "2026-02-15",
+        completedAt: "2026-02-13T10:15:00Z",
+        completedBy: "RH"
+      },
+      {
+        id: 403,
+        title: "Material dos Participantes",
+        description: "Preparar pastas e brindes",
+        category: "MATERIAL",
+        status: "IN_PROGRESS",
+        priority: "MEDIUM",
+        order: 3,
+        responsible: "Marketing",
+        dueDate: "2026-03-01"
+      },
+      {
+        id: 404,
+        title: "Confirmar Palestrantes",
+        description: "Última confirmação com os palestrantes",
+        category: "PESSOAL",
+        status: "PENDING",
+        priority: "URGENT",
+        order: 4,
+        responsible: "Eventos",
+        dueDate: "2026-03-10"
+      }
+    ]
+  }
+};
 
 export const ChecklistManagement: React.FC = () => {
     const [events, setEvents] = useState<Event[]>([]);
@@ -21,6 +326,14 @@ export const ChecklistManagement: React.FC = () => {
     const [filterCategory, setFilterCategory] = useState<string>('ALL');
     const [searchTerm, setSearchTerm] = useState('');
 
+    // Estados para modais
+    const [showSuccessModal, setShowSuccessModal] = useState(false);
+    const [successMessage, setSuccessMessage] = useState('');
+    const [showErrorModal, setShowErrorModal] = useState(false);
+    const [errorMessage, setErrorMessage] = useState('');
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [taskToDelete, setTaskToDelete] = useState<number | null>(null);
+
     useEffect(() => {
         loadEvents();
     }, []);
@@ -28,21 +341,26 @@ export const ChecklistManagement: React.FC = () => {
     useEffect(() => {
         if (selectedEventId) {
             loadChecklist(selectedEventId);
+        } else {
+            setChecklist(null);
         }
     }, [selectedEventId]);
 
     const loadEvents = async () => {
         try {
             setLoading(true);
-            const eventsData = await eventService.getAllEvents();
-            setEvents(eventsData);
-            
-            if (eventsData.length > 0) {
-                setSelectedEventId(eventsData[0].id);
-            }
+            // Usar dados mocados em vez da API
+            setTimeout(() => {
+                setEvents(MOCK_EVENTS);
+                if (MOCK_EVENTS.length > 0) {
+                    setSelectedEventId(MOCK_EVENTS[0].id);
+                }
+                setLoading(false);
+            }, 500);
         } catch (error) {
             console.error('Erro ao carregar eventos:', error);
-        } finally {
+            setErrorMessage('Erro ao carregar eventos. Tente novamente.');
+            setShowErrorModal(true);
             setLoading(false);
         }
     };
@@ -50,40 +368,85 @@ export const ChecklistManagement: React.FC = () => {
     const loadChecklist = async (eventId: number) => {
         try {
             setLoading(true);
-            const data = await checklistService.getChecklistByEventId(eventId);
-            setChecklist(data);
+            // Usar dados mocados em vez da API
+            setTimeout(() => {
+                const mockChecklist = MOCK_CHECKLISTS[eventId] || null;
+                setChecklist(mockChecklist);
+                setLoading(false);
+            }, 300);
         } catch (error) {
             console.error('Erro ao carregar checklist:', error);
-        } finally {
+            setErrorMessage('Erro ao carregar checklist. Tente novamente.');
+            setShowErrorModal(true);
             setLoading(false);
         }
     };
 
     const handleCreateChecklist = async (data: CreateChecklistData) => {
         try {
-            await checklistService.createChecklist(data);
-            if (selectedEventId) {
-                await loadChecklist(selectedEventId);
-            }
+            setLoading(true);
+            
+            // Simular criação de checklist
+            const newChecklist: Checklist = {
+                id: Date.now(),
+                title: data.title,
+                description: data.description || '',
+                eventId: data.eventId,
+                eventType: data.eventType,
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+                tasks: data.tasks || []
+            };
+            
+            // Adicionar ao mock (apenas para simular)
+            MOCK_CHECKLISTS[data.eventId] = newChecklist;
+            
+            setChecklist(newChecklist);
             setShowCreateModal(false);
+            setSuccessMessage('Checklist criado com sucesso!');
+            setShowSuccessModal(true);
         } catch (error) {
             console.error('Erro ao criar checklist:', error);
+            setErrorMessage('Erro ao criar checklist. Tente novamente.');
+            setShowErrorModal(true);
+        } finally {
+            setLoading(false);
         }
     };
 
     const handleUpdateTaskStatus = async (taskId: number, status: ChecklistTask['status']) => {
+        if (!checklist) return;
+        
         try {
-            await checklistService.updateTaskStatus(taskId, { status });
+            const updatedTasks = checklist.tasks.map(task => {
+                if (task.id === taskId) {
+                    return {
+                        ...task,
+                        status,
+                        ...(status === 'COMPLETED' ? {
+                            completedAt: new Date().toISOString(),
+                            completedBy: "Usuário"
+                        } : {})
+                    };
+                }
+                return task;
+            });
             
-            // Atualizar lista local
-            if (checklist) {
-                const updatedTasks = checklist.tasks.map(task => 
-                    task.id === taskId ? { ...task, status } : task
-                );
-                setChecklist({ ...checklist, tasks: updatedTasks });
-            }
+            setChecklist({
+                ...checklist,
+                tasks: updatedTasks,
+                updatedAt: new Date().toISOString()
+            });
+            
+            setSuccessMessage(status === 'COMPLETED' 
+                ? 'Tarefa marcada como concluída!' 
+                : 'Status da tarefa atualizado!'
+            );
+            setShowSuccessModal(true);
         } catch (error) {
             console.error('Erro ao atualizar tarefa:', error);
+            setErrorMessage('Erro ao atualizar status da tarefa. Tente novamente.');
+            setShowErrorModal(true);
         }
     };
 
@@ -91,45 +454,80 @@ export const ChecklistManagement: React.FC = () => {
         if (!checklist) return;
         
         try {
-            const newTask = await checklistService.addTask(checklist.id, taskData);
+            const newTask: ChecklistTask = {
+                id: Date.now(),
+                title: taskData.title,
+                description: taskData.description || '',
+                category: taskData.category,
+                status: taskData.status || 'PENDING',
+                priority: taskData.priority,
+                order: checklist.tasks.length + 1,
+                responsible: taskData.responsible || '',
+                dueDate: taskData.dueDate || ''
+            };
+            
             setChecklist({
                 ...checklist,
-                tasks: [...checklist.tasks, newTask]
+                tasks: [...checklist.tasks, newTask],
+                updatedAt: new Date().toISOString()
             });
             setShowTaskModal(false);
+            setSuccessMessage('Tarefa adicionada com sucesso!');
+            setShowSuccessModal(true);
         } catch (error) {
             console.error('Erro ao adicionar tarefa:', error);
+            setErrorMessage('Erro ao adicionar tarefa. Tente novamente.');
+            setShowErrorModal(true);
         }
     };
 
     const handleUpdateTask = async (taskId: number, data: any) => {
+        if (!checklist) return;
+        
         try {
-            const updatedTask = await checklistService.updateTask(taskId, data);
+            const updatedTasks = checklist.tasks.map(task => 
+                task.id === taskId ? { ...task, ...data } : task
+            );
             
-            if (checklist) {
-                const updatedTasks = checklist.tasks.map(task => 
-                    task.id === taskId ? updatedTask : task
-                );
-                setChecklist({ ...checklist, tasks: updatedTasks });
-            }
+            setChecklist({
+                ...checklist,
+                tasks: updatedTasks,
+                updatedAt: new Date().toISOString()
+            });
             setEditingTask(null);
+            setSuccessMessage('Tarefa atualizada com sucesso!');
+            setShowSuccessModal(true);
         } catch (error) {
             console.error('Erro ao atualizar tarefa:', error);
+            setErrorMessage('Erro ao atualizar tarefa. Tente novamente.');
+            setShowErrorModal(true);
         }
     };
 
-    const handleDeleteTask = async (taskId: number) => {
-        if (!window.confirm('Tem certeza que deseja excluir esta tarefa?')) return;
+    const handleDeleteTask = (taskId: number) => {
+        setTaskToDelete(taskId);
+        setShowDeleteConfirm(true);
+    };
+
+    const confirmDeleteTask = async () => {
+        if (!checklist || !taskToDelete) return;
         
         try {
-            await checklistService.deleteTask(taskId);
-            
-            if (checklist) {
-                const updatedTasks = checklist.tasks.filter(task => task.id !== taskId);
-                setChecklist({ ...checklist, tasks: updatedTasks });
-            }
+            const updatedTasks = checklist.tasks.filter(task => task.id !== taskToDelete);
+            setChecklist({
+                ...checklist,
+                tasks: updatedTasks,
+                updatedAt: new Date().toISOString()
+            });
+            setSuccessMessage('Tarefa excluída com sucesso!');
+            setShowSuccessModal(true);
         } catch (error) {
             console.error('Erro ao excluir tarefa:', error);
+            setErrorMessage('Erro ao excluir tarefa. Tente novamente.');
+            setShowErrorModal(true);
+        } finally {
+            setShowDeleteConfirm(false);
+            setTaskToDelete(null);
         }
     };
 
@@ -140,7 +538,8 @@ export const ChecklistManagement: React.FC = () => {
             .filter(task => {
                 if (filterStatus !== 'ALL' && task.status !== filterStatus) return false;
                 if (filterCategory !== 'ALL' && task.category !== filterCategory) return false;
-                if (searchTerm && !task.title.toLowerCase().includes(searchTerm.toLowerCase())) return false;
+                if (searchTerm && !task.title.toLowerCase().includes(searchTerm.toLowerCase()) && 
+                    !task.description?.toLowerCase().includes(searchTerm.toLowerCase())) return false;
                 return true;
             })
             .sort((a, b) => a.order - b.order);
@@ -175,7 +574,7 @@ export const ChecklistManagement: React.FC = () => {
     const filteredTasks = getFilteredTasks();
     const progress = calculateProgress();
 
-    if (loading && !checklist) {
+    if (loading && !checklist && events.length === 0) {
         return <LoadingSpinner text="Carregando checklists..." fullScreen />;
     }
 
@@ -210,7 +609,7 @@ export const ChecklistManagement: React.FC = () => {
                             className={styles.primaryButton}
                             onClick={() => setShowCreateModal(true)}
                         >
-                            <span className={styles.buttonIcon}>➕</span>
+                            <FiPlus size={18} />
                             Criar Checklist
                         </button>
                     )}
@@ -219,13 +618,13 @@ export const ChecklistManagement: React.FC = () => {
 
             {!selectedEventId ? (
                 <EmptyState
-                    icon="📋"
+                    icon={<FiCalendar size={48} />}
                     title="Nenhum evento selecionado"
                     description="Selecione um evento para visualizar ou criar um checklist."
                 />
             ) : !checklist ? (
                 <EmptyState
-                    icon="📝"
+                    icon={<FiCheckCircle size={48} />}
                     title="Nenhum checklist encontrado"
                     description="Este evento ainda não possui um checklist. Crie um novo checklist para começar a organizar as tarefas."
                     action={{
@@ -303,7 +702,7 @@ export const ChecklistManagement: React.FC = () => {
                             className={styles.addButton}
                             onClick={() => setShowTaskModal(true)}
                         >
-                            <span className={styles.buttonIcon}>➕</span>
+                            <FiPlus size={18} />
                             Nova Tarefa
                         </button>
                     </div>
@@ -312,14 +711,14 @@ export const ChecklistManagement: React.FC = () => {
                     <div className={styles.tasksContainer}>
                         {filteredTasks.length === 0 ? (
                             <EmptyState
-                                icon="📭"
+                                icon={<FiCheckCircle size={48} />}
                                 title="Nenhuma tarefa encontrada"
                                 description="Tente ajustar os filtros ou criar uma nova tarefa."
                             />
                         ) : (
                             <div className={styles.tasksList}>
                                 {filteredTasks.map(task => (
-                                    <div key={task.id} className={styles.taskCard}>
+                                    <div key={task.id} className={`${styles.taskCard} ${styles[task.status.toLowerCase()]}`}>
                                         <div className={styles.taskCheckbox}>
                                             <input
                                                 type="checkbox"
@@ -341,7 +740,10 @@ export const ChecklistManagement: React.FC = () => {
                                                     className={styles.priorityBadge}
                                                     style={{ backgroundColor: getPriorityColor(task.priority) }}
                                                 >
-                                                    {task.priority}
+                                                    {task.priority === 'LOW' && 'Baixa'}
+                                                    {task.priority === 'MEDIUM' && 'Média'}
+                                                    {task.priority === 'HIGH' && 'Alta'}
+                                                    {task.priority === 'URGENT' && 'Urgente'}
                                                 </span>
                                             </div>
 
@@ -352,19 +754,19 @@ export const ChecklistManagement: React.FC = () => {
                                             <div className={styles.taskMeta}>
                                                 {task.category && (
                                                     <span className={styles.taskCategory}>
-                                                        <span className={styles.metaIcon}>📋</span>
+                                                        <MdCategory size={12} />
                                                         {task.category}
                                                     </span>
                                                 )}
                                                 {task.responsible && (
                                                     <span className={styles.taskResponsible}>
-                                                        <span className={styles.metaIcon}>👤</span>
+                                                        <MdPerson size={12} />
                                                         {task.responsible}
                                                     </span>
                                                 )}
                                                 {task.dueDate && (
                                                     <span className={styles.taskDueDate}>
-                                                        <span className={styles.metaIcon}>📅</span>
+                                                        <FiCalendar size={12} />
                                                         {new Date(task.dueDate).toLocaleDateString('pt-BR')}
                                                     </span>
                                                 )}
@@ -372,7 +774,7 @@ export const ChecklistManagement: React.FC = () => {
 
                                             {task.status === 'COMPLETED' && task.completedAt && (
                                                 <div className={styles.completedInfo}>
-                                                    <span className={styles.completedIcon}>✅</span>
+                                                    <FiCheckCircle size={12} />
                                                     Concluído em {new Date(task.completedAt).toLocaleDateString('pt-BR')}
                                                     {task.completedBy && ` por ${task.completedBy}`}
                                                 </div>
@@ -388,14 +790,14 @@ export const ChecklistManagement: React.FC = () => {
                                                 }}
                                                 title="Editar tarefa"
                                             >
-                                                ✏️
+                                                <FiEdit2 size={16} />
                                             </button>
                                             <button
                                                 className={`${styles.actionButton} ${styles.deleteButton}`}
                                                 onClick={() => handleDeleteTask(task.id)}
                                                 title="Excluir tarefa"
                                             >
-                                                🗑️
+                                                <FiTrash2 size={16} />
                                             </button>
                                         </div>
                                     </div>
@@ -432,6 +834,36 @@ export const ChecklistManagement: React.FC = () => {
                     }}
                 />
             )}
+
+            {/* Modais de Feedback */}
+            <ConfirmationModal
+                isOpen={showSuccessModal}
+                title="Sucesso!"
+                message={successMessage}
+                type="success"
+                onConfirm={() => setShowSuccessModal(false)}
+                onCancel={() => setShowSuccessModal(false)}
+                confirmText="OK"
+            />
+
+            <ErrorModal
+                isOpen={showErrorModal}
+                message={errorMessage}
+                onClose={() => setShowErrorModal(false)}
+            />
+
+            <ConfirmationModal
+                isOpen={showDeleteConfirm}
+                title="Confirmar Exclusão"
+                message="Tem certeza que deseja excluir esta tarefa? Esta ação não pode ser desfeita."
+                type="warning"
+                onConfirm={confirmDeleteTask}
+                onCancel={() => {
+                    setShowDeleteConfirm(false);
+                    setTaskToDelete(null);
+                }}
+                confirmText="Excluir"
+            />
         </div>
     );
 };
@@ -462,12 +894,52 @@ const CreateChecklistModal: React.FC<CreateChecklistModalProps> = ({
         setLoading(true);
         
         try {
+            let tasks = [];
+            
+            // Tarefas padrão baseadas no tipo de evento
+            if (useDefault) {
+                if (eventType === 'CASAMENTO') {
+                    tasks = [
+                        { title: "Contratar Cerimonialista", category: "CONTRATOS", priority: "HIGH" },
+                        { title: "Escolher Decoração", category: "DECORACAO", priority: "HIGH" },
+                        { title: "Contratar Buffet", category: "ALIMENTACAO", priority: "URGENT" },
+                        { title: "Enviar Convites", category: "COMUNICACAO", priority: "MEDIUM" },
+                        { title: "Prova de Vestido", category: "VESTUARIO", priority: "HIGH" },
+                        { title: "Reunião com Fotógrafo", category: "CONTRATOS", priority: "MEDIUM" },
+                        { title: "Organizar Lista de Músicas", category: "MUSICA", priority: "LOW" }
+                    ];
+                } else if (eventType === 'ANIVERSARIO') {
+                    tasks = [
+                        { title: "Escolher Tema da Festa", category: "DECORACAO", priority: "HIGH" },
+                        { title: "Contratar Buffet", category: "ALIMENTACAO", priority: "HIGH" },
+                        { title: "Escolher Vestido", category: "VESTUARIO", priority: "URGENT" },
+                        { title: "Contratar Banda/DJ", category: "MUSICA", priority: "HIGH" },
+                        { title: "Enviar Convites", category: "COMUNICACAO", priority: "MEDIUM" }
+                    ];
+                } else if (eventType === 'CORPORATIVO') {
+                    tasks = [
+                        { title: "Reservar Sala", category: "LOGISTICA", priority: "HIGH" },
+                        { title: "Coffee Break", category: "ALIMENTACAO", priority: "MEDIUM" },
+                        { title: "Material dos Participantes", category: "MATERIAL", priority: "MEDIUM" },
+                        { title: "Confirmar Palestrantes", category: "PESSOAL", priority: "URGENT" }
+                    ];
+                } else if (eventType === 'FORMATURA') {
+                    tasks = [
+                        { title: "Reservar Local", category: "LOGISTICA", priority: "HIGH" },
+                        { title: "Contratar Banda/DJ", category: "MUSICA", priority: "HIGH" },
+                        { title: "Venda de Convites", category: "COMERCIAL", priority: "URGENT" },
+                        { title: "Contratar Fotógrafo", category: "CONTRATOS", priority: "MEDIUM" },
+                        { title: "Preparar Becas", category: "VESTUARIO", priority: "HIGH" }
+                    ];
+                }
+            }
+            
             await onSubmit({
                 title,
                 description,
                 eventId,
                 eventType,
-                tasks: [] // Será preenchido pelo backend se useDefault=true
+                tasks
             });
         } finally {
             setLoading(false);
@@ -479,7 +951,9 @@ const CreateChecklistModal: React.FC<CreateChecklistModalProps> = ({
             <div className={styles.modal}>
                 <div className={styles.modalHeader}>
                     <h2 className={styles.modalTitle}>Criar Novo Checklist</h2>
-                    <button className={styles.closeButton} onClick={onClose}>×</button>
+                    <button className={styles.closeButton} onClick={onClose}>
+                        <FiX size={20} />
+                    </button>
                 </div>
 
                 <form onSubmit={handleSubmit} className={styles.modalForm}>
@@ -519,10 +993,10 @@ const CreateChecklistModal: React.FC<CreateChecklistModalProps> = ({
                     </div>
 
                     <div className={styles.modalActions}>
-                        <button type="button" className={styles.cancelButton} onClick={onClose}>
+                        <button type="button" className={styles.secondaryButton} onClick={onClose}>
                             Cancelar
                         </button>
-                        <button type="submit" className={styles.submitButton} disabled={loading}>
+                        <button type="submit" className={styles.primaryButton} disabled={loading}>
                             {loading ? 'Criando...' : 'Criar Checklist'}
                         </button>
                     </div>
@@ -568,7 +1042,9 @@ const TaskModal: React.FC<TaskModalProps> = ({
                     <h2 className={styles.modalTitle}>
                         {task ? 'Editar Tarefa' : 'Nova Tarefa'}
                     </h2>
-                    <button className={styles.closeButton} onClick={onClose}>×</button>
+                    <button className={styles.closeButton} onClick={onClose}>
+                        <FiX size={20} />
+                    </button>
                 </div>
 
                 <form onSubmit={handleSubmit} className={styles.modalForm}>
@@ -661,10 +1137,11 @@ const TaskModal: React.FC<TaskModalProps> = ({
                     )}
 
                     <div className={styles.modalActions}>
-                        <button type="button" className={styles.cancelButton} onClick={onClose}>
+                        <button type="button" className={styles.secondaryButton} onClick={onClose}>
                             Cancelar
                         </button>
-                        <button type="submit" className={styles.submitButton}>
+                        <button type="submit" className={styles.primaryButton}>
+                            <FiSave size={16} />
                             {task ? 'Atualizar' : 'Adicionar'} Tarefa
                         </button>
                     </div>
