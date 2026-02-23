@@ -5,7 +5,6 @@ import {
   FiEdit2, 
   FiTrash2, 
   FiCalendar,
-  FiFilter,
   FiAlertCircle,
   FiCheckCircle,
   FiXCircle,
@@ -14,17 +13,15 @@ import {
   FiTag,
   FiSave,
   FiX,
-  FiSearch
+  FiSearch,
+  FiInfo
 } from 'react-icons/fi';
 import { 
-  MdCategory, 
-  MdInventory, 
+  MdCategory,  
   MdWarning,
   MdEvent,
   MdDescription,
   MdAttachMoney,
-  MdCheck,
-  MdClose
 } from 'react-icons/md';
 import { 
   FaCouch, 
@@ -35,17 +32,8 @@ import {
 import { ConfirmationModal } from '../common/Alerts/ConfirmationModal';
 import { ErrorModal } from '../common/Alerts/ErrorModal';
 import styles from "./ItemsManagement.module.css";
-
-export interface Item {
-  id: number;
-  name: string;
-  category: "DECORATION" | "FURNITURE" | "UTENSIL" | "OTHER";
-  quantityTotal: number;
-  quantityAvailable: number;
-  description?: string;
-  minStock?: number;
-  unitPrice?: number;
-}
+// IMPORTANTE: Ajuste o caminho abaixo para onde o seu itemService foi salvo
+import { itemService, Item } from '../../services/items';
 
 interface ItemReservation {
   itemId: number;
@@ -56,184 +44,18 @@ interface ItemReservation {
   status: 'RESERVED' | 'CONFIRMED' | 'RETURNED';
 }
 
-// Dados mocados
-const MOCK_ITEMS: Item[] = [
-  {
-    id: 1,
-    name: "Cadeira Tiffany Branca",
-    category: "FURNITURE",
-    quantityTotal: 100,
-    quantityAvailable: 85,
-    description: "Cadeira clássica para casamentos e eventos formais",
-    minStock: 20,
-    unitPrice: 15.00
-  },
-  {
-    id: 2,
-    name: "Mesa Redonda 1.80m",
-    category: "FURNITURE",
-    quantityTotal: 50,
-    quantityAvailable: 42,
-    description: "Mesa redonda para 10 pessoas",
-    minStock: 10,
-    unitPrice: 45.00
-  },
-  {
-    id: 3,
-    name: "Jogo de Talheres Inox",
-    category: "UTENSIL",
-    quantityTotal: 500,
-    quantityAvailable: 480,
-    description: "Jogo completo com garfo, faca e colher",
-    minStock: 100,
-    unitPrice: 2.50
-  },
-  {
-    id: 4,
-    name: "Arranjo de Flores Artificial",
-    category: "DECORATION",
-    quantityTotal: 30,
-    quantityAvailable: 12,
-    description: "Arranjo decorativo para centro de mesa",
-    minStock: 5,
-    unitPrice: 25.00
-  },
-  {
-    id: 5,
-    name: "Tapete Vermelho 10m",
-    category: "DECORATION",
-    quantityTotal: 5,
-    quantityAvailable: 2,
-    description: "Tapete para cerimônias e eventos especiais",
-    minStock: 2,
-    unitPrice: 80.00
-  },
-  {
-    id: 6,
-    name: "Sofá 3 Lugares",
-    category: "FURNITURE",
-    quantityTotal: 8,
-    quantityAvailable: 3,
-    description: "Sofá para lounge e áreas de espera",
-    minStock: 2,
-    unitPrice: 120.00
-  },
-  {
-    id: 7,
-    name: "Jogo de Pratos",
-    category: "UTENSIL",
-    quantityTotal: 400,
-    quantityAvailable: 350,
-    description: "Prato branco de porcelana 25cm",
-    minStock: 80,
-    unitPrice: 3.00
-  },
-  {
-    id: 8,
-    name: "Luminária Pendente",
-    category: "DECORATION",
-    quantityTotal: 12,
-    quantityAvailable: 4,
-    description: "Iluminação decorativa para ambientes",
-    minStock: 3,
-    unitPrice: 45.00
-  },
-  {
-    id: 9,
-    name: "Painel de Flores",
-    category: "DECORATION",
-    quantityTotal: 3,
-    quantityAvailable: 1,
-    description: "Painel decorativo 2x3m",
-    minStock: 1,
-    unitPrice: 250.00
-  },
-  {
-    id: 10,
-    name: "Banqueta Alta",
-    category: "FURNITURE",
-    quantityTotal: 40,
-    quantityAvailable: 25,
-    description: "Banqueta para bar e mesas altas",
-    minStock: 8,
-    unitPrice: 35.00
-  }
-];
-
 const MOCK_EVENTS = [
   { id: 1, title: "Casamento João & Maria", eventDate: "2026-03-15", status: "CONFIRMED" },
   { id: 2, title: "Aniversário de 15 anos - Sofia", eventDate: "2026-03-20", status: "CONFIRMED" },
   { id: 3, title: "Formatura Direito", eventDate: "2026-04-05", status: "QUOTE" },
-  { id: 4, title: "Evento Corporativo - Empresa X", eventDate: "2026-03-25", status: "CONFIRMED" },
-  { id: 5, title: "Casamento Pedro & Ana", eventDate: "2026-04-10", status: "CONFIRMED" }
+  { id: 4, title: "Evento Corporativo - Empresa X", eventDate: "2026-03-25", status: "CONFIRMED" }
 ];
 
-const MOCK_RESERVATIONS: ItemReservation[] = [
-  {
-    itemId: 1,
-    eventId: 1,
-    eventTitle: "Casamento João & Maria",
-    eventDate: "2026-03-15",
-    quantity: 50,
-    status: "CONFIRMED"
-  },
-  {
-    itemId: 1,
-    eventId: 4,
-    eventTitle: "Evento Corporativo - Empresa X",
-    eventDate: "2026-03-25",
-    quantity: 30,
-    status: "RESERVED"
-  },
-  {
-    itemId: 3,
-    eventId: 1,
-    eventTitle: "Casamento João & Maria",
-    eventDate: "2026-03-15",
-    quantity: 200,
-    status: "CONFIRMED"
-  },
-  {
-    itemId: 4,
-    eventId: 2,
-    eventTitle: "Aniversário de 15 anos - Sofia",
-    eventDate: "2026-03-20",
-    quantity: 15,
-    status: "RESERVED"
-  },
-  {
-    itemId: 5,
-    eventId: 1,
-    eventTitle: "Casamento João & Maria",
-    eventDate: "2026-03-15",
-    quantity: 1,
-    status: "CONFIRMED"
-  },
-  {
-    itemId: 6,
-    eventId: 4,
-    eventTitle: "Evento Corporativo - Empresa X",
-    eventDate: "2026-03-25",
-    quantity: 4,
-    status: "RESERVED"
-  },
-  {
-    itemId: 8,
-    eventId: 1,
-    eventTitle: "Casamento João & Maria",
-    eventDate: "2026-03-15",
-    quantity: 8,
-    status: "CONFIRMED"
-  },
-  {
-    itemId: 9,
-    eventId: 1,
-    eventTitle: "Casamento João & Maria",
-    eventDate: "2026-03-15",
-    quantity: 1,
-    status: "CONFIRMED"
-  }
-];
+// Com o mapItemToFrontend corrigido, podemos simplificar o getter
+const getQTotal = (item: any): number => {
+  if (!item) return 0;
+  return Number(item.quantityTotal || 0);
+};
 
 export const ItemsManagement: React.FC = () => {
   const [items, setItems] = useState<Item[]>([]);
@@ -244,11 +66,12 @@ export const ItemsManagement: React.FC = () => {
   const [filterCategory, setFilterCategory] = useState<string>("ALL");
   const [filterLowStock, setFilterLowStock] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  
   const [reservations, setReservations] = useState<ItemReservation[]>([]);
-  const [showReservationModal, setShowReservationModal] = useState(false);
+  
   const [selectedItemForReservation, setSelectedItemForReservation] = useState<Item | null>(null);
+  const [editingReservation, setEditingReservation] = useState<ItemReservation | null>(null);
 
-  // Estados para modais
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   const [showErrorModal, setShowErrorModal] = useState(false);
@@ -257,12 +80,19 @@ export const ItemsManagement: React.FC = () => {
   const [itemToDelete, setItemToDelete] = useState<number | null>(null);
 
   useEffect(() => {
-    // Simular carregamento
-    setTimeout(() => {
-      setItems(MOCK_ITEMS);
-      setReservations(MOCK_RESERVATIONS);
-      setLoading(false);
-    }, 800);
+    const fetchDados = async () => {
+      try {
+        const itemsDaAPI = await itemService.getAllItems();
+        setItems(itemsDaAPI);
+      } catch (error) {
+        setErrorMessage('Erro ao carregar itens. Verifique a conexão com o servidor.');
+        setShowErrorModal(true);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDados();
   }, []);
 
   const checkAvailability = (itemId: number, date: string, quantity: number): boolean => {
@@ -275,7 +105,8 @@ export const ItemsManagement: React.FC = () => {
     const reservedQuantity = itemReservations.reduce((sum, r) => sum + r.quantity, 0);
     const item = items.find(i => i.id === itemId);
     
-    return item ? (item.quantityTotal - reservedQuantity) >= quantity : false;
+    const quantityTotal = getQTotal(item);
+    return item ? (quantityTotal - reservedQuantity) >= quantity : false;
   };
 
   const getItemReservations = (itemId: number): ItemReservation[] => {
@@ -287,9 +118,10 @@ export const ItemsManagement: React.FC = () => {
       .filter(r => r.itemId === item.id && r.status !== 'RETURNED')
       .reduce((sum, r) => sum + r.quantity, 0);
     
-    const available = item.quantityTotal - reserved;
+    const quantityTotal = getQTotal(item);
+    const available = quantityTotal - reserved;
     
-    if (available === 0) {
+    if (available <= 0) {
       return { 
         type: 'error', 
         message: 'Indisponível', 
@@ -303,7 +135,7 @@ export const ItemsManagement: React.FC = () => {
         color: '#f59e0b',
         icon: <MdWarning size={14} />
       };
-    } else if (available < item.quantityTotal * 0.2) {
+    } else if (available < quantityTotal * 0.2) {
       return { 
         type: 'warning', 
         message: `Baixo estoque (${available} un.)`, 
@@ -338,25 +170,51 @@ export const ItemsManagement: React.FC = () => {
     return labels[cat] || cat;
   };
 
-  const handleCreateItem = (itemData: Omit<Item, "id">) => {
-    const newItem = {
-      ...itemData,
-      id: Math.max(...items.map(i => i.id), 0) + 1,
-      quantityAvailable: itemData.quantityTotal
-    };
-    setItems([...items, newItem as Item]);
-    setShowForm(false);
-    setSuccessMessage('Item criado com sucesso!');
-    setShowSuccessModal(true);
+  const handleCreateItem = async (itemData: Omit<Item, "id">, reservationData?: { eventId: number, quantity: number }) => {
+    try {
+      const newItem = await itemService.createItem(itemData);
+      setItems(prev => [...prev, newItem]);
+      setShowForm(false);
+      
+      let msg = 'Item cadastrado com sucesso!';
+
+      if (reservationData && reservationData.eventId && reservationData.quantity > 0) {
+        const event = events.find(e => e.id === reservationData.eventId);
+        if (event) {
+          const newReservation: ItemReservation = {
+            itemId: newItem.id,
+            eventId: event.id,
+            eventTitle: event.title,
+            eventDate: event.eventDate,
+            quantity: reservationData.quantity,
+            status: 'RESERVED'
+          };
+          setReservations(prev => [...prev, newReservation]);
+          msg = 'Item cadastrado E reservado com sucesso!';
+        }
+      }
+
+      setSuccessMessage(msg);
+      setShowSuccessModal(true);
+    } catch (error) {
+      setErrorMessage('Erro ao tentar cadastrar o item. Verifique os dados.');
+      setShowErrorModal(true);
+      throw error;
+    }
   };
 
-  const handleUpdateItem = (id: number, itemData: Partial<Item>) => {
-    setItems(items.map(item => 
-      item.id === id ? { ...item, ...itemData } : item
-    ));
-    setEditingItem(null);
-    setSuccessMessage('Item atualizado com sucesso!');
-    setShowSuccessModal(true);
+  const handleUpdateItem = async (id: number, itemData: Partial<Item>) => {
+    try {
+      const updatedItem = await itemService.updateItem(id, itemData);
+      setItems(items.map(item => item.id === id ? updatedItem : item));
+      setEditingItem(null);
+      setSuccessMessage('Item atualizado com sucesso!');
+      setShowSuccessModal(true);
+    } catch (error) {
+      setErrorMessage('Erro ao tentar atualizar o item.');
+      setShowErrorModal(true);
+      throw error;
+    }
   };
 
   const handleDeleteItem = (id: number) => {
@@ -364,14 +222,22 @@ export const ItemsManagement: React.FC = () => {
     setShowDeleteConfirm(true);
   };
 
-  const confirmDeleteItem = () => {
+  const confirmDeleteItem = async () => {
     if (!itemToDelete) return;
-    
-    setItems(items.filter(item => item.id !== itemToDelete));
-    setShowDeleteConfirm(false);
-    setItemToDelete(null);
-    setSuccessMessage('Item excluído com sucesso!');
-    setShowSuccessModal(true);
+    try {
+      await itemService.deleteItem(itemToDelete);
+      setItems(items.filter(item => item.id !== itemToDelete));
+      setReservations(reservations.filter(r => r.itemId !== itemToDelete));
+      setShowDeleteConfirm(false);
+      setItemToDelete(null);
+      setSuccessMessage('Item excluído com sucesso!');
+      setShowSuccessModal(true);
+    } catch (error) {
+      setShowDeleteConfirm(false);
+      setItemToDelete(null);
+      setErrorMessage('Erro ao excluir item. Ele pode ter dependências.');
+      setShowErrorModal(true);
+    }
   };
 
   const handleReserveItem = (itemId: number, eventId: number, quantity: number) => {
@@ -379,7 +245,7 @@ export const ItemsManagement: React.FC = () => {
     if (!event) return;
 
     if (!checkAvailability(itemId, event.eventDate, quantity)) {
-      setErrorMessage('Quantidade indisponível para esta data!');
+      setErrorMessage('Quantidade indisponível para a data deste evento!');
       setShowErrorModal(true);
       return;
     }
@@ -395,7 +261,18 @@ export const ItemsManagement: React.FC = () => {
 
     setReservations([...reservations, newReservation]);
     setSelectedItemForReservation(null);
-    setSuccessMessage('Item reservado com sucesso!');
+    setSuccessMessage('Reserva confirmada!');
+    setShowSuccessModal(true);
+  };
+
+  const handleUpdateReservationQuantity = (itemId: number, eventId: number, newQuantity: number) => {
+    setReservations(reservations.map(r => 
+      (r.itemId === itemId && r.eventId === eventId) 
+        ? { ...r, quantity: newQuantity } 
+        : r
+    ));
+    setEditingReservation(null);
+    setSuccessMessage('Quantidade da reserva atualizada!');
     setShowSuccessModal(true);
   };
 
@@ -412,15 +289,16 @@ export const ItemsManagement: React.FC = () => {
       const reserved = reservations
         .filter(r => r.itemId === i.id && r.status !== 'RETURNED')
         .reduce((sum, r) => sum + r.quantity, 0);
-      const available = i.quantityTotal - reserved;
-      return i.minStock ? available <= i.minStock : available < i.quantityTotal * 0.2;
+      const quantityTotal = getQTotal(i);
+      const available = quantityTotal - reserved;
+      return i.minStock ? available <= i.minStock : available < quantityTotal * 0.2;
     })());
 
   if (loading) {
     return (
       <div className={styles.loading}>
         <div className={styles.spinner}></div>
-        <p>Carregando estoque...</p>
+        <p>Carregando estoque atualizado...</p>
       </div>
     );
   }
@@ -436,7 +314,7 @@ export const ItemsManagement: React.FC = () => {
             </h2>
             <p className={styles.subtitle}>
               <FiBox size={14} />
-              {items.length} itens cadastrados | {reservations.length} reservas ativas
+              {items.length} itens cadastrados no total
             </p>
           </div>
 
@@ -471,7 +349,7 @@ export const ItemsManagement: React.FC = () => {
                 onChange={(e) => setFilterLowStock(e.target.checked)}
               />
               <FiAlertCircle size={14} />
-              Apenas estoque baixo
+              Estoque Baixo
             </label>
 
             <button
@@ -487,6 +365,7 @@ export const ItemsManagement: React.FC = () => {
 
       {showForm && (
         <ItemForm
+          events={events}
           onSubmit={handleCreateItem}
           onCancel={() => setShowForm(false)}
         />
@@ -495,6 +374,7 @@ export const ItemsManagement: React.FC = () => {
       {editingItem && (
         <ItemForm
           item={editingItem}
+          events={events}
           onSubmit={(data) => handleUpdateItem(editingItem.id, data)}
           onCancel={() => setEditingItem(null)}
         />
@@ -510,6 +390,16 @@ export const ItemsManagement: React.FC = () => {
         />
       )}
 
+      {editingReservation && (
+        <EditReservationModal
+          reservation={editingReservation}
+          item={items.find(i => i.id === editingReservation.itemId)!}
+          itemReservations={reservations.filter(r => r.itemId === editingReservation.itemId && r.status !== 'RETURNED')}
+          onConfirm={handleUpdateReservationQuantity}
+          onCancel={() => setEditingReservation(null)}
+        />
+      )}
+
       <div className={`${styles.clientsTable} ${styles.card}`}>
         <div className={styles.tableContainer}>
           <table className={styles.table}>
@@ -517,10 +407,10 @@ export const ItemsManagement: React.FC = () => {
               <tr>
                 <th>Item</th>
                 <th>Categoria</th>
-                <th>Total</th>
+                <th>Inventário Total</th>
                 <th>Disponível</th>
                 <th>Status</th>
-                <th>Reservas</th>
+                <th>Reservas Ativas</th>
                 <th>Ações</th>
               </tr>
             </thead>
@@ -528,7 +418,8 @@ export const ItemsManagement: React.FC = () => {
               {filteredItems.map((item) => {
                 const alert = getAvailabilityAlert(item);
                 const itemReservations = getItemReservations(item.id);
-                const available = item.quantityTotal - itemReservations.reduce((sum, r) => sum + r.quantity, 0);
+                const quantityTotal = getQTotal(item);
+                const available = quantityTotal - itemReservations.reduce((sum, r) => sum + r.quantity, 0);
                 
                 return (
                   <tr key={item.id}>
@@ -542,13 +433,13 @@ export const ItemsManagement: React.FC = () => {
                               {item.description}
                             </small>
                           )}
-                          {item.minStock && (
+                          {item.minStock !== undefined && (
                             <small>
-                              <FiLayers size={12} />
-                              Mín: {item.minStock} un.
+                              <FiAlertCircle size={12} />
+                              Alerta mín: {item.minStock} un.
                             </small>
                           )}
-                          {item.unitPrice && item.unitPrice > 0 && (
+                          {item.unitPrice && item.unitPrice > 0 ? (
                             <small>
                               <MdAttachMoney size={12} />
                               {item.unitPrice.toLocaleString('pt-BR', { 
@@ -556,7 +447,7 @@ export const ItemsManagement: React.FC = () => {
                                 currency: 'BRL' 
                               })}
                             </small>
-                          )}
+                          ) : null}
                         </div>
                       </div>
                     </td>
@@ -569,7 +460,7 @@ export const ItemsManagement: React.FC = () => {
                     <td>
                       <div className={styles.quantityCell}>
                         <FiLayers size={14} />
-                        {item.quantityTotal} un.
+                        {quantityTotal} un.
                       </div>
                     </td>
                     <td>
@@ -594,36 +485,30 @@ export const ItemsManagement: React.FC = () => {
                     </td>
                     <td>
                       {itemReservations.length > 0 ? (
-                        <div className={styles.reservationsCell}>
-                          <span className={styles.reservationCount}>
-                            <MdEvent size={14} />
-                            {itemReservations.length} reserva(s)
-                          </span>
-                          <div className={styles.reservationTooltip}>
-                            {itemReservations.map((r, i) => (
-                              <div key={i} className={styles.reservationItem}>
-                                <strong>{r.eventTitle}</strong>
-                                <span>
-                                  <FiCalendar size={12} />
-                                  Data: {new Date(r.eventDate).toLocaleDateString('pt-BR')}
-                                </span>
-                                <span>
-                                  <FiLayers size={12} />
-                                  Qtd: {r.quantity} un.
-                                </span>
-                                <span className={styles[r.status.toLowerCase()]}>
-                                  {r.status === 'RESERVED' && '🔵 Reservado'}
-                                  {r.status === 'CONFIRMED' && '✅ Confirmado'}
-                                  {r.status === 'RETURNED' && '🔄 Devolvido'}
-                                </span>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', minWidth: '220px' }}>
+                          {itemReservations.map((r, i) => (
+                            <div key={i} style={{ display: 'flex', alignItems: 'center', background: '#f8fafc', padding: '6px', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
+                              <div style={{ flex: 1 }}>
+                                <strong style={{ fontSize: '12px', display: 'block', marginBottom: '2px' }}>{r.eventTitle}</strong>
+                                <div style={{ display: 'flex', gap: '8px', fontSize: '11px', color: '#64748b' }}>
+                                  <span><FiCalendar size={10} /> {new Date(r.eventDate).toLocaleDateString('pt-BR')}</span>
+                                  <span style={{ fontWeight: 'bold', color: '#0f172a' }}><FiLayers size={10} /> Qtd reservada: {r.quantity}</span>
+                                </div>
                               </div>
-                            ))}
-                          </div>
+                              <button 
+                                onClick={() => setEditingReservation(r)} 
+                                className={styles.editButton} 
+                                style={{ padding: '6px', background: '#e0f2fe', border: 'none', borderRadius: '4px', cursor: 'pointer', color: '#0284c7', marginLeft: '8px' }}
+                                title="Editar quantidade"
+                              >
+                                <FiEdit2 size={14} />
+                              </button>
+                            </div>
+                          ))}
                         </div>
                       ) : (
                         <span className={styles.noReservations}>
-                          <FiCalendar size={14} />
-                          Sem reservas
+                          <FiCalendar size={14} /> Nenhuma reserva
                         </span>
                       )}
                     </td>
@@ -632,15 +517,16 @@ export const ItemsManagement: React.FC = () => {
                         <button
                           onClick={() => setSelectedItemForReservation(item)}
                           className={styles.reserveButton}
-                          title="Reservar item"
-                          disabled={available === 0}
+                          title="Fazer nova reserva"
+                          disabled={available <= 0}
+                          style={{ opacity: available <= 0 ? 0.5 : 1, cursor: available <= 0 ? 'not-allowed' : 'pointer' }}
                         >
                           <FiCalendar size={16} />
                         </button>
                         <button
                           onClick={() => setEditingItem(item)}
                           className={styles.editButton}
-                          title="Editar item"
+                          title="Editar cadastro do item"
                         >
                           <FiEdit2 size={16} />
                         </button>
@@ -667,9 +553,7 @@ export const ItemsManagement: React.FC = () => {
             </div>
             <h3 className={styles.emptyTitle}>Nenhum item encontrado</h3>
             <p className={styles.emptyText}>
-              {searchTerm || filterCategory !== 'ALL' || filterLowStock
-                ? 'Tente ajustar os filtros para encontrar itens.'
-                : 'Cadastre itens no seu estoque para gerenciá-los aqui.'}
+              Você não possui itens cadastrados ou nenhum item atende aos filtros atuais.
             </p>
             {!searchTerm && filterCategory === 'ALL' && !filterLowStock && (
               <button
@@ -677,14 +561,13 @@ export const ItemsManagement: React.FC = () => {
                 className={styles.primaryButton}
               >
                 <FiPlus size={18} />
-                Cadastrar Primeiro Item
+                Cadastrar Meu Primeiro Item
               </button>
             )}
           </div>
         )}
       </div>
 
-      {/* Cards de resumo */}
       <div className={styles.summaryCards}>
         <div className={styles.summaryCard}>
           <div className={styles.summaryIcon} style={{ background: '#e0f2fe' }}>
@@ -704,9 +587,10 @@ export const ItemsManagement: React.FC = () => {
               const reserved = reservations
                 .filter(r => r.itemId === item.id && r.status !== 'RETURNED')
                 .reduce((s, r) => s + r.quantity, 0);
-              return sum + (item.quantityTotal - reserved);
+              const qTotal = getQTotal(item);
+              return sum + (qTotal - reserved);
             }, 0)}</strong>
-            <span>Disponíveis</span>
+            <span>Unidades Disponíveis</span>
           </div>
         </div>
         <div className={styles.summaryCard}>
@@ -718,8 +602,9 @@ export const ItemsManagement: React.FC = () => {
               const reserved = reservations
                 .filter(r => r.itemId === item.id && r.status !== 'RETURNED')
                 .reduce((s, r) => s + r.quantity, 0);
-              const available = item.quantityTotal - reserved;
-              return item.minStock ? available <= item.minStock : available < item.quantityTotal * 0.2;
+              const qTotal = getQTotal(item);
+              const available = qTotal - reserved;
+              return item.minStock ? available <= item.minStock : available < qTotal * 0.2;
             }).length}</strong>
             <span>Estoque Baixo</span>
           </div>
@@ -733,14 +618,14 @@ export const ItemsManagement: React.FC = () => {
               const reserved = reservations
                 .filter(r => r.itemId === item.id && r.status !== 'RETURNED')
                 .reduce((s, r) => s + r.quantity, 0);
-              return (item.quantityTotal - reserved) === 0;
+              const qTotal = getQTotal(item);
+              return (qTotal - reserved) <= 0;
             }).length}</strong>
             <span>Indisponíveis</span>
           </div>
         </div>
       </div>
 
-      {/* Modais de Feedback */}
       <ConfirmationModal
         isOpen={showSuccessModal}
         title="Sucesso!"
@@ -760,7 +645,7 @@ export const ItemsManagement: React.FC = () => {
       <ConfirmationModal
         isOpen={showDeleteConfirm}
         title="Confirmar Exclusão"
-        message="Tem certeza que deseja excluir este item? Esta ação não pode ser desfeita."
+        message="Tem certeza que deseja excluir este item permanentemente?"
         type="warning"
         onConfirm={confirmDeleteItem}
         onCancel={() => {
@@ -775,18 +660,25 @@ export const ItemsManagement: React.FC = () => {
 
 interface ItemFormProps {
   item?: Item;
-  onSubmit: (data: any) => void;
+  events: any[]; 
+  onSubmit: (data: any, reservationData?: {eventId: number, quantity: number}) => Promise<void>;
   onCancel: () => void;
 }
 
-const ItemForm: React.FC<ItemFormProps> = ({ item, onSubmit, onCancel }) => {
+const ItemForm: React.FC<ItemFormProps> = ({ item, events, onSubmit, onCancel }) => {
   const [formData, setFormData] = useState({
     name: item?.name || "",
     category: item?.category || "DECORATION",
-    quantityTotal: item?.quantityTotal || 1,
+    quantityTotal: item ? getQTotal(item) : 1,
     description: item?.description || "",
-    minStock: item?.minStock || 5,
-    unitPrice: item?.unitPrice || 0,
+    minStock: item?.minStock ? Number(item.minStock) : 5,
+    unitPrice: item?.unitPrice ? Number(item.unitPrice) : 0,
+  });
+
+  const [assignToEvent, setAssignToEvent] = useState(false);
+  const [reservationData, setReservationData] = useState({
+    eventId: '',
+    quantity: 1
   });
 
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
@@ -795,11 +687,18 @@ const ItemForm: React.FC<ItemFormProps> = ({ item, onSubmit, onCancel }) => {
   const validateForm = () => {
     const newErrors: { [key: string]: string } = {};
 
-    if (!formData.name.trim()) newErrors.name = "Nome é obrigatório";
+    if (!formData.name.trim()) newErrors.name = "O nome é obrigatório";
     if (formData.quantityTotal < 1)
-      newErrors.quantityTotal = "Quantidade deve ser maior que 0";
+      newErrors.quantityTotal = "Você precisa de no mínimo 1 unidade.";
     if (formData.minStock < 0)
-      newErrors.minStock = "Estoque mínimo não pode ser negativo";
+      newErrors.minStock = "Não pode ser negativo.";
+      
+    if (assignToEvent && !reservationData.eventId) {
+      newErrors.eventId = "Selecione um evento válido.";
+    }
+    if (assignToEvent && reservationData.quantity > formData.quantityTotal) {
+      newErrors.reservationQty = "Você não pode reservar mais do que possui.";
+    }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -810,19 +709,26 @@ const ItemForm: React.FC<ItemFormProps> = ({ item, onSubmit, onCancel }) => {
     if (!validateForm()) return;
 
     setLoading(true);
-    setTimeout(() => {
-      onSubmit(formData);
+    try {
+      const resData = assignToEvent 
+        ? { eventId: Number(reservationData.eventId), quantity: reservationData.quantity }
+        : undefined;
+        
+      await onSubmit(formData, resData);
+    } catch (error) {
+      
+    } finally {
       setLoading(false);
-    }, 500);
+    }
   };
 
   return (
-    <div className={styles.modalOverlay}>
-      <div className={`${styles.modal} ${styles.card}`}>
+    <div className={styles.modalOverlay} style={{ overflowY: 'auto', padding: '20px' }}>
+      <div className={`${styles.modal} ${styles.card}`} style={{ margin: 'auto', maxWidth: '600px' }}>
         <div className={styles.modalHeader}>
           <h3 className={styles.modalTitle}>
             <FiPackage size={20} />
-            {item ? "Editar Item" : "Novo Item"}
+            {item ? "Editar Item" : "Novo Item no Estoque"}
           </h3>
           <button onClick={onCancel} className={styles.closeButton}>
             <FiX size={20} />
@@ -838,7 +744,7 @@ const ItemForm: React.FC<ItemFormProps> = ({ item, onSubmit, onCancel }) => {
               </label>
               <input
                 type="text"
-                placeholder="Ex: Cadeira de Ferro"
+                placeholder="Ex: Cadeira de Plástico Branca"
                 value={formData.name}
                 onChange={(e) =>
                   setFormData({ ...formData, name: e.target.value })
@@ -874,20 +780,24 @@ const ItemForm: React.FC<ItemFormProps> = ({ item, onSubmit, onCancel }) => {
             <div className={styles.formGroup}>
               <label className={styles.formLabel}>
                 <FiLayers size={14} />
-                Quantidade Total *
+                Estoque Físico Total *
               </label>
               <input
                 type="number"
                 min="1"
                 value={formData.quantityTotal}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    quantityTotal: parseInt(e.target.value),
-                  })
-                }
+                onChange={(e) => {
+                  const val = parseInt(e.target.value) || 0;
+                  setFormData({ ...formData, quantityTotal: val });
+                  if (assignToEvent && reservationData.quantity > val) {
+                    setReservationData({...reservationData, quantity: val});
+                  }
+                }}
                 className={`${styles.formInput} ${errors.quantityTotal ? styles.error : ''}`}
               />
+              <small className={styles.helpText} style={{ color: '#64748b', fontSize: '11px', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <FiInfo size={12}/> Quantas unidades totais você possui no galpão/estoque.
+              </small>
               {errors.quantityTotal && (
                 <span className={styles.errorText}>{errors.quantityTotal}</span>
               )}
@@ -896,7 +806,7 @@ const ItemForm: React.FC<ItemFormProps> = ({ item, onSubmit, onCancel }) => {
             <div className={styles.formGroup}>
               <label className={styles.formLabel}>
                 <FiAlertCircle size={14} />
-                Estoque Mínimo
+                Alerta de Estoque Mínimo
               </label>
               <input
                 type="number"
@@ -905,14 +815,14 @@ const ItemForm: React.FC<ItemFormProps> = ({ item, onSubmit, onCancel }) => {
                 onChange={(e) =>
                   setFormData({
                     ...formData,
-                    minStock: parseInt(e.target.value),
+                    minStock: parseInt(e.target.value) || 0,
                   })
                 }
                 className={`${styles.formInput} ${errors.minStock ? styles.error : ''}`}
               />
-              {errors.minStock && (
-                <span className={styles.errorText}>{errors.minStock}</span>
-              )}
+              <small className={styles.helpText} style={{ color: '#64748b', fontSize: '11px', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <FiInfo size={12}/> O sistema avisa se a quantidade disponível cair abaixo disso.
+              </small>
             </div>
 
             <div className={styles.formGroup}>
@@ -928,7 +838,7 @@ const ItemForm: React.FC<ItemFormProps> = ({ item, onSubmit, onCancel }) => {
                 onChange={(e) =>
                   setFormData({
                     ...formData,
-                    unitPrice: parseFloat(e.target.value),
+                    unitPrice: parseFloat(e.target.value) || 0,
                   })
                 }
                 className={styles.formInput}
@@ -940,11 +850,11 @@ const ItemForm: React.FC<ItemFormProps> = ({ item, onSubmit, onCancel }) => {
           <div className={styles.formGroup}>
             <label className={styles.formLabel}>
               <MdDescription size={14} />
-              Descrição (Opcional)
+              Descrição Extra (Opcional)
             </label>
             <textarea
-              rows={3}
-              placeholder="Detalhes sobre o item (cor, material, dimensões)"
+              rows={2}
+              placeholder="Ex: Cadeira arranhada, necessita capa..."
               value={formData.description}
               onChange={(e) =>
                 setFormData({ ...formData, description: e.target.value })
@@ -953,7 +863,54 @@ const ItemForm: React.FC<ItemFormProps> = ({ item, onSubmit, onCancel }) => {
             />
           </div>
 
-          <div className={styles.formActions}>
+          {!item && (
+            <div style={{ marginTop: '20px', padding: '16px', border: '1px solid #e2e8f0', borderRadius: '8px', background: '#f8fafc' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontWeight: 'bold', color: '#0f172a' }}>
+                <input 
+                  type="checkbox" 
+                  checked={assignToEvent}
+                  onChange={(e) => setAssignToEvent(e.target.checked)}
+                  style={{ width: '16px', height: '16px' }}
+                />
+                Deseja já reservar este item para um evento?
+              </label>
+              
+              {assignToEvent && (
+                <div className={styles.formGrid} style={{ marginTop: '16px' }}>
+                  <div className={styles.formGroup}>
+                    <label className={styles.formLabel} style={{ fontSize: '12px' }}>Vincular a qual Evento? *</label>
+                    <select
+                      value={reservationData.eventId}
+                      onChange={(e) => setReservationData({ ...reservationData, eventId: e.target.value })}
+                      className={`${styles.formInput} ${errors.eventId ? styles.error : ''}`}
+                    >
+                      <option value="">-- Selecione na lista --</option>
+                      {events.map(event => (
+                        <option key={event.id} value={event.id}>
+                          {event.title}
+                        </option>
+                      ))}
+                    </select>
+                    {errors.eventId && <span className={styles.errorText}>{errors.eventId}</span>}
+                  </div>
+                  <div className={styles.formGroup}>
+                    <label className={styles.formLabel} style={{ fontSize: '12px' }}>Quantidade a Reservar *</label>
+                    <input
+                      type="number"
+                      min="1"
+                      max={formData.quantityTotal}
+                      value={reservationData.quantity}
+                      onChange={(e) => setReservationData({ ...reservationData, quantity: parseInt(e.target.value) || 1 })}
+                      className={`${styles.formInput} ${errors.reservationQty ? styles.error : ''}`}
+                    />
+                    {errors.reservationQty && <span className={styles.errorText}>{errors.reservationQty}</span>}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          <div className={styles.formActions} style={{ marginTop: '24px' }}>
             <button
               type="button"
               onClick={onCancel}
@@ -971,12 +928,12 @@ const ItemForm: React.FC<ItemFormProps> = ({ item, onSubmit, onCancel }) => {
               {loading ? (
                 <>
                   <span className={styles.buttonSpinner}></span>
-                  Salvando...
+                  Salvando no Banco...
                 </>
               ) : (
                 <>
                   <FiSave size={16} />
-                  {item ? "Atualizar" : "Cadastrar"}
+                  {item ? "Atualizar Estoque" : "Cadastrar e Salvar"}
                 </>
               )}
             </button>
@@ -987,6 +944,8 @@ const ItemForm: React.FC<ItemFormProps> = ({ item, onSubmit, onCancel }) => {
   );
 };
 
+// Modais Secundários Abaixo
+
 interface ReservationModalProps {
   item: Item;
   events: any[];
@@ -995,13 +954,7 @@ interface ReservationModalProps {
   checkAvailability: (itemId: number, date: string, quantity: number) => boolean;
 }
 
-const ReservationModal: React.FC<ReservationModalProps> = ({
-  item,
-  events,
-  onConfirm,
-  onCancel,
-  checkAvailability
-}) => {
+const ReservationModal: React.FC<ReservationModalProps> = ({ item, events, onConfirm, onCancel, checkAvailability }) => {
   const [selectedEventId, setSelectedEventId] = useState<number | ''>('');
   const [quantity, setQuantity] = useState(1);
   const [selectedDate, setSelectedDate] = useState<string>('');
@@ -1009,13 +962,15 @@ const ReservationModal: React.FC<ReservationModalProps> = ({
   const reserved = events
     .filter(e => e.id === selectedEventId)
     .map(e => {
-      const itemReservations: any[] = [];
+      const itemReservations: any[] = []; 
       return itemReservations.reduce((sum, r) => sum + r.quantity, 0);
     })[0] || 0;
 
-  const maxAvailable = item.quantityTotal - reserved;
-
-  const selectedEvent = events.find(e => e.id === selectedEventId);
+  const qTotal = getQTotal(item);
+  const maxAvailable = qTotal - reserved;
+  const isAvailable = selectedEventId && selectedDate
+    ? checkAvailability(item.id, selectedDate, quantity)
+    : true;
 
   const handleEventChange = (eventId: number) => {
     setSelectedEventId(eventId);
@@ -1024,10 +979,6 @@ const ReservationModal: React.FC<ReservationModalProps> = ({
       setSelectedDate(event.eventDate);
     }
   };
-
-  const isAvailable = selectedEventId && selectedDate
-    ? checkAvailability(item.id, selectedDate, quantity)
-    : true;
 
   const handleConfirm = () => {
     if (selectedEventId && isAvailable && quantity > 0) {
@@ -1041,7 +992,7 @@ const ReservationModal: React.FC<ReservationModalProps> = ({
         <div className={styles.modalHeader}>
           <h3 className={styles.modalTitle}>
             <FiCalendar size={20} />
-            Reservar Item
+            Nova Reserva de Item
           </h3>
           <button onClick={onCancel} className={styles.closeButton}>
             <FiX size={20} />
@@ -1057,31 +1008,22 @@ const ReservationModal: React.FC<ReservationModalProps> = ({
               <strong>{item.name}</strong>
               <span>
                 <FiLayers size={12} />
-                Total: {item.quantityTotal} un.
+                Inventário Total: {qTotal} unidades
               </span>
-              {item.unitPrice && item.unitPrice > 0 && (
-                <span>
-                  <MdAttachMoney size={12} />
-                  {item.unitPrice.toLocaleString('pt-BR', { 
-                    style: 'currency', 
-                    currency: 'BRL' 
-                  })}
-                </span>
-              )}
             </div>
           </div>
 
           <div className={styles.formGroup}>
             <label className={styles.formLabel}>
               <MdEvent size={14} />
-              Selecione o Evento *
+              Vincular a qual Evento? *
             </label>
             <select
               value={selectedEventId}
               onChange={(e) => handleEventChange(Number(e.target.value))}
               className={styles.formInput}
             >
-              <option value="">Selecione um evento</option>
+              <option value="">-- Selecione o Evento na lista --</option>
               {events.map(event => (
                 <option key={event.id} value={event.id}>
                   {event.title} - {new Date(event.eventDate).toLocaleDateString('pt-BR')}
@@ -1093,19 +1035,16 @@ const ReservationModal: React.FC<ReservationModalProps> = ({
           <div className={styles.formGroup}>
             <label className={styles.formLabel}>
               <FiLayers size={14} />
-              Quantidade *
+              Quantidade a Reservar *
             </label>
             <input
               type="number"
               min="1"
-              max={maxAvailable}
+              max={maxAvailable > 0 ? maxAvailable : 1}
               value={quantity}
-              onChange={(e) => setQuantity(parseInt(e.target.value))}
+              onChange={(e) => setQuantity(parseInt(e.target.value) || 1)}
               className={styles.formInput}
             />
-            <small className={styles.helpText}>
-              Disponível: {maxAvailable} unidades
-            </small>
           </div>
 
           {selectedEventId && selectedDate && (
@@ -1113,24 +1052,19 @@ const ReservationModal: React.FC<ReservationModalProps> = ({
               {isAvailable ? (
                 <div className={styles.availableMessage}>
                   <FiCheckCircle size={18} color="#10b981" />
-                  Disponível para esta data
+                  Quantidade disponível para a data!
                 </div>
               ) : (
                 <div className={styles.unavailableMessage}>
                   <FiXCircle size={18} color="#ef4444" />
-                  Quantidade indisponível para esta data
+                  Você não tem essa quantidade disponível nesta data.
                 </div>
               )}
             </div>
           )}
 
           <div className={styles.modalActions}>
-            <button
-              type="button"
-              onClick={onCancel}
-              className={styles.secondaryButton}
-            >
-              <FiX size={16} />
+            <button type="button" onClick={onCancel} className={styles.secondaryButton}>
               Cancelar
             </button>
             <button
@@ -1139,8 +1073,99 @@ const ReservationModal: React.FC<ReservationModalProps> = ({
               className={styles.primaryButton}
               disabled={!selectedEventId || !quantity || !isAvailable}
             >
-              <FiCheckCircle size={16} />
               Confirmar Reserva
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+interface EditReservationModalProps {
+  reservation: ItemReservation;
+  item: Item;
+  itemReservations: ItemReservation[];
+  onConfirm: (itemId: number, eventId: number, newQty: number) => void;
+  onCancel: () => void;
+}
+
+const EditReservationModal: React.FC<EditReservationModalProps> = ({ reservation, item, itemReservations, onConfirm, onCancel }) => {
+  const [newQuantity, setNewQuantity] = useState(reservation.quantity);
+
+  const otherReservationsSum = itemReservations
+    .filter(r => r.eventId !== reservation.eventId)
+    .reduce((sum, r) => sum + r.quantity, 0);
+
+  const qTotal = getQTotal(item);
+  const maxAvailableNow = qTotal - otherReservationsSum;
+  const isAvailable = newQuantity > 0 && newQuantity <= maxAvailableNow;
+
+  return (
+    <div className={styles.modalOverlay}>
+      <div className={`${styles.modal} ${styles.card}`}>
+        <div className={styles.modalHeader}>
+          <h3 className={styles.modalTitle}>
+            <FiEdit2 size={20} />
+            Alterar Quantidade da Reserva
+          </h3>
+          <button onClick={onCancel} className={styles.closeButton}>
+            <FiX size={20} />
+          </button>
+        </div>
+
+        <div className={styles.modalContent}>
+          <div className={styles.itemInfoCard}>
+            <div className={styles.itemDetails}>
+              <strong>{item.name}</strong>
+              <span>Evento: {reservation.eventTitle}</span>
+              <span>Data de Uso: {new Date(reservation.eventDate).toLocaleDateString('pt-BR')}</span>
+            </div>
+          </div>
+
+          <div className={styles.formGroup}>
+            <label className={styles.formLabel}>
+              <FiLayers size={14} />
+              Nova Quantidade a Reservar
+            </label>
+            <input
+              type="number"
+              min="1"
+              max={maxAvailableNow > 0 ? maxAvailableNow : 1}
+              value={newQuantity}
+              onChange={(e) => setNewQuantity(parseInt(e.target.value) || 1)}
+              className={styles.formInput}
+            />
+            <small className={styles.helpText} style={{ marginTop: '4px', display: 'block', color: '#64748b' }}>
+              Máximo disponível (considerando outras reservas): {maxAvailableNow} un.
+            </small>
+          </div>
+
+          <div className={styles.availabilityInfo}>
+            {isAvailable ? (
+              <div className={styles.availableMessage}>
+                <FiCheckCircle size={18} color="#10b981" />
+                Alteração válida.
+              </div>
+            ) : (
+              <div className={styles.unavailableMessage}>
+                <FiXCircle size={18} color="#ef4444" />
+                Excede o limite físico.
+              </div>
+            )}
+          </div>
+
+          <div className={styles.modalActions}>
+            <button type="button" onClick={onCancel} className={styles.secondaryButton}>
+              Cancelar
+            </button>
+            <button
+              type="button"
+              onClick={() => onConfirm(reservation.itemId, reservation.eventId, newQuantity)}
+              className={styles.primaryButton}
+              disabled={!isAvailable}
+            >
+              Salvar Alteração
             </button>
           </div>
         </div>

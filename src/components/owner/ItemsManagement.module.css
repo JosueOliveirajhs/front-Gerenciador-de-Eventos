@@ -812,3 +812,23 @@
     justify-content: center;
   }
 }
+
+.reservationItem {
+  display: flex;
+  justify-content: space-between; /* Separa a info do botão */
+  align-items: center;
+}
+
+.editReservationBtn {
+  background: none;
+  border: none;
+  color: #64748b;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+}
+
+.editReservationBtn:hover {
+  background-color: #f1f5f9;
+  color: #0f172a;
+}
