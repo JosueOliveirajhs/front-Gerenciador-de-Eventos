@@ -1,7 +1,13 @@
 import React, { useState } from 'react';
 import { authService } from '../../services/auth';
 import { useAuth } from '../../context/AuthContext';
+import { Link } from 'react-router-dom'; // ✅ Importar Link
 import styles from './LoginForm.module.css';
+
+interface LoginData {
+  cpf: string;
+  password: string;
+}
 
 export const LoginForm: React.FC = () => {
   const [loginData, setLoginData] = useState<LoginData>({
@@ -85,6 +91,13 @@ export const LoginForm: React.FC = () => {
           required
           disabled={loading}
         />
+      </div>
+
+      {/* ✅ Link para redefinição de senha */}
+      <div className={styles.forgotPassword}>
+        <Link to="/esqueci-senha" className={styles.forgotPasswordLink}>
+          Esqueceu sua senha?
+        </Link>
       </div>
 
       <button 

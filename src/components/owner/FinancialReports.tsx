@@ -1,4 +1,5 @@
-// src/components/admin/financial/FinancialReports.tsx
+// src/components/admin/FinancialReports.tsx
+// VERSÃO CORRIGIDA COM IMPORTS CORRETOS DO MD
 
 import React, { useState, useEffect } from 'react';
 import { 
@@ -12,7 +13,13 @@ import {
   FiPercent,
   FiChevronDown,
   FiChevronUp,
-  FiInfo
+  FiInfo,
+  FiPieChart,
+  FiBarChart2,
+  FiGift,
+  FiMusic,
+  FiCamera,
+  FiTruck
 } from 'react-icons/fi';
 import { 
   MdAttachMoney, 
@@ -25,13 +32,42 @@ import {
   MdDateRange,
   MdDescription,
   MdReceipt,
-  MdMoneyOff
+  MdMoneyOff,
+  MdAddCircle,
+  MdDelete,
+  MdEdit,
+  MdRestaurant,
+  MdLocalBar,
+  MdChair,
+  MdBrush,
+  MdCake,           
+  // MdCrown não existe - substituir por alternativas
+  MdInventory,
+  MdPalette,
+  MdStore,
+  MdLocalShipping,
+  MdCelebration,
+  MdStar,           // Alternativa para destaque
+  MdEmojiEvents,    // Alternativa para conquistas/premiação
+  MdWorkspacePremium // Alternativa para premium/destaque
 } from 'react-icons/md';
 import { 
   FaMoneyBillWave, 
   FaChartLine, 
   FaChartPie,
-  FaHandHoldingUsd 
+  FaHandHoldingUsd,
+  FaBoxes,
+  FaUtensils,
+  FaChair,
+  FaMusic,
+  FaCamera,
+  FaGlassCheers,
+  FaTshirt,
+  FaPalette,
+  FaTruck,
+  FaGift,
+  FaCrown,          // ← FaCrown existe e funciona
+  FaBirthdayCake   
 } from 'react-icons/fa';
 import { Event } from '../../types/Event';
 import { Payment } from '../../types/Payment';
@@ -39,6 +75,7 @@ import { eventService } from '../../services/events';
 import { paymentService } from '../../services/payments';
 import styles from './FinancialReports.module.css';
 
+// Interfaces
 interface Commission {
   id: number;
   eventId: number;
@@ -50,6 +87,33 @@ interface Commission {
   dueDate: string;
 }
 
+interface Expense {
+  id: string;
+  eventId: number;
+  eventTitle: string;
+  category: string;
+  description: string;
+  amount: number;
+  date: string;
+  supplier?: string;
+  paymentMethod?: string;
+  status: 'PENDING' | 'PAID';
+}
+
+interface EventFinancialDetails {
+  eventId: number;
+  eventTitle: string;
+  eventDate: string;
+  clientName: string;
+  revenue: number;
+  expenses: Expense[];
+  netProfit: number;
+  profitMargin: number;
+  status: string;
+}
+
+type PeriodType = 'MONTHLY' | 'QUARTERLY' | 'SEMESTERLY';
+
 export const FinancialReports: React.FC = () => {
   const [events, setEvents] = useState<Event[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
@@ -58,11 +122,34 @@ export const FinancialReports: React.FC = () => {
   const [selectedMonth, setSelectedMonth] = useState(
     new Date().toISOString().slice(0, 7)
   );
+  const [selectedPeriod, setSelectedPeriod] = useState<PeriodType>('MONTHLY');
   const [showCommissionModal, setShowCommissionModal] = useState(false);
+  const [showExpenseModal, setShowExpenseModal] = useState(false);
   const [commissions, setCommissions] = useState<Commission[]>([]);
+  const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
+  const [selectedEventForExpense, setSelectedEventForExpense] = useState<number | null>(null);
+
+  // Categorias de despesas pré-definidas com ícones CORRIGIDOS
+  const expenseCategories = [
+    { id: 'food', name: 'Alimentação', icon: <MdRestaurant /> },
+    { id: 'drinks', name: 'Bebidas', icon: <MdLocalBar /> },
+    { id: 'decoration', name: 'Decoração', icon: <MdPalette /> },
+    { id: 'music', name: 'Música/DJ', icon: <FiMusic /> },
+    { id: 'photography', name: 'Fotografia/Filmagem', icon: <FiCamera /> },
+    { id: 'furniture', name: 'Móveis', icon: <MdChair /> },
+    { id: 'cake', name: 'Bolo/Doces', icon: <MdCake /> },
+    { id: 'staff', name: 'Equipe', icon: <MdPeople /> },
+    { id: 'transport', name: 'Transporte', icon: <FiTruck /> },
+    { id: 'gifts', name: 'Brindes/Lembranças', icon: <FiGift /> },
+    { id: 'venue', name: 'Espaço/Local', icon: <FaCrown /> },     // ← Usando FaCrown em vez de MdCrown
+    { id: 'marketing', name: 'Marketing/Divulgação', icon: <FiTrendingUp /> },
+    { id: 'other', name: 'Outros', icon: <MdInventory /> }
+  ];
 
   useEffect(() => {
     loadFinancialData();
+    loadExpenses();
   }, [selectedMonth]);
 
   const loadFinancialData = async () => {
@@ -101,6 +188,40 @@ export const FinancialReports: React.FC = () => {
     }
   };
 
+  const loadExpenses = () => {
+    // Carrega despesas do localStorage (simulação - substituir por chamada API)
+    const savedExpenses = localStorage.getItem('event_expenses');
+    if (savedExpenses) {
+      setExpenses(JSON.parse(savedExpenses));
+    }
+  };
+
+  const saveExpenses = (newExpenses: Expense[]) => {
+    localStorage.setItem('event_expenses', JSON.stringify(newExpenses));
+    setExpenses(newExpenses);
+  };
+
+  const addExpense = (expense: Omit<Expense, 'id'>) => {
+    const newExpense = {
+      ...expense,
+      id: Date.now().toString()
+    };
+    const updatedExpenses = [...expenses, newExpense];
+    saveExpenses(updatedExpenses);
+  };
+
+  const updateExpense = (id: string, updatedExpense: Partial<Expense>) => {
+    const updatedExpenses = expenses.map(exp => 
+      exp.id === id ? { ...exp, ...updatedExpense } : exp
+    );
+    saveExpenses(updatedExpenses);
+  };
+
+  const deleteExpense = (id: string) => {
+    const updatedExpenses = expenses.filter(exp => exp.id !== id);
+    saveExpenses(updatedExpenses);
+  };
+
   const formatDateForDisplay = (dateString: string): string => {
     if (!dateString) return 'Data inválida';
     
@@ -113,77 +234,46 @@ export const FinancialReports: React.FC = () => {
     }
   };
 
-  const isEventInSelectedMonth = (event: Event): boolean => {
+  const isEventInSelectedPeriod = (event: Event): boolean => {
     if (!event.eventDate) return false;
     
     try {
       const eventDate = new Date(event.eventDate + 'T12:00:00-03:00');
-      const eventMonth = eventDate.toISOString().slice(0, 7);
-      return eventMonth === selectedMonth;
+      const [year, month] = selectedMonth.split('-').map(Number);
+      const eventYear = eventDate.getFullYear();
+      const eventMonth = eventDate.getMonth() + 1;
+      
+      if (selectedPeriod === 'MONTHLY') {
+        return eventYear === year && eventMonth === month;
+      } else if (selectedPeriod === 'QUARTERLY') {
+        // Calcula o trimestre (1-4)
+        const quarter = Math.ceil(month / 3);
+        const eventQuarter = Math.ceil(eventMonth / 3);
+        return eventYear === year && eventQuarter === quarter;
+      } else if (selectedPeriod === 'SEMESTERLY') {
+        // Calcula o semestre (1-2)
+        const semester = month <= 6 ? 1 : 2;
+        const eventSemester = eventMonth <= 6 ? 1 : 2;
+        return eventYear === year && eventSemester === semester;
+      }
+      
+      return false;
     } catch (error) {
       console.error('Erro ao verificar data do evento:', error);
       return false;
     }
   };
 
-  const getMonthlyRevenue = () => {
-    const monthEvents = events.filter(event => 
-      isEventInSelectedMonth(event) && 
+  const getEventsInPeriod = (): Event[] => {
+    return events.filter(event => 
+      isEventInSelectedPeriod(event) && 
       (event.status === 'CONFIRMED' || event.status === 'COMPLETED')
     );
-    
-    const revenue = monthEvents.reduce((sum, event) => {
-      const value = typeof event.totalValue === 'string' 
-        ? parseFloat(event.totalValue) 
-        : event.totalValue;
-      return sum + (value || 0);
-    }, 0);
-    
-    return revenue;
   };
 
-  const getPendingPayments = () => {
-    const pendingPayments = payments.filter(payment => {
-      const event = events.find(e => e.id === payment.eventId);
-      return event && isEventInSelectedMonth(event) && payment.status === 'PENDING';
-    });
-    
-    return pendingPayments.length;
-  };
-
-  const getPaidAmount = () => {
-    const paidPayments = payments.filter(payment => {
-      const event = events.find(e => e.id === payment.eventId);
-      return event && isEventInSelectedMonth(event) && payment.status === 'PAID';
-    });
-    
-    const total = paidPayments.reduce((sum, payment) => {
-      const amount = typeof payment.amount === 'string' 
-        ? parseFloat(payment.amount) 
-        : payment.amount;
-      return sum + (amount || 0);
-    }, 0);
-    
-    return total;
-  };
-
-  const getRecentPayments = () => {
-    const monthPayments = payments.filter(payment => {
-      const event = events.find(e => e.id === payment.eventId);
-      return event && isEventInSelectedMonth(event);
-    });
-    
-    return monthPayments
-      .sort((a, b) => new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime())
-      .slice(0, 10);
-  };
-
-  const getRevenueForecast = () => {
-    const confirmedEvents = events.filter(event => 
-      isEventInSelectedMonth(event) && event.status === 'CONFIRMED'
-    );
-    
-    return confirmedEvents.reduce((sum, event) => {
+  const getTotalRevenue = (): number => {
+    const periodEvents = getEventsInPeriod();
+    return periodEvents.reduce((sum, event) => {
       const value = typeof event.totalValue === 'string' 
         ? parseFloat(event.totalValue) 
         : event.totalValue;
@@ -191,42 +281,77 @@ export const FinancialReports: React.FC = () => {
     }, 0);
   };
 
-  const getOverduePayments = () => {
-    const today = new Date();
-    const overduePayments = payments.filter(payment => {
-      const event = events.find(e => e.id === payment.eventId);
-      const isOverdue = new Date(payment.dueDate) < today;
-      return event && isEventInSelectedMonth(event) && payment.status === 'PENDING' && isOverdue;
-    });
+  const getTotalExpenses = (): number => {
+    const periodEvents = getEventsInPeriod();
+    const periodEventIds = periodEvents.map(e => e.id);
     
-    return overduePayments.length;
+    return expenses
+      .filter(exp => periodEventIds.includes(exp.eventId))
+      .reduce((sum, exp) => sum + exp.amount, 0);
   };
 
-  const calculateCommissions = (): Commission[] => {
-    const commissionsList: Commission[] = [];
+  const getNetProfit = (): number => {
+    return getTotalRevenue() - getTotalExpenses();
+  };
+
+  const getProfitMargin = (): number => {
+    const revenue = getTotalRevenue();
+    if (revenue === 0) return 0;
+    return (getNetProfit() / revenue) * 100;
+  };
+
+  const getExpensesByCategory = (): Record<string, number> => {
+    const periodEvents = getEventsInPeriod();
+    const periodEventIds = periodEvents.map(e => e.id);
     
-    events.forEach(event => {
-      if (event.status === 'COMPLETED' && isEventInSelectedMonth(event)) {
-        const value = typeof event.totalValue === 'string' 
-          ? parseFloat(event.totalValue) 
-          : event.totalValue;
-        
-        const sellerName = event.client?.name || 'Vendedor Padrão';
-        
-        commissionsList.push({
-          id: event.id,
-          eventId: event.id,
-          eventTitle: event.title,
-          sellerName,
-          amount: value * 0.1, // 10% de comissão
-          percentage: 10,
-          status: 'PENDING',
-          dueDate: new Date(new Date(event.eventDate).setDate(new Date(event.eventDate).getDate() + 30)).toISOString()
-        });
-      }
-    });
+    return expenses
+      .filter(exp => periodEventIds.includes(exp.eventId))
+      .reduce((acc, exp) => {
+        acc[exp.category] = (acc[exp.category] || 0) + exp.amount;
+        return acc;
+      }, {} as Record<string, number>);
+  };
+
+  const getEventFinancialDetails = (): EventFinancialDetails[] => {
+    const periodEvents = getEventsInPeriod();
     
-    return commissionsList;
+    return periodEvents.map(event => {
+      const eventExpenses = expenses.filter(exp => exp.eventId === event.id);
+      const revenue = typeof event.totalValue === 'string' 
+        ? parseFloat(event.totalValue) 
+        : event.totalValue;
+      const totalExpenses = eventExpenses.reduce((sum, exp) => sum + exp.amount, 0);
+      const netProfit = revenue - totalExpenses;
+      const profitMargin = revenue > 0 ? (netProfit / revenue) * 100 : 0;
+      
+      return {
+        eventId: event.id,
+        eventTitle: event.title,
+        eventDate: event.eventDate,
+        clientName: event.client?.name || 'Cliente não informado',
+        revenue,
+        expenses: eventExpenses,
+        netProfit,
+        profitMargin,
+        status: event.status
+      };
+    }).sort((a, b) => new Date(b.eventDate).getTime() - new Date(a.eventDate).getTime());
+  };
+
+  const getPeriodLabel = (): string => {
+    const [year, month] = selectedMonth.split('-');
+    const monthNames = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+      'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+    
+    if (selectedPeriod === 'MONTHLY') {
+      return `${monthNames[parseInt(month) - 1]} de ${year}`;
+    } else if (selectedPeriod === 'QUARTERLY') {
+      const quarter = Math.ceil(parseInt(month) / 3);
+      return `${quarter}º Trimestre de ${year}`;
+    } else {
+      const semester = parseInt(month) <= 6 ? 1 : 2;
+      return `${semester}º Semestre de ${year}`;
+    }
   };
 
   const formatCurrency = (value: number): string => {
@@ -236,21 +361,14 @@ export const FinancialReports: React.FC = () => {
     }).format(value);
   };
 
-  const getDetailedStats = () => {
-    const monthEvents = events.filter(event => isEventInSelectedMonth(event));
-    const monthPayments = payments.filter(payment => {
-      const event = events.find(e => e.id === payment.eventId);
-      return event && isEventInSelectedMonth(event);
-    });
+  const getCategoryIcon = (categoryId: string) => {
+    const category = expenseCategories.find(c => c.id === categoryId);
+    return category?.icon || <MdInventory />;
+  };
 
-    return {
-      totalEvents: monthEvents.length,
-      confirmedEvents: monthEvents.filter(e => e.status === 'CONFIRMED').length,
-      completedEvents: monthEvents.filter(e => e.status === 'COMPLETED').length,
-      totalPayments: monthPayments.length,
-      paidPayments: monthPayments.filter(p => p.status === 'PAID').length,
-      pendingPayments: monthPayments.filter(p => p.status === 'PENDING').length,
-    };
+  const getCategoryName = (categoryId: string) => {
+    const category = expenseCategories.find(c => c.id === categoryId);
+    return category?.name || categoryId;
   };
 
   if (loading) {
@@ -276,10 +394,12 @@ export const FinancialReports: React.FC = () => {
     );
   }
 
-  const stats = getDetailedStats();
-  const revenueForecast = getRevenueForecast();
-  const overduePayments = getOverduePayments();
-  const commissionsList = calculateCommissions();
+  const totalRevenue = getTotalRevenue();
+  const totalExpenses = getTotalExpenses();
+  const netProfit = getNetProfit();
+  const profitMargin = getProfitMargin();
+  const expensesByCategory = getExpensesByCategory();
+  const eventFinancials = getEventFinancialDetails();
 
   return (
     <div className={styles.financialReports}>
@@ -289,364 +409,398 @@ export const FinancialReports: React.FC = () => {
             <MdAttachMoney size={32} />
             Relatórios Financeiros
           </h1>
-          <div className={styles.monthSelector}>
-            <label className={styles.selectorLabel}>
-              <FiCalendar size={16} />
-              Período:
-            </label>
-            <input
-              type="month"
-              value={selectedMonth}
-              onChange={(e) => setSelectedMonth(e.target.value)}
-              className={styles.monthInput}
-            />
-            <button onClick={loadFinancialData} className={styles.refreshButton}>
-              <FiRefreshCw size={16} />
-              Atualizar
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Estatísticas Financeiras */}
-      <div className={styles.financialStats}>
-        <div className={`${styles.statCard} ${styles.card}`}>
-          <div className={styles.statIcon}>
-            <FaMoneyBillWave size={24} />
-          </div>
-          <div className={styles.statContent}>
-            <h3 className={styles.statLabel}>Receita do Mês</h3>
-            <p className={`${styles.statNumber} ${styles.revenue}`}>
-              {formatCurrency(getMonthlyRevenue())}
-            </p>
-            <div className={styles.statBreakdown}>
-              <span>
-                <MdEvent size={12} /> {stats.completedEvents} eventos realizados
-              </span>
-              <span>
-                <FiTarget size={12} /> +{formatCurrency(revenueForecast)} previstos
-              </span>
+          <div className={styles.periodControls}>
+            <div className={styles.periodSelector}>
+              <label className={styles.selectorLabel}>
+                <FiCalendar size={16} />
+                Período:
+              </label>
+              <select
+                value={selectedPeriod}
+                onChange={(e) => setSelectedPeriod(e.target.value as PeriodType)}
+                className={styles.periodSelect}
+              >
+                <option value="MONTHLY">Mensal</option>
+                <option value="QUARTERLY">Trimestral</option>
+                <option value="SEMESTERLY">Semestral</option>
+              </select>
+            </div>
+            
+            <div className={styles.monthSelector}>
+              <input
+                type="month"
+                value={selectedMonth}
+                onChange={(e) => setSelectedMonth(e.target.value)}
+                className={styles.monthInput}
+              />
+              <button onClick={loadFinancialData} className={styles.refreshButton}>
+                <FiRefreshCw size={16} />
+                Atualizar
+              </button>
             </div>
           </div>
         </div>
         
-        <div className={`${styles.statCard} ${styles.card}`}>
-          <div className={styles.statIcon}>
-            <MdPayment size={24} />
-          </div>
-          <div className={styles.statContent}>
-            <h3 className={styles.statLabel}>Total Recebido</h3>
-            <p className={`${styles.statNumber} ${styles.paid}`}>
-              {formatCurrency(getPaidAmount())}
-            </p>
-            <div className={styles.statBreakdown}>
-              <span>
-                <MdCheckCircle size={12} /> {stats.paidPayments} pagamentos
-              </span>
-              <span>
-                <FiTrendingUp size={12} /> {(stats.totalPayments > 0 ? (stats.paidPayments / stats.totalPayments * 100).toFixed(0) : 0)}% concluídos
-              </span>
-            </div>
-          </div>
-        </div>
-        
-        <div className={`${styles.statCard} ${styles.card}`}>
-          <div className={styles.statIcon}>
-            <FiClock size={24} />
-          </div>
-          <div className={styles.statContent}>
-            <h3 className={styles.statLabel}>Pagamentos Pendentes</h3>
-            <p className={`${styles.statNumber} ${styles.pending}`}>
-              {getPendingPayments()}
-            </p>
-            <div className={styles.statBreakdown}>
-              <span>
-                <MdWarning size={12} /> {overduePayments} em atraso
-              </span>
-              <span>
-                <MdReceipt size={12} /> {stats.pendingPayments} totais
-              </span>
-            </div>
-          </div>
-        </div>
-
-        <div className={`${styles.statCard} ${styles.card}`}>
-          <div className={styles.statIcon}>
-            <FiTarget size={24} />
-          </div>
-          <div className={styles.statContent}>
-            <h3 className={styles.statLabel}>Previsão de Receita</h3>
-            <p className={`${styles.statNumber} ${styles.forecast}`}>
-              {formatCurrency(revenueForecast)}
-            </p>
-            <div className={styles.statBreakdown}>
-              <span>
-                <MdEvent size={12} /> {stats.confirmedEvents} eventos confirmados
-              </span>
-              <span>
-                <FaChartLine size={12} /> {stats.totalEvents} totais no mês
-              </span>
-            </div>
-          </div>
+        <div className={styles.periodTitle}>
+          <h2>{getPeriodLabel()}</h2>
+          <span className={styles.eventCount}>
+            {getEventsInPeriod().length} eventos no período
+          </span>
         </div>
       </div>
 
-      {/* Resumo do Mês */}
-      <div className={`${styles.monthSummary} ${styles.card}`}>
-        <h3 className={styles.summaryTitle}>
-          <FaChartPie size={18} />
-          Resumo do Mês - {selectedMonth}
-        </h3>
-        <div className={styles.summaryGrid}>
-          <div className={styles.summaryItem}>
-            <span className={styles.summaryLabel}>
-              <MdEvent size={14} /> Eventos Totais
-            </span>
-            <span className={styles.summaryValue}>{stats.totalEvents}</span>
+      {/* Cards de Resumo Financeiro */}
+      <div className={styles.financialSummary}>
+        <div className={`${styles.summaryCard} ${styles.revenueCard}`}>
+          <div className={styles.cardIcon}>
+            <FaMoneyBillWave />
           </div>
-          <div className={styles.summaryItem}>
-            <span className={styles.summaryLabel}>
-              <MdCheckCircle size={14} /> Confirmados
+          <div className={styles.cardContent}>
+            <span className={styles.cardLabel}>Receita Total</span>
+            <span className={styles.cardValue}>{formatCurrency(totalRevenue)}</span>
+            <span className={styles.cardDetail}>
+              {getEventsInPeriod().length} eventos realizados
             </span>
-            <span className={styles.summaryValue}>{stats.confirmedEvents}</span>
           </div>
-          <div className={styles.summaryItem}>
-            <span className={styles.summaryLabel}>
-              <FaHandHoldingUsd size={14} /> Realizados
-            </span>
-            <span className={styles.summaryValue}>{stats.completedEvents}</span>
+        </div>
+
+        <div className={`${styles.summaryCard} ${styles.expensesCard}`}>
+          <div className={styles.cardIcon}>
+            <MdMoneyOff />
           </div>
-          <div className={styles.summaryItem}>
-            <span className={styles.summaryLabel}>
-              <MdPayment size={14} /> Pagamentos
+          <div className={styles.cardContent}>
+            <span className={styles.cardLabel}>Despesas Totais</span>
+            <span className={styles.cardValue}>{formatCurrency(totalExpenses)}</span>
+            <span className={styles.cardDetail}>
+              {Object.keys(expensesByCategory).length} categorias
             </span>
-            <span className={styles.summaryValue}>{stats.totalPayments}</span>
           </div>
-          <div className={styles.summaryItem}>
-            <span className={styles.summaryLabel}>
-              <FiPercent size={14} /> Taxa de Conclusão
+        </div>
+
+        <div className={`${styles.summaryCard} ${styles.profitCard}`}>
+          <div className={styles.cardIcon}>
+            <FaChartLine />
+          </div>
+          <div className={styles.cardContent}>
+            <span className={styles.cardLabel}>Lucro Líquido</span>
+            <span className={`${styles.cardValue} ${netProfit >= 0 ? styles.positive : styles.negative}`}>
+              {formatCurrency(netProfit)}
             </span>
-            <span className={styles.summaryValue}>
-              {stats.totalPayments > 0 ? (stats.paidPayments / stats.totalPayments * 100).toFixed(0) : 0}%
+            <span className={styles.cardDetail}>
+              Margem: {profitMargin.toFixed(1)}%
+            </span>
+          </div>
+        </div>
+
+        <div className={`${styles.summaryCard} ${styles.marginCard}`}>
+          <div className={styles.cardIcon}>
+            <FiPercent />
+          </div>
+          <div className={styles.cardContent}>
+            <span className={styles.cardLabel}>Margem de Lucro</span>
+            <span className={`${styles.cardValue} ${profitMargin >= 20 ? styles.excellent : profitMargin >= 10 ? styles.good : styles.attention}`}>
+              {profitMargin.toFixed(1)}%
+            </span>
+            <span className={styles.cardDetail}>
+              {profitMargin >= 20 ? 'Excelente' : profitMargin >= 10 ? 'Boa' : 'Atenção'}
             </span>
           </div>
         </div>
       </div>
 
-      {/* Pagamentos Recentes */}
-      <div className={`${styles.paymentsSection} ${styles.card}`}>
+      {/* Despesas por Categoria */}
+      <div className={`${styles.categorySection} ${styles.card}`}>
         <div className={styles.sectionHeader}>
           <h2 className={styles.sectionTitle}>
-            <MdPayment size={20} />
-            Pagamentos do Mês 
-            {payments.length === 0 && ' (Modo Fallback - Apenas Eventos)'}
+            <FaChartPie size={20} />
+            Despesas por Categoria
           </h2>
-          <span className={styles.sectionBadge}>{getRecentPayments().length}</span>
-        </div>
-
-        {getRecentPayments().length === 0 ? (
-          <div className={styles.emptyState}>
-            <div className={styles.emptyIcon}>
-              {payments.length === 0 ? <FaChartLine size={48} /> : <MdMoneyOff size={48} />}
-            </div>
-            <h3 className={styles.emptyTitle}>
-              {payments.length === 0 
-                ? 'Dados de Pagamentos Não Disponíveis' 
-                : 'Nenhum pagamento encontrado'}
-            </h3>
-            <p className={styles.emptyText}>
-              {payments.length === 0 
-                ? 'Os dados de pagamentos não puderam ser carregados. Mostrando apenas informações dos eventos.'
-                : `Não há pagamentos registrados para ${selectedMonth}.`}
-            </p>
-            <button onClick={loadFinancialData} className={styles.retryButton}>
-              <FiRefreshCw size={16} />
-              Tentar Novamente
-            </button>
-          </div>
-        ) : (
-          <div className={styles.tableContainer}>
-            <table className={styles.table}>
-              <thead>
-                <tr>
-                  <th>Evento</th>
-                  <th>Cliente</th>
-                  <th>Valor</th>
-                  <th>Vencimento</th>
-                  <th>Status</th>
-                  <th>Método</th>
-                  <th>Descrição</th>
-                </tr>
-              </thead>
-              <tbody>
-                {getRecentPayments().map(payment => {
-                  const event = events.find(e => e.id === payment.eventId);
-                  const isOverdue = payment.status === 'PENDING' && new Date(payment.dueDate) < new Date();
-                  
-                  return (
-                    <tr key={payment.id} className={isOverdue ? styles.overdueRow : ''}>
-                      <td>
-                        <div className={styles.eventCell}>
-                          <strong>{event?.title || 'Evento não encontrado'}</strong>
-                          {event && (
-                            <small className={styles.eventType}>{event.eventType}</small>
-                          )}
-                        </div>
-                      </td>
-                      <td>
-                        <div className={styles.clientCell}>
-                          <MdPeople size={14} />
-                          {event?.client?.name || '-'}
-                        </div>
-                      </td>
-                      <td>
-                        <div className={styles.valueCell}>
-                          <FiDollarSign size={14} />
-                          {formatCurrency(typeof payment.amount === 'string' ? parseFloat(payment.amount) : payment.amount)}
-                        </div>
-                      </td>
-                      <td>
-                        <div className={`${styles.dateCell} ${isOverdue ? styles.overdueDate : ''}`}>
-                          <MdDateRange size={14} />
-                          {formatDateForDisplay(payment.dueDate)}
-                          {isOverdue && (
-                            <span className={styles.overdueBadge}>
-                              <MdWarning size={12} /> ATRASADO
-                            </span>
-                          )}
-                        </div>
-                      </td>
-                      <td>
-                        <span className={`${styles.statusBadge} ${styles[payment.status.toLowerCase()]}`}>
-                          {payment.status === 'PENDING' ? (
-                            <><FiClock size={12} /> Pendente</>
-                          ) : payment.status === 'PAID' ? (
-                            <><MdCheckCircle size={12} /> Pago</>
-                          ) : (
-                            <><MdWarning size={12} /> Atrasado</>
-                          )}
-                        </span>
-                      </td>
-                      <td>
-                        <div className={styles.methodCell}>
-                          <FiCreditCard size={14} />
-                          {payment.paymentMethod || '-'}
-                        </div>
-                      </td>
-                      <td>
-                        <div className={styles.descriptionCell}>
-                          <MdDescription size={14} />
-                          {payment.description || '-'}
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
-
-      {/* Seção de Comissões */}
-      <div className={`${styles.commissionsSection} ${styles.card}`}>
-        <div className={styles.sectionHeader}>
-          <h2 className={styles.sectionTitle}>
-            <FaHandHoldingUsd size={20} />
-            Comissões a Pagar
-          </h2>
-          <button 
-            onClick={() => setShowCommissionModal(!showCommissionModal)}
-            className={styles.secondaryButton}
+          <button
+            onClick={() => setShowExpenseModal(true)}
+            className={styles.primaryButton}
           >
-            {showCommissionModal ? <FiChevronUp size={18} /> : <FiChevronDown size={18} />}
-            {showCommissionModal ? 'Ocultar' : 'Calcular Comissões'}
+            <MdAddCircle size={18} />
+            Adicionar Despesa
           </button>
         </div>
 
-        {showCommissionModal && (
-          <div className={styles.tableContainer}>
-            <table className={styles.table}>
-              <thead>
-                <tr>
-                  <th>Evento</th>
-                  <th>Vendedor</th>
-                  <th>Valor do Evento</th>
-                  <th>%</th>
-                  <th>Comissão</th>
-                  <th>Vencimento</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {commissionsList.map(comm => {
-                  const event = events.find(e => e.id === comm.eventId);
-                  return (
-                    <tr key={comm.id}>
-                      <td>
-                        <strong>{comm.eventTitle}</strong>
-                      </td>
-                      <td>
-                        <MdPeople size={14} />
-                        {comm.sellerName}
-                      </td>
-                      <td className={styles.valueCell}>
-                        {formatCurrency(event ? (typeof event.totalValue === 'string' ? parseFloat(event.totalValue) : event.totalValue) : 0)}
-                      </td>
-                      <td>
-                        <FiPercent size={14} />
-                        {comm.percentage}%
-                      </td>
-                      <td className={styles.revenue}>
-                        <strong>{formatCurrency(comm.amount)}</strong>
-                      </td>
-                      <td>
-                        <MdDateRange size={14} />
-                        {new Date(comm.dueDate).toLocaleDateString('pt-BR')}
-                      </td>
-                      <td>
-                        <span className={`${styles.statusBadge} ${styles[comm.status.toLowerCase()]}`}>
-                          {comm.status === 'PENDING' ? (
-                            <><FiClock size={12} /> Pendente</>
-                          ) : (
-                            <><MdCheckCircle size={12} /> Pago</>
-                          )}
-                        </span>
-                      </td>
-                    </tr>
-                  );
-                })}
-                {commissionsList.length === 0 && (
-                  <tr>
-                    <td colSpan={7} className={styles.emptyTableCell}>
-                      <FiInfo size={16} />
-                      Nenhuma comissão calculada para o período
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        )}
+        <div className={styles.categoryGrid}>
+          {expenseCategories.map(category => {
+            const amount = expensesByCategory[category.id] || 0;
+            if (amount === 0) return null;
+            
+            const percentage = totalExpenses > 0 ? (amount / totalExpenses) * 100 : 0;
+            
+            return (
+              <div key={category.id} className={styles.categoryItem}>
+                <div className={styles.categoryIcon}>
+                  {category.icon}
+                </div>
+                <div className={styles.categoryInfo}>
+                  <span className={styles.categoryName}>{category.name}</span>
+                  <span className={styles.categoryAmount}>{formatCurrency(amount)}</span>
+                  <div className={styles.categoryBar}>
+                    <div 
+                      className={styles.categoryBarFill}
+                      style={{ width: `${percentage}%` }}
+                    />
+                  </div>
+                  <span className={styles.categoryPercentage}>
+                    {percentage.toFixed(1)}%
+                  </span>
+                </div>
+              </div>
+            );
+          })}
+          
+          {Object.keys(expensesByCategory).length === 0 && (
+            <div className={styles.emptyCategories}>
+              <p>Nenhuma despesa registrada no período</p>
+              <button 
+                onClick={() => setShowExpenseModal(true)}
+                className={styles.secondaryButton}
+              >
+                <MdAddCircle size={16} />
+                Adicionar primeira despesa
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* Debug Info */}
-      <div className={styles.debugInfo}>
-        <details>
-          <summary>
-            <FiInfo size={16} />
-            Informações de Debug
-          </summary>
-          <div className={styles.debugContent}>
-            <p><strong>Mês Selecionado:</strong> {selectedMonth}</p>
-            <p><strong>Total de Eventos:</strong> {events.length}</p>
-            <p><strong>Total de Pagamentos:</strong> {payments.length}</p>
-            <p><strong>Eventos do Mês:</strong> {stats.totalEvents}</p>
-            <p><strong>Pagamentos do Mês:</strong> {getRecentPayments().length}</p>
-            <p><strong>Comissões Calculadas:</strong> {commissionsList.length}</p>
-          </div>
-        </details>
+      {/* Detalhamento por Evento */}
+      <div className={`${styles.eventsSection} ${styles.card}`}>
+        <div className={styles.sectionHeader}>
+          <h2 className={styles.sectionTitle}>
+            <MdEvent size={20} />
+            Detalhamento por Evento
+          </h2>
+        </div>
+
+        <div className={styles.tableContainer}>
+          <table className={styles.table}>
+            <thead>
+              <tr>
+                <th>Evento</th>
+                <th>Data</th>
+                <th>Cliente</th>
+                <th>Receita</th>
+                <th>Despesas</th>
+                <th>Lucro</th>
+                <th>Margem</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {eventFinancials.map(event => (
+                <tr key={event.eventId}>
+                  <td>
+                    <strong>{event.eventTitle}</strong>
+                  </td>
+                  <td>{formatDateForDisplay(event.eventDate)}</td>
+                  <td>
+                    <MdPeople size={14} />
+                    {event.clientName}
+                  </td>
+                  <td className={styles.valueCell}>
+                    {formatCurrency(event.revenue)}
+                  </td>
+                  <td className={styles.valueCell}>
+                    {formatCurrency(event.expenses.reduce((sum, e) => sum + e.amount, 0))}
+                  </td>
+                  <td className={`${styles.valueCell} ${event.netProfit >= 0 ? styles.positive : styles.negative}`}>
+                    {formatCurrency(event.netProfit)}
+                  </td>
+                  <td>
+                    <span className={`${styles.marginBadge} ${
+                      event.profitMargin >= 20 ? styles.excellent : 
+                      event.profitMargin >= 10 ? styles.good : 
+                      styles.attention
+                    }`}>
+                      {event.profitMargin.toFixed(1)}%
+                    </span>
+                  </td>
+                  <td>
+                    <span className={`${styles.statusBadge} ${styles[event.status.toLowerCase()]}`}>
+                      {event.status === 'CONFIRMED' ? 'Confirmado' :
+                       event.status === 'COMPLETED' ? 'Realizado' :
+                       event.status === 'QUOTE' ? 'Orçamento' : 'Cancelado'}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+              {eventFinancials.length === 0 && (
+                <tr>
+                  <td colSpan={8} className={styles.emptyTableCell}>
+                    Nenhum evento encontrado no período
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
+
+      {/* Modal de Despesas */}
+      {showExpenseModal && (
+        <div className={styles.modal}>
+          <div className={styles.modalContent}>
+            <div className={styles.modalHeader}>
+              <h3>
+                <MdAddCircle size={20} />
+                {editingExpense ? 'Editar Despesa' : 'Nova Despesa'}
+              </h3>
+              <button 
+                onClick={() => {
+                  setShowExpenseModal(false);
+                  setEditingExpense(null);
+                  setSelectedEventForExpense(null);
+                }}
+                className={styles.closeButton}
+              >
+                ×
+              </button>
+            </div>
+            
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              const formData = new FormData(e.currentTarget);
+              
+              const expenseData = {
+                eventId: parseInt(formData.get('eventId') as string),
+                eventTitle: events.find(e => e.id === parseInt(formData.get('eventId') as string))?.title || '',
+                category: formData.get('category') as string,
+                description: formData.get('description') as string,
+                amount: parseFloat(formData.get('amount') as string),
+                date: formData.get('date') as string,
+                supplier: formData.get('supplier') as string,
+                paymentMethod: formData.get('paymentMethod') as string,
+                status: formData.get('status') as 'PENDING' | 'PAID'
+              };
+              
+              if (editingExpense) {
+                updateExpense(editingExpense.id, expenseData);
+              } else {
+                addExpense(expenseData);
+              }
+              
+              setShowExpenseModal(false);
+              setEditingExpense(null);
+              setSelectedEventForExpense(null);
+            }}>
+              <div className={styles.formGroup}>
+                <label>Evento:</label>
+                <select 
+                  name="eventId" 
+                  required
+                  defaultValue={selectedEventForExpense || ''}
+                >
+                  <option value="">Selecione um evento</option>
+                  {getEventsInPeriod().map(event => (
+                    <option key={event.id} value={event.id}>
+                      {event.title} - {formatDateForDisplay(event.eventDate)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              
+              <div className={styles.formGroup}>
+                <label>Categoria:</label>
+                <select name="category" required>
+                  <option value="">Selecione a categoria</option>
+                  {expenseCategories.map(cat => (
+                    <option key={cat.id} value={cat.id}>
+                      {cat.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              
+              <div className={styles.formGroup}>
+                <label>Descrição:</label>
+                <input 
+                  type="text" 
+                  name="description" 
+                  required 
+                  placeholder="Ex: Buffet, Decoração, etc"
+                />
+              </div>
+              
+              <div className={styles.formRow}>
+                <div className={styles.formGroup}>
+                  <label>Valor (R$):</label>
+                  <input 
+                    type="number" 
+                    name="amount" 
+                    step="0.01" 
+                    min="0" 
+                    required 
+                    placeholder="0,00"
+                  />
+                </div>
+                
+                <div className={styles.formGroup}>
+                  <label>Data:</label>
+                  <input 
+                    type="date" 
+                    name="date" 
+                    required 
+                    defaultValue={new Date().toISOString().split('T')[0]}
+                  />
+                </div>
+              </div>
+              
+              <div className={styles.formRow}>
+                <div className={styles.formGroup}>
+                  <label>Fornecedor:</label>
+                  <input 
+                    type="text" 
+                    name="supplier" 
+                    placeholder="Nome do fornecedor"
+                  />
+                </div>
+                
+                <div className={styles.formGroup}>
+                  <label>Forma de Pagamento:</label>
+                  <select name="paymentMethod">
+                    <option value="">Selecione</option>
+                    <option value="DINHEIRO">Dinheiro</option>
+                    <option value="CARTAO_CREDITO">Cartão de Crédito</option>
+                    <option value="CARTAO_DEBITO">Cartão de Débito</option>
+                    <option value="PIX">PIX</option>
+                    <option value="TRANSFERENCIA">Transferência</option>
+                    <option value="BOLETO">Boleto</option>
+                  </select>
+                </div>
+              </div>
+              
+              <div className={styles.formGroup}>
+                <label>Status:</label>
+                <select name="status" defaultValue="PENDING">
+                  <option value="PENDING">Pendente</option>
+                  <option value="PAID">Pago</option>
+                </select>
+              </div>
+              
+              <div className={styles.modalActions}>
+                <button 
+                  type="button" 
+                  onClick={() => {
+                    setShowExpenseModal(false);
+                    setEditingExpense(null);
+                  }}
+                  className={styles.cancelButton}
+                >
+                  Cancelar
+                </button>
+                <button type="submit" className={styles.submitButton}>
+                  {editingExpense ? 'Atualizar' : 'Salvar'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

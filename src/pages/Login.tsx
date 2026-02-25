@@ -2,6 +2,9 @@ import React from 'react';
 import { LoginForm } from '../components/auth/LoginForm';
 import styles from './Login.module.css';
 
+// ✅ Importando a logo completa
+import logoCompleta from '../assets/logo-big.png';
+
 export const Login: React.FC = () => {
   return (
     <div className={styles.loginPage}>
@@ -11,15 +14,13 @@ export const Login: React.FC = () => {
       <div className={styles.loginContainer}>
         {/* Card de Login */}
         <div className={styles.loginCard}>
-          {/* Header */}
+          {/* Header - AGORA É SÓ A LOGO COMPLETA */}
           <div className={styles.loginHeader}>
-            <div className={styles.logo}>
-              <div className={styles.logoIcon}>🎪</div>
-              <div className={styles.logoText}>
-                <span className={styles.logoTitle}>EventosFáceis</span>
-                <span className={styles.logoSubtitle}>Sistema de Gestão</span>
-              </div>
-            </div>
+            <img 
+              src={logoCompleta} 
+              alt="EventosFáceis - Sistema de Gestão de Eventos" 
+              className={styles.logoFull}
+            />
           </div>
 
           {/* Form */}

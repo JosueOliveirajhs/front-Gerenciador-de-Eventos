@@ -21,7 +21,7 @@ import { EventCalendar } from './events/EventCalendar';
 import { EventList } from './events/EventList';
 import { EventForm } from './events/EventForm';
 import { DeleteConfirmationModal } from './events/DeleteConfirmationModal';
-import { ConfirmationModal } from '../common/Alerts/ConfirmationModal'; // ✅ IMPORT CORRETO
+import { ConfirmationModal } from '../common/Alerts/ConfirmationModal';
 import { useEvents } from './hooks/useEvents';
 import styles from './EventManagement.module.css';
 
@@ -31,7 +31,8 @@ export const EventManagement: React.FC = () => {
   const [showForm, setShowForm] = useState(false);
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState<Event | null>(null);
-  const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
+  // ALTERADO: calendário como visualização padrão
+  const [viewMode, setViewMode] = useState<'list' | 'calendar'>('calendar');
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [selectedMonth, setSelectedMonth] = useState<string>(
     new Date().toISOString().slice(0, 7)
@@ -97,7 +98,6 @@ export const EventManagement: React.FC = () => {
         setSuccessType('create');
       }
       setShowSuccessModal(true);
-      // Não fechar o formulário aqui - deixa o modal de sucesso decidir
     } catch (error) {
       console.error('Erro ao salvar evento:', error);
       alert('Erro ao salvar evento: ' + error);
@@ -127,7 +127,6 @@ export const EventManagement: React.FC = () => {
 
   const handleSuccessClose = () => {
     setShowSuccessModal(false);
-    // Só fecha o formulário se não for uma exclusão (exclusão já fecha automaticamente)
     if (successType !== 'delete') {
       setShowForm(false);
       setEditingEvent(null);
@@ -183,7 +182,6 @@ export const EventManagement: React.FC = () => {
         />
       )}
 
-      {/* ✅ MODAL DE SUCESSO - Agora usando ConfirmationModal */}
       <ConfirmationModal
         isOpen={showSuccessModal}
         title="Sucesso!"
