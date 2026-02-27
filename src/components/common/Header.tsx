@@ -70,7 +70,7 @@ export const Header: React.FC<HeaderProps> = ({ onMenuToggle, onViewChange }) =>
               <MdEvent size={24} />
             </div>
             <h1 className={styles.logoText}>
-              Eventos<span className={styles.logoAccent}>Fáceis</span>
+              <span className={styles.logoAccent}>Easy Event Management System</span>
             </h1>
           </div>
         </div>

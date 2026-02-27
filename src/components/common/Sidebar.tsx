@@ -120,7 +120,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               />
             </div>
             <div className={styles.logoText}>
-              <span className={styles.logoTitle}>EventosFáceis</span>
+              <span className={styles.logoTitle}>EEMS</span>
               <span className={styles.logoSubtitle}>Gestão</span>
             </div>
           </div>
