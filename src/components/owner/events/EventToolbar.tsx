@@ -46,18 +46,18 @@ export const EventToolbar: React.FC<EventToolbarProps> = ({
       <div className={styles.toolbarLeft}>
         <div className={styles.viewToggle}>
           <button
-            className={`${styles.viewButton} ${viewMode === 'list' ? styles.activeView : ''}`}
-            onClick={() => onViewChange('list')}
-          >
-            <FiList size={18} />
-            Lista
-          </button>
-          <button
             className={`${styles.viewButton} ${viewMode === 'calendar' ? styles.activeView : ''}`}
             onClick={() => onViewChange('calendar')}
           >
             <FiCalendar size={18} />
             Calendário
+          </button>
+          <button
+            className={`${styles.viewButton} ${viewMode === 'list' ? styles.activeView : ''}`}
+            onClick={() => onViewChange('list')}
+          >
+            <FiList size={18} />
+            Lista
           </button>
         </div>
 

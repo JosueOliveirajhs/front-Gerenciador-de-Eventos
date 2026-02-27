@@ -1,11 +1,13 @@
 /* src/components/admin/FinancialReports.module.css */
 
+/* ===== LAYOUT PRINCIPAL ===== */
 .financialReports {
   padding: 2rem;
   background: #f8fafc;
   min-height: 100vh;
 }
 
+/* ===== CABEÇALHO ===== */
 .pageHeader {
   margin-bottom: 2rem;
 }
@@ -16,6 +18,7 @@
   align-items: center;
   flex-wrap: wrap;
   gap: 1rem;
+  margin-bottom: 1rem;
 }
 
 .pageTitle {
@@ -44,7 +47,7 @@
   align-items: center;
   gap: 0.5rem;
   background: white;
-  padding: 0.5rem;
+  padding: 0.25rem;
   border-radius: 8px;
   border: 1px solid #e2e8f0;
 }
@@ -54,9 +57,8 @@
   align-items: center;
   gap: 0.25rem;
   padding: 0 0.5rem;
-  font-weight: 600;
   color: #475569;
-  white-space: nowrap;
+  font-weight: 500;
 }
 
 .periodSelect {
@@ -82,34 +84,36 @@
 }
 
 .monthInput {
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
   padding: 0.5rem;
-  font-size: 1rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 0.95rem;
 }
 
 .monthInput:focus {
   outline: none;
   border-color: #10b981;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
 }
 
 .refreshButton {
-  background: #6366f1;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: #00B4D8;
   color: white;
   border: none;
-  padding: 0.5rem 1rem;
   border-radius: 6px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
 }
 
 .refreshButton:hover {
-  background: #4f46e5;
+  background: rgba(22, 182, 203, 0.552);
   transform: translateY(-1px);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 }
 
 .periodTitle {
@@ -135,7 +139,7 @@
   font-weight: 500;
 }
 
-/* Cards de Resumo */
+/* ===== CARDS DE RESUMO ===== */
 .financialSummary {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -253,7 +257,7 @@
   color: #94a3b8;
 }
 
-/* Seção de Categorias */
+/* ===== SEÇÃO DE CATEGORIAS ===== */
 .categorySection {
   margin-bottom: 2rem;
   background: white;
@@ -288,8 +292,8 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.5rem 1rem;
-  background: #10b981;
+  padding: 0.5rem 0.5rem;
+  background: #00B4D8;
   color: white;
   border: none;
   border-radius: 6px;
@@ -299,8 +303,9 @@
 }
 
 .primaryButton:hover {
-  background: #059669;
+  background: #00b4d8ac;
   transform: translateY(-1px);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 }
 
 .secondaryButton {
@@ -315,6 +320,7 @@
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s;
+  margin: 10px 20px;
 }
 
 .secondaryButton:hover {
@@ -335,12 +341,13 @@
   padding: 1rem;
   background: #f8fafc;
   border-radius: 8px;
-  transition: background 0.2s;
+  transition: all 0.2s;
   border: 1px solid #e2e8f0;
 }
 
 .categoryItem:hover {
   background: #f1f5f9;
+  border-color: #10b981;
 }
 
 .categoryIcon {
@@ -408,17 +415,15 @@
   margin-bottom: 1rem;
 }
 
-/* Seção de Eventos */
+/* ===== SEÇÃO DE EVENTOS ===== */
 .eventsSection {
   background: white;
   border-radius: 12px;
   padding: 1.5rem;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   border: 1px solid #e2e8f0;
-  margin-bottom: 2rem;
 }
 
-/* Tabela */
 .tableContainer {
   overflow-x: auto;
 }
@@ -426,7 +431,6 @@
 .table {
   width: 100%;
   border-collapse: collapse;
-  background: white;
 }
 
 .table th {
@@ -434,8 +438,8 @@
   padding: 1rem;
   text-align: left;
   font-weight: 600;
-  color: #374151;
-  border-bottom: 1px solid #e5e7eb;
+  color: #475569;
+  border-bottom: 2px solid #e2e8f0;
   font-size: 0.875rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -443,7 +447,7 @@
 
 .table td {
   padding: 1rem;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid #e2e8f0;
   color: #1e293b;
 }
 
@@ -451,20 +455,9 @@
   background: #f8fafc;
 }
 
-/* Células da Tabela */
 .eventCell strong {
   display: block;
-  color: #1e293b;
   margin-bottom: 0.25rem;
-}
-
-.eventType {
-  font-size: 0.75rem;
-  color: #64748b;
-  background: #f1f5f9;
-  padding: 0.25rem 0.5rem;
-  border-radius: 4px;
-  display: inline-block;
 }
 
 .clientCell {
@@ -472,7 +465,6 @@
   align-items: center;
   gap: 0.5rem;
   color: #475569;
-  font-weight: 500;
 }
 
 .clientCell svg {
@@ -484,67 +476,32 @@
   color: #10b981;
 }
 
-.dateCell {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  color: #475569;
+.expensesButton {
+  background: none;
+  border: none;
+  color: #10b981;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  text-decoration: underline;
+  text-decoration-style: dotted;
+  transition: all 0.2s;
 }
 
-.overdueDate {
-  color: #dc2626;
+.expensesButton:hover {
+  background: #e8f5e9;
+  color: #059669;
+}
+
+.marginBadge {
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.85rem;
   font-weight: 600;
 }
 
-.overdueBadge {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
-  font-size: 0.7rem;
-  color: #dc2626;
-  background: #fecaca;
-  padding: 0.125rem 0.5rem;
-  border-radius: 4px;
-  width: fit-content;
-}
-
-.overdueRow {
-  background: #fef2f2 !important;
-}
-
-.overdueRow:hover {
-  background: #fee2e2 !important;
-}
-
-.methodCell {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  color: #475569;
-}
-
-.methodCell svg {
-  color: #94a3b8;
-}
-
-.descriptionCell {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  color: #64748b;
-  font-size: 0.875rem;
-  max-width: 200px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.descriptionCell svg {
-  color: #94a3b8;
-  flex-shrink: 0;
-}
-
-/* Status Badges */
 .statusBadge {
   display: inline-flex;
   align-items: center;
@@ -555,21 +512,6 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-}
-
-.statusBadge.pending {
-  background: #fef3c7;
-  color: #92400e;
-}
-
-.statusBadge.paid {
-  background: #d1fae5;
-  color: #065f46;
-}
-
-.statusBadge.overdue {
-  background: #fecaca;
-  color: #991b1b;
 }
 
 .statusBadge.confirmed {
@@ -592,16 +534,93 @@
   color: #e74c3c;
 }
 
-/* Margin Badge */
-.marginBadge {
-  display: inline-block;
-  padding: 0.25rem 0.5rem;
-  border-radius: 4px;
-  font-size: 0.85rem;
-  font-weight: 600;
+.statusBadge.paid {
+  background: #d1fae5;
+  color: #065f46;
 }
 
-/* Modal */
+.statusBadge.pending {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.actionButton {
+  background: none;
+  border: none;
+  color: #64748b;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.actionButton:hover {
+  background: #f1f5f9;
+  color: #10b981;
+}
+
+/* ===== LINHA EXPANDIDA ===== */
+.expandedRow {
+  background: #f8fafc;
+}
+
+.expandedContent {
+  padding: 1rem;
+}
+
+.expandedContent h4 {
+  margin: 0 0 1rem 0;
+  color: #1e293b;
+  font-size: 1rem;
+}
+
+.expandedExpenses {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.expandedExpense {
+  display: grid;
+  grid-template-columns: auto 1fr auto auto;
+  gap: 1rem;
+  align-items: center;
+  padding: 0.5rem;
+  background: white;
+  border-radius: 4px;
+  border: 1px solid #e2e8f0;
+}
+
+.expenseCategory {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  color: #475569;
+  font-size: 0.85rem;
+}
+
+.expenseCategory svg {
+  color: #10b981;
+}
+
+.viewAllButton {
+  background: none;
+  border: none;
+  color: #10b981;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0.5rem;
+  text-align: left;
+}
+
+.viewAllButton:hover {
+  text-decoration: underline;
+}
+
+/* ===== MODAL ===== */
 .modal {
   position: fixed;
   top: 0;
@@ -628,8 +647,13 @@
   max-width: 600px;
   max-height: 90vh;
   overflow-y: auto;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
   animation: slideUp 0.3s;
+}
+
+.detailsModal {
+  max-width: 900px;
+  height: 430px;
 }
 
 @keyframes slideUp {
@@ -671,8 +695,11 @@
   font-size: 1.5rem;
   color: #94a3b8;
   cursor: pointer;
-  padding: 0.25rem 0.5rem;
+  padding: 0.25rem;
   border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   transition: all 0.2s;
 }
 
@@ -693,8 +720,8 @@
   display: block;
   margin-bottom: 0.5rem;
   color: #475569;
-  font-size: 0.875rem;
   font-weight: 600;
+  font-size: 0.875rem;
 }
 
 .formGroup input,
@@ -704,7 +731,6 @@
   border: 1px solid #e2e8f0;
   border-radius: 6px;
   font-size: 0.95rem;
-  color: #1e293b;
   transition: all 0.2s;
 }
 
@@ -713,11 +739,6 @@
   outline: none;
   border-color: #10b981;
   box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
-}
-
-.formGroup input:hover,
-.formGroup select:hover {
-  border-color: #94a3b8;
 }
 
 .formRow {
@@ -741,7 +762,6 @@
   border: 1px solid #e2e8f0;
   border-radius: 6px;
   color: #475569;
-  font-size: 0.95rem;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s;
@@ -758,7 +778,6 @@
   color: white;
   border: none;
   border-radius: 6px;
-  font-size: 0.95rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
@@ -770,48 +789,102 @@
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 }
 
-/* Estados Vazios */
-.emptyState {
+/* ===== MODAL DE DETALHES ===== */
+.detailsSummary {
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 3rem 2rem;
-  text-align: center;
+  gap: 2rem;
+  padding: 1rem 1.5rem;
   background: #f8fafc;
-  border-radius: 8px;
-  border: 1px dashed #e2e8f0;
+  border-bottom: 1px solid #e2e8f0;
 }
 
-.emptyIcon {
-  font-size: 4rem;
-  margin-bottom: 1rem;
-  opacity: 0.5;
-  color: #94a3b8;
+.summaryItem {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
-.emptyTitle {
-  font-size: 1.25rem;
+.summaryItem span {
+  color: #64748b;
+}
+
+.summaryItem strong {
+  color: #1e293b;
+  font-size: 1.1rem;
+}
+
+.detailsList {
+  padding: 1.5rem;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.detailsTable {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.detailsTable th {
+  text-align: left;
+  padding: 0.75rem;
+  background: #f8fafc;
   font-weight: 600;
   color: #475569;
-  margin: 0 0 0.5rem 0;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 2px solid #e2e8f0;
 }
 
-.emptyText {
+.detailsTable td {
+  padding: 0.75rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.categoryBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem 0.75rem;
+  background: #f1f5f9;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  color: #475569;
+}
+
+.categoryBadge svg {
+  color: #10b981;
+}
+
+.actionButtons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.iconButton {
+  background: none;
+  border: none;
   color: #64748b;
-  font-size: 1rem;
-  margin: 0 0 1.5rem 0;
-  line-height: 1.5;
+  cursor: pointer;
+  padding: 0.4rem;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
 }
 
-.emptyTableCell {
-  text-align: center;
-  padding: 2rem !important;
-  color: #94a3b8;
-  font-style: italic;
+.iconButton:hover {
+  background: #f1f5f9;
+  color: #10b981;
 }
 
-/* Loading e Error States */
+.deleteButton:hover {
+  color: #e74c3c;
+  background: #fee9e7;
+}
+
+/* ===== LOADING E ERROR ===== */
 .loading, .error {
   display: flex;
   flex-direction: column;
@@ -836,30 +909,29 @@
 }
 
 .errorIcon {
-  font-size: 3rem;
-  margin-bottom: 1rem;
   color: #e74c3c;
+  margin-bottom: 1rem;
 }
 
 .error h3 {
   font-size: 1.25rem;
   color: #1e293b;
-  margin: 0 0 0.5rem 0;
+  margin-bottom: 0.5rem;
 }
 
 .error p {
   color: #64748b;
-  margin: 0 0 1.5rem 0;
+  margin-bottom: 1.5rem;
 }
 
 .retryButton {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
+  padding: 0.625rem 1.25rem;
   background: #e74c3c;
   color: white;
   border: none;
-  padding: 0.625rem 1.25rem;
   border-radius: 6px;
   font-weight: 600;
   cursor: pointer;
@@ -872,48 +944,21 @@
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 }
 
-/* Debug Info */
-.debugInfo {
-  margin-top: 2rem;
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  padding: 1rem;
+/* ===== ESTADOS VAZIOS ===== */
+.emptyTableCell {
+  text-align: center;
+  padding: 2rem !important;
+  color: #94a3b8;
+  font-style: italic;
 }
 
-.debugInfo summary {
-  cursor: pointer;
-  font-weight: 600;
-  color: #475569;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
+.emptyState {
+  text-align: center;
+  padding: 2rem;
+  color: #94a3b8;
 }
 
-.debugInfo summary:hover {
-  color: #10b981;
-}
-
-.debugContent {
-  margin-top: 1rem;
-  padding: 1rem;
-  background: white;
-  border-radius: 6px;
-  border: 1px solid #e2e8f0;
-}
-
-.debugContent p {
-  margin: 0.5rem 0;
-  color: #475569;
-  font-size: 0.875rem;
-}
-
-.debugContent strong {
-  color: #1e293b;
-  font-weight: 600;
-}
-
-/* Responsive */
+/* ===== RESPONSIVIDADE ===== */
 @media (max-width: 1200px) {
   .financialSummary {
     grid-template-columns: repeat(2, 1fr);
@@ -968,7 +1013,6 @@
 
   .formRow {
     grid-template-columns: 1fr;
-    gap: 0.5rem;
   }
 
   .sectionHeader {
@@ -983,25 +1027,31 @@
     justify-content: center;
   }
 
-  .table {
+  .expandedExpense {
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+  }
+
+  .detailsSummary {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .detailsTable {
     font-size: 0.875rem;
   }
 
-  .table th,
-  .table td {
-    padding: 0.75rem 0.5rem;
+  .detailsTable th,
+  .detailsTable td {
+    padding: 0.5rem;
   }
 
-  .descriptionCell {
-    max-width: 150px;
+  .actionButtons {
+    flex-direction: column;
   }
 }
 
 @media (max-width: 480px) {
-  .financialReports {
-    padding: 0.75rem;
-  }
-
   .pageTitle {
     font-size: 1.5rem;
   }
@@ -1031,27 +1081,15 @@
   .submitButton {
     width: 100%;
     text-align: center;
-    justify-content: center;
   }
 
-  .categoryItem {
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-  }
-
-  .categoryBar {
-    width: 100%;
+  .table {
+    font-size: 0.875rem;
   }
 
   .table th,
   .table td {
     padding: 0.5rem;
-    font-size: 0.8rem;
-  }
-
-  .descriptionCell {
-    max-width: 100px;
   }
 
   .statusBadge {
@@ -1059,29 +1097,3 @@
     font-size: 0.7rem;
   }
 }
-
-/* Utilitários */
-.srOnly {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  border: 0;
-}
-
-.textCenter {
-  text-align: center;
-}
-
-.mt1 { margin-top: 0.25rem; }
-.mt2 { margin-top: 0.5rem; }
-.mt3 { margin-top: 0.75rem; }
-.mt4 { margin-top: 1rem; }
-
-.mb1 { margin-bottom: 0.25rem; }
-.mb2 { margin-bottom: 0.5rem; }
-.mb3 { margin-bottom: 0.75rem; }
-.mb4 { margin-bottom: 1rem; }

@@ -46,7 +46,7 @@
   align-items: center;
   gap: 8px;
   padding: 10px 20px;
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  background: #00B4D8;
   color: white;
   border: none;
   border-radius: 10px;
@@ -142,7 +142,7 @@
 }
 
 .filterButton.activeFilter {
-  background: #3b82f6;
+  background: #00B4D8;
   color: white;
 }
 
