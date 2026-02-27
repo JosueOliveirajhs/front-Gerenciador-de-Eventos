@@ -88,10 +88,9 @@
   color: #1e293b;
 }
 
-.secondaryButton.active {
-  background: #3b82f6;
-  color: white;
-  border-color: #3b82f6;
+.secondaryButton.active, .primaryButton.active {
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
+  transform: translateY(1px);
 }
 
 .buttonSpinner {
@@ -147,8 +146,8 @@
   color: white;
 }
 
-/* ========== PREFERÊNCIAS PANEL ========== */
-.preferencesPanel {
+/* ========== PAINÉIS COMPARTILHADOS ========== */
+.preferencesPanel, .managerPanel {
   background: white;
   border-radius: 20px;
   padding: 24px;
@@ -159,17 +158,11 @@
 }
 
 @keyframes slideDown {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-.preferencesTitle {
+.panelTitle {
   font-size: 18px;
   font-weight: 600;
   color: #0f172a;
@@ -178,6 +171,15 @@
   border-bottom: 2px solid #e2e8f0;
 }
 
+.panelActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding-top: 20px;
+  border-top: 1px solid #e2e8f0;
+}
+
+/* ========== PREFERÊNCIAS ========== */
 .preferencesGrid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -194,12 +196,78 @@
   letter-spacing: 0.5px;
 }
 
-.preferencesActions {
+/* ========== GERENCIADOR DE NOTIFICAÇÕES (NOVO) ========== */
+.managerGrid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+.managerForm {
   display: flex;
-  justify-content: flex-end;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.formTextarea {
+  min-height: 100px;
+  resize: vertical;
+  font-family: inherit;
+}
+
+.statusSelectsRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: 12px;
-  padding-top: 20px;
-  border-top: 1px solid #e2e8f0;
+}
+
+.managerUsers {
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 16px;
+  background-color: #f8fafc;
+  display: flex;
+  flex-direction: column;
+}
+
+.managerUsersTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: #475569;
+  margin: 0 0 16px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.usersListContainer {
+  flex: 1;
+  max-height: 250px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* Personalizando a scrollbar da lista de usuários */
+.usersListContainer::-webkit-scrollbar {
+  width: 6px;
+}
+.usersListContainer::-webkit-scrollbar-track {
+  background: #f1f5f9; 
+  border-radius: 4px;
+}
+.usersListContainer::-webkit-scrollbar-thumb {
+  background: #cbd5e1; 
+  border-radius: 4px;
+}
+
+.userAll {
+  font-weight: 600;
+  color: #3b82f6;
 }
 
 /* ========== CHECKBOX ========== */
@@ -211,6 +279,12 @@
   cursor: pointer;
   font-size: 14px;
   color: #1e293b;
+  transition: background 0.2s;
+  border-radius: 6px;
+}
+
+.checkboxLabel:hover {
+  background-color: #f1f5f9;
 }
 
 .checkboxLabel input[type="checkbox"] {
@@ -519,94 +593,28 @@ input:checked + .switchSlider:before {
 }
 
 @media (max-width: 768px) {
-  .notificationsPage {
-    padding: 16px;
-  }
-
-  .pageHeader {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .headerActions {
-    width: 100%;
-    flex-direction: column;
-  }
-
-  .headerActions button {
-    width: 100%;
-    justify-content: center;
-  }
-
-  .filterGroup {
-    flex-direction: column;
-  }
-
-  .filterButton {
-    width: 100%;
-    text-align: center;
-  }
-
-  .preferencesGrid {
-    grid-template-columns: 1fr;
-  }
-
-  .notificationCard {
-    flex-direction: column;
-  }
-
-  .notificationIcon {
-    width: 40px;
-    height: 40px;
-  }
-
-  .notificationHeader {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .notificationMeta {
-    width: 100%;
-    justify-content: space-between;
-  }
-
-  .notificationFooter {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .preferencesActions {
-    flex-direction: column;
-  }
-
-  .preferencesActions button {
-    width: 100%;
-    justify-content: center;
-  }
-
-  .quietHoursInputs {
-    flex-direction: column;
-  }
+  .notificationsPage { padding: 16px; }
+  .pageHeader { flex-direction: column; align-items: flex-start; }
+  .headerActions { width: 100%; flex-direction: column; }
+  .headerActions button { width: 100%; justify-content: center; }
+  .filterGroup { flex-direction: column; }
+  .filterButton { width: 100%; text-align: center; }
+  .preferencesGrid, .managerGrid { grid-template-columns: 1fr; }
+  .notificationCard { flex-direction: column; }
+  .notificationIcon { width: 40px; height: 40px; }
+  .notificationHeader { flex-direction: column; align-items: flex-start; }
+  .notificationMeta { width: 100%; justify-content: space-between; }
+  .notificationFooter { flex-direction: column; align-items: flex-start; }
+  .panelActions { flex-direction: column; }
+  .panelActions button { width: 100%; justify-content: center; }
+  .quietHoursInputs { flex-direction: column; }
+  .statusSelectsRow { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 480px) {
-  .notificationTitle {
-    font-size: 15px;
-  }
-
-  .notificationMessage {
-    font-size: 13px;
-  }
-
-  .emptyIcon {
-    font-size: 40px;
-  }
-
-  .emptyTitle {
-    font-size: 16px;
-  }
-
-  .emptyText {
-    font-size: 13px;
-  }
+  .notificationTitle { font-size: 15px; }
+  .notificationMessage { font-size: 13px; }
+  .emptyIcon { font-size: 40px; }
+  .emptyTitle { font-size: 16px; }
+  .emptyText { font-size: 13px; }
 }
