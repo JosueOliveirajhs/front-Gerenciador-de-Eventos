@@ -160,7 +160,7 @@
 }
 
 .calendarWrapper :global(.react-calendar__tile--active) {
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%) !important;
+  background: #00B4D8 !important;
   color: white !important;
   box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.3);
 }

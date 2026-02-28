@@ -1,6 +1,17 @@
 import { api } from './api';
 import { LoginCredentials, RegisterData, AuthResponse } from '../types/User';
 
+// ✅ Tipos para redefinição de senha
+export interface RequestPasswordResetData {
+  cpf: string;
+}
+
+export interface ResetPasswordData {
+  cpf: string;
+  code: string;
+  newPassword: string;
+}
+
 export const authService = {
     /**
      * Realiza login do usuário
@@ -63,6 +74,57 @@ export const authService = {
             return data;
         } catch (error: any) {
             console.error('❌ Erro ao registrar usuário:', error);
+            throw error;
+        }
+    },
+
+    // ✅ NOVO: Solicitar redefinição de senha
+    requestPasswordReset: async (cpf: string): Promise<{ message: string }> => {
+        try {
+            console.log('🔑 Solicitando redefinição de senha para CPF:', cpf);
+            
+            const response = await api.post('/auth/request-password-reset', { cpf });
+            
+            console.log('✅ Código enviado com sucesso');
+            return response.data;
+        } catch (error: any) {
+            console.error('❌ Erro ao solicitar redefinição:', error);
+            
+            if (error.response?.status === 404) {
+                throw new Error('CPF não encontrado');
+            }
+            
+            throw error;
+        }
+    },
+
+    // ✅ NOVO: Redefinir senha com código
+    resetPassword: async (data: ResetPasswordData): Promise<{ message: string }> => {
+        try {
+            console.log('🔄 Redefinindo senha para CPF:', data.cpf);
+            
+            const response = await api.post('/auth/reset-password', data);
+            
+            console.log('✅ Senha redefinida com sucesso');
+            return response.data;
+        } catch (error: any) {
+            console.error('❌ Erro ao redefinir senha:', error);
+            
+            if (error.response?.status === 400) {
+                throw new Error('Código inválido ou expirado');
+            }
+            
+            throw error;
+        }
+    },
+
+    // ✅ NOVO: Verificar se o código é válido (opcional)
+    verifyResetCode: async (cpf: string, code: string): Promise<{ valid: boolean }> => {
+        try {
+            const response = await api.post('/auth/verify-reset-code', { cpf, code });
+            return response.data;
+        } catch (error: any) {
+            console.error('❌ Erro ao verificar código:', error);
             throw error;
         }
     },

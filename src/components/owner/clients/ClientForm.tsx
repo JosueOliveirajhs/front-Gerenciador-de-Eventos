@@ -18,7 +18,7 @@ import {
 } from 'react-icons/md';
 import { User } from '../types';
 import { ConfirmationModal } from '../../common/Alerts/ConfirmationModal';
-import { ErrorModal } from '../../common/ALerts/ErrorModal';
+import { ErrorModal } from '../../common/Alerts/ErrorModal';
 import styles from './ClientForm.module.css';
 
 interface ClientFormProps {

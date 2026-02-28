@@ -1,6 +1,6 @@
 import React from "react";
 import { useAuth } from "../../context/AuthContext";
-import { FiCalendar, FiPlusCircle, FiX, FiCheckSquare } from "react-icons/fi"; // ✅ Adicionado FiCheckSquare
+import { FiCalendar, FiPlusCircle, FiX, FiCheckSquare } from "react-icons/fi";
 import {
   MdEvent,
   MdDashboard,
@@ -11,6 +11,9 @@ import {
 } from "react-icons/md";
 import styles from "./Sidebar.module.css";
 import { FaBox } from "react-icons/fa";
+
+// ✅ Importando a imagem diretamente
+import logoSmall from "../../assets/logo-small.png";
 
 interface SidebarProps {
   activeView: string;
@@ -52,7 +55,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
       icon: <FaBox size={20} />,
       description: "Gerencie seus itens",
     },
-    // ✅ NOVO: Item Checklist adicionado
     {
       id: "checklist",
       label: "Checklists",
@@ -64,12 +66,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
       label: "Financeiro",
       icon: <MdAttachMoney size={20} />,
       description: "Controle financeiro",
-    },
-    {
-      id: "reports",
-      label: "Relatórios",
-      icon: <MdAssessment size={20} />,
-      description: "Relatórios e analytics",
     },
   ];
 
@@ -109,9 +105,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
         {/* Header do Sidebar */}
         <div className={styles.sidebarHeader}>
           <div className={styles.sidebarLogo}>
-            <div className={styles.logoIcon}>🎉</div>
+            <div className={styles.logoIcon}>
+              {/* ✅ Usando a imagem importada */}
+              <img 
+                src={logoSmall} 
+                alt="EventosFáceis" 
+                className={styles.logoImage}
+              />
+            </div>
             <div className={styles.logoText}>
-              <span className={styles.logoTitle}>EventosFáceis</span>
+              <span className={styles.logoTitle}>EEMS</span>
               <span className={styles.logoSubtitle}>Gestão</span>
             </div>
           </div>

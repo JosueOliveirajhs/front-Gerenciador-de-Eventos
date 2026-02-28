@@ -70,7 +70,22 @@
     align-items: center;
     gap: 8px;
     padding: 10px 20px;
-    background-color: #3b82f6;
+    background-color: #00B4D8;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.secondaryButton{
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    background-color: #e10909;
     color: white;
     border: none;
     border-radius: 8px;
@@ -93,7 +108,7 @@
 
 .checklistHeader {
     padding: 24px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: #495bbe;
     color: white;
 }
 
@@ -105,6 +120,7 @@
     font-size: 28px;
     font-weight: 600;
     margin: 0 0 8px 0;
+    color: #fff;
 }
 
 .checklistDescription {
@@ -147,7 +163,7 @@
 
 .progressFill {
     height: 100%;
-    background-color: #10b981;
+    background-color: #02505c;
     border-radius: 4px;
     transition: width 0.3s ease;
 }
@@ -225,7 +241,7 @@
     align-items: center;
     gap: 8px;
     padding: 10px 20px;
-    background-color: #10b981;
+    background-color: #00B4D8;
     color: white;
     border: none;
     border-radius: 8px;
@@ -237,7 +253,7 @@
 }
 
 .addButton:hover {
-    background-color: #059669;
+    background-color: #095c6c;
 }
 
 .tasksContainer {

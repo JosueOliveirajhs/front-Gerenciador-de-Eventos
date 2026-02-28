@@ -7,6 +7,7 @@ import { Owner } from './pages/Owner';
 import { Client } from './pages/Client';
 import { LoadingSpinner as Loading } from './components/common/LoadingSpinner';
 import styles from './App.module.css';
+import { ResetPasswordPage } from './pages/ResetPasswordPage';
 
 const AppRoutes: React.FC = () => {
   const { user, loading } = useAuth();
@@ -27,6 +28,7 @@ const AppRoutes: React.FC = () => {
           user ? <Navigate to="/" replace /> : <Login />
         } 
       />
+      <Route path="/esqueci-senha" element={<ResetPasswordPage />} />
       <Route 
         path="/" 
         element={

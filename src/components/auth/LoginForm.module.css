@@ -30,8 +30,21 @@
   box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
 }
 
-.formInput:invalid {
-  border-color: #ef4444;
+.forgotPassword {
+  text-align: right;
+  margin: 0.5rem 0 1rem 0;
+}
+
+.forgotPasswordLink {
+  color: #00B4D8;
+  font-size: 0.9rem;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.forgotPasswordLink:hover {
+  color: #0096b4;
+  text-decoration: underline;
 }
 
 .errorMessage {

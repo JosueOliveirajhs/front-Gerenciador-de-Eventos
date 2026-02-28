@@ -39,7 +39,7 @@
 }
 
 .clientCount {
-    background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);
+    background: #00B4D8;
     color: white;
     padding: 6px 14px;
     border-radius: 30px;
@@ -77,8 +77,8 @@
 }
 
 .filterToggle.active {
-    background: #4f46e5;
-    border-color: #4f46e5;
+    background: #00B4D8;
+    border-color: #ffffff;
     color: white;
 }
 
@@ -91,7 +91,7 @@
     align-items: center;
     gap: 10px;
     padding: 12px 24px;
-    background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);
+    background: #00B4D8;
     border: none;
     border-radius: 12px;
     color: white;
