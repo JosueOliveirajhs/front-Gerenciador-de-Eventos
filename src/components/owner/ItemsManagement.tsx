@@ -32,8 +32,8 @@ import {
 import { ConfirmationModal } from '../common/Alerts/ConfirmationModal';
 import { ErrorModal } from '../common/Alerts/ErrorModal';
 import styles from "./ItemsManagement.module.css";
-// IMPORTANTE: Ajuste o caminho abaixo para onde o seu itemService foi salvo
-import { itemService, Item } from '../../services/items';
+import { itemService, Item, CreateItemDTO } from '../../services/items';
+import { eventService, Event } from '../../services/events';
 
 interface ItemReservation {
   itemId: number;
@@ -44,14 +44,7 @@ interface ItemReservation {
   status: 'RESERVED' | 'CONFIRMED' | 'RETURNED';
 }
 
-const MOCK_EVENTS = [
-  { id: 1, title: "Casamento João & Maria", eventDate: "2026-03-15", status: "CONFIRMED" },
-  { id: 2, title: "Aniversário de 15 anos - Sofia", eventDate: "2026-03-20", status: "CONFIRMED" },
-  { id: 3, title: "Formatura Direito", eventDate: "2026-04-05", status: "QUOTE" },
-  { id: 4, title: "Evento Corporativo - Empresa X", eventDate: "2026-03-25", status: "CONFIRMED" }
-];
-
-// Com o mapItemToFrontend corrigido, podemos simplificar o getter
+// Função segura para obter quantidade total
 const getQTotal = (item: any): number => {
   if (!item) return 0;
   return Number(item.quantityTotal || 0);
@@ -59,7 +52,7 @@ const getQTotal = (item: any): number => {
 
 export const ItemsManagement: React.FC = () => {
   const [items, setItems] = useState<Item[]>([]);
-  const [events] = useState(MOCK_EVENTS);
+  const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingItem, setEditingItem] = useState<Item | null>(null);
@@ -79,20 +72,32 @@ export const ItemsManagement: React.FC = () => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<number | null>(null);
 
+  // Carregar dados iniciais
   useEffect(() => {
-    const fetchDados = async () => {
+    const fetchData = async () => {
+      setLoading(true);
       try {
-        const itemsDaAPI = await itemService.getAllItems();
-        setItems(itemsDaAPI);
+        const [itemsData, eventsData] = await Promise.all([
+          itemService.getAllItems(),
+          eventService.getAllEvents()
+        ]);
+
+        console.log('📦 Itens carregados:', itemsData);
+        console.log('📅 Eventos carregados:', eventsData);
+
+        setItems(itemsData);
+        setEvents(eventsData);
+        
       } catch (error) {
-        setErrorMessage('Erro ao carregar itens. Verifique a conexão com o servidor.');
+        console.error('❌ Erro ao carregar dados:', error);
+        setErrorMessage('Erro ao carregar dados. Verifique a conexão com o servidor.');
         setShowErrorModal(true);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchDados();
+    fetchData();
   }, []);
 
   const checkAvailability = (itemId: number, date: string, quantity: number): boolean => {
@@ -172,7 +177,21 @@ export const ItemsManagement: React.FC = () => {
 
   const handleCreateItem = async (itemData: Omit<Item, "id">, reservationData?: { eventId: number, quantity: number }) => {
     try {
-      const newItem = await itemService.createItem(itemData);
+      // Garantir que todos os campos obrigatórios estão presentes e com tipos corretos
+      const dataToSend: CreateItemDTO = {
+        name: itemData.name,
+        category: itemData.category,
+        quantityTotal: Number(itemData.quantityTotal) || 1,
+        minStock: Number(itemData.minStock) || 0,
+        unitPrice: Number(itemData.unitPrice) || 0,
+        description: itemData.description
+      };
+
+      console.log('📝 Enviando dados para criar item:', dataToSend);
+      
+      const newItem = await itemService.createItem(dataToSend);
+      console.log('✅ Item criado com sucesso:', newItem);
+      
       setItems(prev => [...prev, newItem]);
       setShowForm(false);
       
@@ -196,8 +215,17 @@ export const ItemsManagement: React.FC = () => {
 
       setSuccessMessage(msg);
       setShowSuccessModal(true);
-    } catch (error) {
-      setErrorMessage('Erro ao tentar cadastrar o item. Verifique os dados.');
+    } catch (error: any) {
+      console.error('❌ Erro detalhado:', error);
+      
+      let errorMsg = 'Erro ao tentar cadastrar o item.';
+      if (error.response?.data?.message) {
+        errorMsg = error.response.data.message;
+      } else if (error.message) {
+        errorMsg = error.message;
+      }
+      
+      setErrorMessage(errorMsg);
       setShowErrorModal(true);
       throw error;
     }
@@ -205,13 +233,28 @@ export const ItemsManagement: React.FC = () => {
 
   const handleUpdateItem = async (id: number, itemData: Partial<Item>) => {
     try {
-      const updatedItem = await itemService.updateItem(id, itemData);
+      const dataToSend: Partial<CreateItemDTO> = {
+        name: itemData.name,
+        category: itemData.category,
+        quantityTotal: itemData.quantityTotal !== undefined ? Number(itemData.quantityTotal) : undefined,
+        minStock: itemData.minStock !== undefined ? Number(itemData.minStock) : undefined,
+        unitPrice: itemData.unitPrice !== undefined ? Number(itemData.unitPrice) : undefined,
+        description: itemData.description
+      };
+
+      const updatedItem = await itemService.updateItem(id, dataToSend);
       setItems(items.map(item => item.id === id ? updatedItem : item));
       setEditingItem(null);
       setSuccessMessage('Item atualizado com sucesso!');
       setShowSuccessModal(true);
-    } catch (error) {
-      setErrorMessage('Erro ao tentar atualizar o item.');
+    } catch (error: any) {
+      let errorMsg = 'Erro ao tentar atualizar o item.';
+      if (error.response?.data?.message) {
+        errorMsg = error.response.data.message;
+      } else if (error.message) {
+        errorMsg = error.message;
+      }
+      setErrorMessage(errorMsg);
       setShowErrorModal(true);
       throw error;
     }
@@ -232,10 +275,14 @@ export const ItemsManagement: React.FC = () => {
       setItemToDelete(null);
       setSuccessMessage('Item excluído com sucesso!');
       setShowSuccessModal(true);
-    } catch (error) {
+    } catch (error: any) {
       setShowDeleteConfirm(false);
       setItemToDelete(null);
-      setErrorMessage('Erro ao excluir item. Ele pode ter dependências.');
+      let errorMsg = 'Erro ao excluir item. Ele pode ter dependências.';
+      if (error.response?.data?.message) {
+        errorMsg = error.response.data.message;
+      }
+      setErrorMessage(errorMsg);
       setShowErrorModal(true);
     }
   };
@@ -298,10 +345,14 @@ export const ItemsManagement: React.FC = () => {
     return (
       <div className={styles.loading}>
         <div className={styles.spinner}></div>
-        <p>Carregando estoque atualizado...</p>
+        <p>Carregando estoque e eventos...</p>
       </div>
     );
   }
+
+  const activeEvents = events.filter(event => 
+    event.status !== 'CANCELLED' && event.status !== 'COMPLETED'
+  );
 
   return (
     <div className={styles.clientManagement}>
@@ -314,7 +365,7 @@ export const ItemsManagement: React.FC = () => {
             </h2>
             <p className={styles.subtitle}>
               <FiBox size={14} />
-              {items.length} itens cadastrados no total
+              {items.length} itens cadastrados | {activeEvents.length} eventos ativos
             </p>
           </div>
 
@@ -365,7 +416,7 @@ export const ItemsManagement: React.FC = () => {
 
       {showForm && (
         <ItemForm
-          events={events}
+          events={activeEvents}
           onSubmit={handleCreateItem}
           onCancel={() => setShowForm(false)}
         />
@@ -374,7 +425,7 @@ export const ItemsManagement: React.FC = () => {
       {editingItem && (
         <ItemForm
           item={editingItem}
-          events={events}
+          events={activeEvents}
           onSubmit={(data) => handleUpdateItem(editingItem.id, data)}
           onCancel={() => setEditingItem(null)}
         />
@@ -383,7 +434,7 @@ export const ItemsManagement: React.FC = () => {
       {selectedItemForReservation && (
         <ReservationModal
           item={selectedItemForReservation}
-          events={events.filter(e => e.status === 'CONFIRMED' || e.status === 'QUOTE')}
+          events={activeEvents}
           onConfirm={handleReserveItem}
           onCancel={() => setSelectedItemForReservation(null)}
           checkAvailability={checkAvailability}
@@ -660,7 +711,7 @@ export const ItemsManagement: React.FC = () => {
 
 interface ItemFormProps {
   item?: Item;
-  events: any[]; 
+  events: Event[];
   onSubmit: (data: any, reservationData?: {eventId: number, quantity: number}) => Promise<void>;
   onCancel: () => void;
 }
@@ -669,20 +720,132 @@ const ItemForm: React.FC<ItemFormProps> = ({ item, events, onSubmit, onCancel })
   const [formData, setFormData] = useState({
     name: item?.name || "",
     category: item?.category || "DECORATION",
-    quantityTotal: item ? getQTotal(item) : 1,
+    quantityTotal: item?.quantityTotal || 1,
     description: item?.description || "",
-    minStock: item?.minStock ? Number(item.minStock) : 5,
-    unitPrice: item?.unitPrice ? Number(item.unitPrice) : 0,
+    minStock: item?.minStock || 5,
+    unitPrice: item?.unitPrice || 0,
   });
+
+  // Estados para controle dos inputs
+  const [quantityTotalInput, setQuantityTotalInput] = useState<string>(item?.quantityTotal?.toString() || "1");
+  const [minStockInput, setMinStockInput] = useState<string>(item?.minStock?.toString() || "5");
+  const [unitPriceInput, setUnitPriceInput] = useState<string>(
+    item?.unitPrice ? item.unitPrice.toFixed(2).replace('.', ',') : "0,00"
+  );
 
   const [assignToEvent, setAssignToEvent] = useState(false);
   const [reservationData, setReservationData] = useState({
     eventId: '',
     quantity: 1
   });
+  const [reservationQuantityInput, setReservationQuantityInput] = useState<string>("1");
 
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [loading, setLoading] = useState(false);
+
+  // Handlers específicos para cada input
+  const handleQuantityTotalChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setQuantityTotalInput(value);
+    
+    if (value === '' || value === '-') {
+      setFormData(prev => ({ ...prev, quantityTotal: 0 }));
+    } else {
+      const num = parseInt(value);
+      if (!isNaN(num)) {
+        setFormData(prev => ({ ...prev, quantityTotal: num }));
+      }
+    }
+  };
+
+  const handleQuantityTotalBlur = () => {
+    if (quantityTotalInput === '' || quantityTotalInput === '-' || parseInt(quantityTotalInput) < 1) {
+      setQuantityTotalInput("1");
+      setFormData(prev => ({ ...prev, quantityTotal: 1 }));
+    }
+  };
+
+  const handleMinStockChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setMinStockInput(value);
+    
+    if (value === '' || value === '-') {
+      setFormData(prev => ({ ...prev, minStock: 0 }));
+    } else {
+      const num = parseInt(value);
+      if (!isNaN(num)) {
+        setFormData(prev => ({ ...prev, minStock: num }));
+      }
+    }
+  };
+
+  const handleMinStockBlur = () => {
+    if (minStockInput === '' || minStockInput === '-') {
+      setMinStockInput("0");
+      setFormData(prev => ({ ...prev, minStock: 0 }));
+    }
+  };
+
+  const handleUnitPriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let value = e.target.value;
+    
+    // Permite apenas números, vírgula e ponto
+    value = value.replace(/[^\d,.]/g, '');
+    
+    setUnitPriceInput(value);
+    
+    if (value === '' || value === ',') {
+      setFormData(prev => ({ ...prev, unitPrice: 0 }));
+      return;
+    }
+    
+    // Converte para número (formato brasileiro: vírgula como decimal)
+    const normalizedValue = value.replace(',', '.');
+    const num = parseFloat(normalizedValue);
+    
+    if (!isNaN(num)) {
+      setFormData(prev => ({ ...prev, unitPrice: num }));
+    }
+  };
+
+  const handleUnitPriceBlur = () => {
+    if (unitPriceInput === '' || unitPriceInput === ',') {
+      setUnitPriceInput("0,00");
+      setFormData(prev => ({ ...prev, unitPrice: 0 }));
+    } else {
+      // Formata para 2 casas decimais
+      const num = formData.unitPrice;
+      setUnitPriceInput(num.toFixed(2).replace('.', ','));
+    }
+  };
+
+  const handleReservationQuantityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setReservationQuantityInput(value);
+    
+    if (value === '' || value === '-') {
+      setReservationData(prev => ({ ...prev, quantity: 0 }));
+    } else {
+      const num = parseInt(value);
+      if (!isNaN(num)) {
+        setReservationData(prev => ({ ...prev, quantity: num }));
+      }
+    }
+  };
+
+  const handleReservationQuantityBlur = () => {
+    if (reservationQuantityInput === '' || reservationQuantityInput === '-' || parseInt(reservationQuantityInput) < 1) {
+      setReservationQuantityInput("1");
+      setReservationData(prev => ({ ...prev, quantity: 1 }));
+    } else {
+      // Garante que não ultrapasse o máximo
+      const max = formData.quantityTotal;
+      if (reservationData.quantity > max) {
+        setReservationQuantityInput(max.toString());
+        setReservationData(prev => ({ ...prev, quantity: max }));
+      }
+    }
+  };
 
   const validateForm = () => {
     const newErrors: { [key: string]: string } = {};
@@ -692,12 +855,17 @@ const ItemForm: React.FC<ItemFormProps> = ({ item, events, onSubmit, onCancel })
       newErrors.quantityTotal = "Você precisa de no mínimo 1 unidade.";
     if (formData.minStock < 0)
       newErrors.minStock = "Não pode ser negativo.";
+    if (formData.unitPrice <= 0)
+      newErrors.unitPrice = "Preço deve ser maior que zero.";
       
     if (assignToEvent && !reservationData.eventId) {
       newErrors.eventId = "Selecione um evento válido.";
     }
     if (assignToEvent && reservationData.quantity > formData.quantityTotal) {
       newErrors.reservationQty = "Você não pode reservar mais do que possui.";
+    }
+    if (assignToEvent && reservationData.quantity < 1) {
+      newErrors.reservationQty = "A quantidade deve ser no mínimo 1.";
     }
 
     setErrors(newErrors);
@@ -708,15 +876,41 @@ const ItemForm: React.FC<ItemFormProps> = ({ item, events, onSubmit, onCancel })
     e.preventDefault();
     if (!validateForm()) return;
 
+    // Garantir que os valores são números válidos antes de enviar
+    const dataToSubmit = {
+      name: formData.name.trim(),
+      category: formData.category,
+      quantityTotal: Number(formData.quantityTotal) || 1,
+      description: formData.description.trim() || undefined,
+      minStock: Number(formData.minStock) || 0,
+      unitPrice: Number(formData.unitPrice) || 0
+    };
+
+    console.log('📝 Dados a serem enviados:', dataToSubmit);
+
+    // Validar novamente antes de enviar
+    if (dataToSubmit.quantityTotal < 1) {
+      setErrors({ ...errors, quantityTotal: "Quantidade total deve ser no mínimo 1" });
+      return;
+    }
+
+    if (dataToSubmit.unitPrice <= 0) {
+      setErrors({ ...errors, unitPrice: "Preço deve ser maior que zero" });
+      return;
+    }
+
     setLoading(true);
     try {
-      const resData = assignToEvent 
-        ? { eventId: Number(reservationData.eventId), quantity: reservationData.quantity }
+      const resData = assignToEvent && reservationData.eventId
+        ? { 
+            eventId: Number(reservationData.eventId), 
+            quantity: Number(reservationData.quantity) || 1 
+          }
         : undefined;
         
-      await onSubmit(formData, resData);
+      await onSubmit(dataToSubmit, resData);
     } catch (error) {
-      
+      console.error('❌ Erro no submit:', error);
     } finally {
       setLoading(false);
     }
@@ -783,19 +977,16 @@ const ItemForm: React.FC<ItemFormProps> = ({ item, events, onSubmit, onCancel })
                 Estoque Físico Total *
               </label>
               <input
-                type="number"
-                min="1"
-                value={formData.quantityTotal}
-                onChange={(e) => {
-                  const val = parseInt(e.target.value) || 0;
-                  setFormData({ ...formData, quantityTotal: val });
-                  if (assignToEvent && reservationData.quantity > val) {
-                    setReservationData({...reservationData, quantity: val});
-                  }
-                }}
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                value={quantityTotalInput}
+                onChange={handleQuantityTotalChange}
+                onBlur={handleQuantityTotalBlur}
                 className={`${styles.formInput} ${errors.quantityTotal ? styles.error : ''}`}
+                placeholder="1"
               />
-              <small className={styles.helpText} style={{ color: '#64748b', fontSize: '11px', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <small className={styles.helpText}>
                 <FiInfo size={12}/> Quantas unidades totais você possui no galpão/estoque.
               </small>
               {errors.quantityTotal && (
@@ -809,18 +1000,16 @@ const ItemForm: React.FC<ItemFormProps> = ({ item, events, onSubmit, onCancel })
                 Alerta de Estoque Mínimo
               </label>
               <input
-                type="number"
-                min="0"
-                value={formData.minStock}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    minStock: parseInt(e.target.value) || 0,
-                  })
-                }
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                value={minStockInput}
+                onChange={handleMinStockChange}
+                onBlur={handleMinStockBlur}
                 className={`${styles.formInput} ${errors.minStock ? styles.error : ''}`}
+                placeholder="0"
               />
-              <small className={styles.helpText} style={{ color: '#64748b', fontSize: '11px', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <small className={styles.helpText}>
                 <FiInfo size={12}/> O sistema avisa se a quantidade disponível cair abaixo disso.
               </small>
             </div>
@@ -828,22 +1017,20 @@ const ItemForm: React.FC<ItemFormProps> = ({ item, events, onSubmit, onCancel })
             <div className={styles.formGroup}>
               <label className={styles.formLabel}>
                 <MdAttachMoney size={14} />
-                Preço Unitário (R$)
+                Preço Unitário (R$) *
               </label>
               <input
-                type="number"
-                min="0"
-                step="0.01"
-                value={formData.unitPrice}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    unitPrice: parseFloat(e.target.value) || 0,
-                  })
-                }
-                className={styles.formInput}
+                type="text"
+                inputMode="decimal"
+                value={unitPriceInput}
+                onChange={handleUnitPriceChange}
+                onBlur={handleUnitPriceBlur}
+                className={`${styles.formInput} ${errors.unitPrice ? styles.error : ''}`}
                 placeholder="0,00"
               />
+              {errors.unitPrice && (
+                <span className={styles.errorText}>{errors.unitPrice}</span>
+              )}
             </div>
           </div>
 
@@ -887,7 +1074,7 @@ const ItemForm: React.FC<ItemFormProps> = ({ item, events, onSubmit, onCancel })
                       <option value="">-- Selecione na lista --</option>
                       {events.map(event => (
                         <option key={event.id} value={event.id}>
-                          {event.title}
+                          {event.title} - {new Date(event.eventDate).toLocaleDateString('pt-BR')}
                         </option>
                       ))}
                     </select>
@@ -896,12 +1083,14 @@ const ItemForm: React.FC<ItemFormProps> = ({ item, events, onSubmit, onCancel })
                   <div className={styles.formGroup}>
                     <label className={styles.formLabel} style={{ fontSize: '12px' }}>Quantidade a Reservar *</label>
                     <input
-                      type="number"
-                      min="1"
-                      max={formData.quantityTotal}
-                      value={reservationData.quantity}
-                      onChange={(e) => setReservationData({ ...reservationData, quantity: parseInt(e.target.value) || 1 })}
+                      type="text"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      value={reservationQuantityInput}
+                      onChange={handleReservationQuantityChange}
+                      onBlur={handleReservationQuantityBlur}
                       className={`${styles.formInput} ${errors.reservationQty ? styles.error : ''}`}
+                      placeholder="1"
                     />
                     {errors.reservationQty && <span className={styles.errorText}>{errors.reservationQty}</span>}
                   </div>
@@ -944,11 +1133,9 @@ const ItemForm: React.FC<ItemFormProps> = ({ item, events, onSubmit, onCancel })
   );
 };
 
-// Modais Secundários Abaixo
-
 interface ReservationModalProps {
   item: Item;
-  events: any[];
+  events: Event[];
   onConfirm: (itemId: number, eventId: number, quantity: number) => void;
   onCancel: () => void;
   checkAvailability: (itemId: number, date: string, quantity: number) => boolean;
@@ -956,21 +1143,13 @@ interface ReservationModalProps {
 
 const ReservationModal: React.FC<ReservationModalProps> = ({ item, events, onConfirm, onCancel, checkAvailability }) => {
   const [selectedEventId, setSelectedEventId] = useState<number | ''>('');
-  const [quantity, setQuantity] = useState(1);
+  const [quantityInput, setQuantityInput] = useState<string>("1");
+  const [quantity, setQuantity] = useState<number>(1);
   const [selectedDate, setSelectedDate] = useState<string>('');
 
-  const reserved = events
-    .filter(e => e.id === selectedEventId)
-    .map(e => {
-      const itemReservations: any[] = []; 
-      return itemReservations.reduce((sum, r) => sum + r.quantity, 0);
-    })[0] || 0;
-
   const qTotal = getQTotal(item);
-  const maxAvailable = qTotal - reserved;
-  const isAvailable = selectedEventId && selectedDate
-    ? checkAvailability(item.id, selectedDate, quantity)
-    : true;
+  
+  const maxAvailable = qTotal;
 
   const handleEventChange = (eventId: number) => {
     setSelectedEventId(eventId);
@@ -979,6 +1158,34 @@ const ReservationModal: React.FC<ReservationModalProps> = ({ item, events, onCon
       setSelectedDate(event.eventDate);
     }
   };
+
+  const handleQuantityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setQuantityInput(value);
+    
+    if (value === '' || value === '-') {
+      setQuantity(0);
+    } else {
+      const num = parseInt(value);
+      if (!isNaN(num)) {
+        setQuantity(num);
+      }
+    }
+  };
+
+  const handleQuantityBlur = () => {
+    if (quantityInput === '' || quantityInput === '-' || quantity < 1) {
+      setQuantityInput("1");
+      setQuantity(1);
+    } else if (quantity > maxAvailable) {
+      setQuantityInput(maxAvailable.toString());
+      setQuantity(maxAvailable);
+    }
+  };
+
+  const isAvailable = selectedEventId && selectedDate
+    ? checkAvailability(item.id, selectedDate, quantity)
+    : true;
 
   const handleConfirm = () => {
     if (selectedEventId && isAvailable && quantity > 0) {
@@ -1038,12 +1245,14 @@ const ReservationModal: React.FC<ReservationModalProps> = ({ item, events, onCon
               Quantidade a Reservar *
             </label>
             <input
-              type="number"
-              min="1"
-              max={maxAvailable > 0 ? maxAvailable : 1}
-              value={quantity}
-              onChange={(e) => setQuantity(parseInt(e.target.value) || 1)}
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              value={quantityInput}
+              onChange={handleQuantityChange}
+              onBlur={handleQuantityBlur}
               className={styles.formInput}
+              placeholder="1"
             />
           </div>
 
@@ -1091,7 +1300,8 @@ interface EditReservationModalProps {
 }
 
 const EditReservationModal: React.FC<EditReservationModalProps> = ({ reservation, item, itemReservations, onConfirm, onCancel }) => {
-  const [newQuantity, setNewQuantity] = useState(reservation.quantity);
+  const [newQuantityInput, setNewQuantityInput] = useState<string>(reservation.quantity.toString());
+  const [newQuantity, setNewQuantity] = useState<number>(reservation.quantity);
 
   const otherReservationsSum = itemReservations
     .filter(r => r.eventId !== reservation.eventId)
@@ -1099,6 +1309,31 @@ const EditReservationModal: React.FC<EditReservationModalProps> = ({ reservation
 
   const qTotal = getQTotal(item);
   const maxAvailableNow = qTotal - otherReservationsSum;
+
+  const handleQuantityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setNewQuantityInput(value);
+    
+    if (value === '' || value === '-') {
+      setNewQuantity(0);
+    } else {
+      const num = parseInt(value);
+      if (!isNaN(num)) {
+        setNewQuantity(num);
+      }
+    }
+  };
+
+  const handleQuantityBlur = () => {
+    if (newQuantityInput === '' || newQuantityInput === '-' || newQuantity < 1) {
+      setNewQuantityInput("1");
+      setNewQuantity(1);
+    } else if (newQuantity > maxAvailableNow) {
+      setNewQuantityInput(maxAvailableNow.toString());
+      setNewQuantity(maxAvailableNow);
+    }
+  };
+
   const isAvailable = newQuantity > 0 && newQuantity <= maxAvailableNow;
 
   return (
@@ -1129,14 +1364,15 @@ const EditReservationModal: React.FC<EditReservationModalProps> = ({ reservation
               Nova Quantidade a Reservar
             </label>
             <input
-              type="number"
-              min="1"
-              max={maxAvailableNow > 0 ? maxAvailableNow : 1}
-              value={newQuantity}
-              onChange={(e) => setNewQuantity(parseInt(e.target.value) || 1)}
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              value={newQuantityInput}
+              onChange={handleQuantityChange}
+              onBlur={handleQuantityBlur}
               className={styles.formInput}
             />
-            <small className={styles.helpText} style={{ marginTop: '4px', display: 'block', color: '#64748b' }}>
+            <small className={styles.helpText}>
               Máximo disponível (considerando outras reservas): {maxAvailableNow} un.
             </small>
           </div>

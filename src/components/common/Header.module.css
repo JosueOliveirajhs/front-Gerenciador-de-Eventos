@@ -75,7 +75,89 @@
   color: #00B4D8;
   font-weight: 700;
 }
+/* src/components/common/Header.module.css */
+.notificationLoading {
+  padding: 20px;
+  text-align: center;
+  color: #6b7280;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
 
+.spinner {
+  width: 30px;
+  height: 30px;
+  border: 2px solid #e5e7eb;
+  border-top-color: #3b82f6;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.notificationEmpty {
+  padding: 30px 20px;
+  text-align: center;
+  color: #9ca3af;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.notificationEmpty svg {
+  color: #d1d5db;
+}
+
+.notificationEmpty p {
+  margin: 0;
+  font-size: 14px;
+}
+
+.notificationMore {
+  padding: 10px;
+  text-align: center;
+  border-top: 1px solid #f3f4f6;
+}
+
+.notificationMore button {
+  background: none;
+  border: none;
+  color: #3b82f6;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.notificationMore button:hover {
+  text-decoration: underline;
+}
+
+.notificationMarkRead {
+  background: none;
+  border: none;
+  color: #9ca3af;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.notificationItem:hover .notificationMarkRead {
+  opacity: 1;
+}
+
+.notificationMarkRead:hover {
+  background-color: #f3f4f6;
+  color: #3b82f6;
+}
 /* ========== CENTER SECTION ========== */
 .headerCenter {
   flex: 1;

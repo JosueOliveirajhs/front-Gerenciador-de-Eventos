@@ -1,5 +1,4 @@
-// src/components/admin/FinancialReports.tsx
-
+// src/components/owner/FinancialReports.tsx
 import React, { useState, useEffect } from 'react';
 import { 
   MdAttachMoney,
@@ -39,22 +38,12 @@ import {
 } from 'react-icons/fi';
 import { Event } from '../../types/Event';
 import { eventService } from '../../services/events';
+import { expenseService, Expense, CreateExpenseDTO } from '../../services/expense';
+import { ConfirmationModal } from '../common/Alerts/ConfirmationModal';
+import { ErrorModal } from '../common/Alerts/ErrorModal';
 import styles from './FinancialReports.module.css';
 
 // ============ TIPOS ============
-interface Expense {
-  id: string;
-  eventId: number;
-  eventTitle: string;
-  category: string;
-  description: string;
-  amount: number;
-  date: string;
-  supplier?: string;
-  paymentMethod?: string;
-  status: 'PENDING' | 'PAID';
-}
-
 interface EventFinancial {
   eventId: number;
   eventTitle: string;
@@ -159,6 +148,7 @@ export const FinancialReports: React.FC = () => {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [selectedMonth, setSelectedMonth] = useState(
     new Date().toISOString().slice(0, 7)
   );
@@ -168,55 +158,93 @@ export const FinancialReports: React.FC = () => {
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
   const [selectedEvent, setSelectedEvent] = useState<EventFinancial | null>(null);
   const [expandedEvent, setExpandedEvent] = useState<number | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [expenseToDelete, setExpenseToDelete] = useState<number | null>(null);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [showErrorModal, setShowErrorModal] = useState(false);
 
   // Carregar dados iniciais
   useEffect(() => {
     loadData();
-    loadExpenses();
   }, []);
 
   const loadData = async () => {
     try {
       setLoading(true);
       setError(null);
-      const eventsData = await eventService.getAllEvents();
+      
+      const [eventsData, expensesData] = await Promise.all([
+        eventService.getAllEvents(),
+        expenseService.getAllExpenses()
+      ]);
+      
       setEvents(eventsData);
+      setExpenses(expensesData);
     } catch (error) {
-      console.error('Erro ao carregar eventos:', error);
-      setError('Erro ao carregar eventos');
+      console.error('Erro ao carregar dados:', error);
+      setError('Erro ao carregar dados financeiros');
     } finally {
       setLoading(false);
     }
   };
 
-  const loadExpenses = () => {
-    const saved = localStorage.getItem('event_expenses');
-    if (saved) {
-      setExpenses(JSON.parse(saved));
+  // CRUD de despesas
+  const handleAddExpense = async (expenseData: CreateExpenseDTO) => {
+    try {
+      setLoading(true);
+      const newExpense = await expenseService.createExpense(expenseData);
+      setExpenses(prev => [...prev, newExpense]);
+      setSuccessMessage('Despesa adicionada com sucesso!');
+      setShowSuccessModal(true);
+      setShowExpenseModal(false);
+    } catch (error) {
+      setError('Erro ao adicionar despesa');
+      setShowErrorModal(true);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const saveExpenses = (newExpenses: Expense[]) => {
-    localStorage.setItem('event_expenses', JSON.stringify(newExpenses));
-    setExpenses(newExpenses);
+  const handleUpdateExpense = async (id: number, updates: Partial<CreateExpenseDTO>) => {
+    try {
+      setLoading(true);
+      const updated = await expenseService.updateExpense(id, updates);
+      setExpenses(prev => prev.map(exp => exp.id === id ? updated : exp));
+      setSuccessMessage('Despesa atualizada com sucesso!');
+      setShowSuccessModal(true);
+      setShowExpenseModal(false);
+      setEditingExpense(null);
+    } catch (error) {
+      setError('Erro ao atualizar despesa');
+      setShowErrorModal(true);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // CRUD de despesas
-  const addExpense = (expense: Omit<Expense, 'id'>) => {
-    const newExpense = { ...expense, id: Date.now().toString() };
-    saveExpenses([...expenses, newExpense]);
-  };
-
-  const updateExpense = (id: string, updates: Partial<Expense>) => {
-    const updated = expenses.map(exp => 
-      exp.id === id ? { ...exp, ...updates } : exp
-    );
-    saveExpenses(updated);
-  };
-
-  const deleteExpense = (id: string) => {
-    if (window.confirm('Excluir esta despesa?')) {
-      saveExpenses(expenses.filter(exp => exp.id !== id));
+  const handleDeleteExpense = async (id: number) => {
+    try {
+      setLoading(true);
+      await expenseService.deleteExpense(id);
+      setExpenses(prev => prev.filter(exp => exp.id !== id));
+      setSuccessMessage('Despesa excluída com sucesso!');
+      setShowSuccessModal(true);
+      setShowDeleteConfirm(false);
+      setExpenseToDelete(null);
+      
+      // Fechar modal de detalhes se necessário
+      if (selectedEvent) {
+        const updatedEvent = {
+          ...selectedEvent,
+          expenses: selectedEvent.expenses.filter(exp => exp.id !== id)
+        };
+        setSelectedEvent(updatedEvent);
+      }
+    } catch (error) {
+      setError('Erro ao excluir despesa');
+      setShowErrorModal(true);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -274,37 +302,32 @@ export const FinancialReports: React.FC = () => {
   }).sort((a, b) => new Date(b.eventDate).getTime() - new Date(a.eventDate).getTime());
 
   // Handlers
-  const handleAddExpense = () => {
-    setEditingExpense(null);
-    setShowExpenseModal(true);
-  };
-
-  const handleEditExpense = (expense: Expense) => {
-    setEditingExpense(expense);
+  const handleOpenExpenseModal = (expense?: Expense) => {
+    if (expense) {
+      setEditingExpense(expense);
+    } else {
+      setEditingExpense(null);
+    }
     setShowExpenseModal(true);
   };
 
   const handleSaveExpense = (formData: FormData) => {
-    const expenseData = {
+    const expenseData: CreateExpenseDTO = {
       eventId: parseInt(formData.get('eventId') as string),
-      eventTitle: events.find(e => e.id === parseInt(formData.get('eventId') as string))?.title || '',
       category: formData.get('category') as string,
       description: formData.get('description') as string,
       amount: parseFloat(formData.get('amount') as string),
       date: formData.get('date') as string,
-      supplier: formData.get('supplier') as string,
-      paymentMethod: formData.get('paymentMethod') as string,
+      supplier: formData.get('supplier') as string || undefined,
+      paymentMethod: formData.get('paymentMethod') as string || undefined,
       status: formData.get('status') as 'PENDING' | 'PAID'
     };
 
     if (editingExpense) {
-      updateExpense(editingExpense.id, expenseData);
+      handleUpdateExpense(editingExpense.id, expenseData);
     } else {
-      addExpense(expenseData);
+      handleAddExpense(expenseData);
     }
-    
-    setShowExpenseModal(false);
-    setEditingExpense(null);
   };
 
   const handleViewEventExpenses = (event: EventFinancial) => {
@@ -312,7 +335,12 @@ export const FinancialReports: React.FC = () => {
     setShowDetailsModal(true);
   };
 
-  if (loading) {
+  const confirmDeleteExpense = (id: number) => {
+    setExpenseToDelete(id);
+    setShowDeleteConfirm(true);
+  };
+
+  if (loading && events.length === 0) {
     return (
       <div className={styles.loading}>
         <div className={styles.spinner}></div>
@@ -347,10 +375,10 @@ export const FinancialReports: React.FC = () => {
           
           <div className={styles.periodControls}>
             <div className={styles.periodSelector}>
-              <label className={styles.selectorLabel}>
+              <span className={styles.selectorLabel}>
                 <FiCalendar size={16} />
                 Período:
-              </label>
+              </span>
               <select
                 value={selectedPeriod}
                 onChange={(e) => setSelectedPeriod(e.target.value as PeriodType)}
@@ -457,7 +485,7 @@ export const FinancialReports: React.FC = () => {
             <FaChartPie size={20} />
             Despesas por Categoria
           </h2>
-          <button onClick={handleAddExpense} className={styles.primaryButton}>
+          <button onClick={() => handleOpenExpenseModal()} className={styles.primaryButton}>
             <MdAddCircle size={18} />
             Nova Despesa
           </button>
@@ -476,7 +504,7 @@ export const FinancialReports: React.FC = () => {
                   {category.icon}
                 </div>
                 <div className={styles.categoryInfo}>
-                  <span className={styles.categoryName}>{category.name}</span>
+                  <h4 className={styles.categoryName}>{category.name}</h4>
                   <span className={styles.categoryAmount}>{formatCurrency(amount)}</span>
                   <div className={styles.categoryBar}>
                     <div 
@@ -495,7 +523,7 @@ export const FinancialReports: React.FC = () => {
           {Object.keys(expensesByCategory).length === 0 && (
             <div className={styles.emptyCategories}>
               <p>Nenhuma despesa no período</p>
-              <button onClick={handleAddExpense} className={styles.secondaryButton}>
+              <button onClick={() => handleOpenExpenseModal()} className={styles.secondaryButton}>
                 <MdAddCircle size={16} />
                 Adicionar despesa
               </button>
@@ -608,6 +636,22 @@ export const FinancialReports: React.FC = () => {
                                   }`}>
                                     {exp.status === 'PAID' ? 'Pago' : 'Pendente'}
                                   </span>
+                                  <div className={styles.expenseActions}>
+                                    <button
+                                      onClick={() => handleOpenExpenseModal(exp)}
+                                      className={styles.iconButton}
+                                      title="Editar"
+                                    >
+                                      <MdEdit size={14} />
+                                    </button>
+                                    <button
+                                      onClick={() => confirmDeleteExpense(exp.id)}
+                                      className={`${styles.iconButton} ${styles.deleteButton}`}
+                                      title="Excluir"
+                                    >
+                                      <MdDelete size={14} />
+                                    </button>
+                                  </div>
                                 </div>
                               ))}
                               {event.expenses.length > 3 && (
@@ -620,7 +664,7 @@ export const FinancialReports: React.FC = () => {
                               )}
                             </div>
                           ) : (
-                            <p>Nenhuma despesa</p>
+                            <p>Nenhuma despesa cadastrada</p>
                           )}
                         </div>
                       </td>
@@ -780,7 +824,7 @@ export const FinancialReports: React.FC = () => {
         </div>
       )}
 
-      {/* Modal de Detalhes */}
+      {/* Modal de Detalhes - CORRIGIDO */}
       {showDetailsModal && selectedEvent && (
         <div className={styles.modal} onClick={() => setShowDetailsModal(false)}>
           <div className={`${styles.modalContent} ${styles.detailsModal}`} onClick={e => e.stopPropagation()}>
@@ -796,19 +840,19 @@ export const FinancialReports: React.FC = () => {
             
             <div className={styles.detailsSummary}>
               <div className={styles.summaryItem}>
-                <span>Total:</span>
+                <span>Total Despesas</span>
                 <strong>{formatCurrency(selectedEvent.expenses.reduce((s, e) => s + e.amount, 0))}</strong>
               </div>
               <div className={styles.summaryItem}>
-                <span>Despesas:</span>
+                <span>Quantidade</span>
                 <strong>{selectedEvent.expenses.length}</strong>
               </div>
               <div className={styles.summaryItem}>
-                <span>Receita:</span>
+                <span>Receita</span>
                 <strong>{formatCurrency(selectedEvent.revenue)}</strong>
               </div>
               <div className={styles.summaryItem}>
-                <span>Lucro:</span>
+                <span>Lucro</span>
                 <strong className={selectedEvent.netProfit >= 0 ? styles.positive : styles.negative}>
                   {formatCurrency(selectedEvent.netProfit)}
                 </strong>
@@ -816,68 +860,85 @@ export const FinancialReports: React.FC = () => {
             </div>
             
             <div className={styles.detailsList}>
-              <table className={styles.detailsTable}>
-                <thead>
-                  <tr>
-                    <th>Data</th>
-                    <th>Categoria</th>
-                    <th>Descrição</th>
-                    <th>Valor</th>
-                    <th>Status</th>
-                    <th></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {selectedEvent.expenses.map(expense => (
-                    <tr key={expense.id}>
-                      <td>{formatDate(expense.date)}</td>
-                      <td>
-                        <span className={styles.categoryBadge}>
-                          {EXPENSE_CATEGORIES.find(c => c.id === expense.category)?.icon}
-                          {expense.category}
-                        </span>
-                      </td>
-                      <td>{expense.description}</td>
-                      <td className={styles.valueCell}>{formatCurrency(expense.amount)}</td>
-                      <td>
-                        <span className={`${styles.statusBadge} ${
-                          expense.status === 'PAID' ? styles.paid : styles.pending
-                        }`}>
-                          {expense.status === 'PAID' ? 'Pago' : 'Pendente'}
-                        </span>
-                      </td>
-                      <td>
-                        <div className={styles.actionButtons}>
-                          <button
-                            onClick={() => {
-                              setShowDetailsModal(false);
-                              handleEditExpense(expense);
-                            }}
-                            className={styles.iconButton}
-                            title="Editar"
-                          >
-                            <MdEdit size={16} />
-                          </button>
-                          <button
-                            onClick={() => deleteExpense(expense.id)}
-                            className={`${styles.iconButton} ${styles.deleteButton}`}
-                            title="Excluir"
-                          >
-                            <MdDelete size={16} />
-                          </button>
-                        </div>
-                      </td>
+              {selectedEvent.expenses.length > 0 ? (
+                <table className={styles.detailsTable}>
+                  <thead>
+                    <tr>
+                      <th>Data</th>
+                      <th>Categoria</th>
+                      <th>Descrição</th>
+                      <th>Valor</th>
+                      <th>Status</th>
+                      <th></th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {selectedEvent.expenses.map(expense => (
+                      <tr key={expense.id}>
+                        <td>{formatDate(expense.date)}</td>
+                        <td>
+                          <span className={styles.categoryBadge}>
+                            {EXPENSE_CATEGORIES.find(c => c.id === expense.category)?.icon}
+                            {expense.category}
+                          </span>
+                        </td>
+                        <td>{expense.description}</td>
+                        <td className={styles.valueCell}>{formatCurrency(expense.amount)}</td>
+                        <td>
+                          <span className={`${styles.statusBadge} ${
+                            expense.status === 'PAID' ? styles.paid : styles.pending
+                          }`}>
+                            {expense.status === 'PAID' ? 'Pago' : 'Pendente'}
+                          </span>
+                        </td>
+                        <td>
+                          <div className={styles.actionButtons}>
+                            <button
+                              onClick={() => {
+                                setShowDetailsModal(false);
+                                handleOpenExpenseModal(expense);
+                              }}
+                              className={styles.iconButton}
+                              title="Editar"
+                            >
+                              <MdEdit size={16} />
+                            </button>
+                            <button
+                              onClick={() => confirmDeleteExpense(expense.id)}
+                              className={`${styles.iconButton} ${styles.deleteButton}`}
+                              title="Excluir"
+                            >
+                              <MdDelete size={16} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              ) : (
+                <div className={styles.emptyState}>
+                  <MdReceipt size={48} />
+                  <p>Nenhuma despesa cadastrada para este evento</p>
+                  <button
+                    onClick={() => {
+                      setShowDetailsModal(false);
+                      handleOpenExpenseModal();
+                    }}
+                    className={styles.secondaryButton}
+                  >
+                    <MdAddCircle size={16} />
+                    Adicionar primeira despesa
+                  </button>
+                </div>
+              )}
             </div>
             
             <div className={styles.modalActions}>
               <button
                 onClick={() => {
                   setShowDetailsModal(false);
-                  handleAddExpense();
+                  handleOpenExpenseModal();
                 }}
                 className={styles.primaryButton}
               >
@@ -894,6 +955,38 @@ export const FinancialReports: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Modais de Confirmação */}
+      <ConfirmationModal
+        isOpen={showDeleteConfirm}
+        title="Confirmar Exclusão"
+        message="Tem certeza que deseja excluir esta despesa?"
+        type="warning"
+        onConfirm={() => expenseToDelete && handleDeleteExpense(expenseToDelete)}
+        onCancel={() => {
+          setShowDeleteConfirm(false);
+          setExpenseToDelete(null);
+        }}
+        confirmText="Excluir"
+      />
+
+      <ConfirmationModal
+        isOpen={showSuccessModal}
+        title="Sucesso!"
+        message={successMessage || ''}
+        type="success"
+        onConfirm={() => setShowSuccessModal(false)}
+        onCancel={() => setShowSuccessModal(false)}
+        confirmText="OK"
+      />
+
+      <ErrorModal
+        isOpen={showErrorModal}
+        message={error || 'Erro ao processar operação'}
+        onClose={() => setShowErrorModal(false)}
+      />
     </div>
   );
 };
+
+export default FinancialReports;

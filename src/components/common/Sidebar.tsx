@@ -67,12 +67,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
       icon: <MdAttachMoney size={20} />,
       description: "Controle financeiro",
     },
-    {
-      id: "reports",
-      label: "Relatórios",
-      icon: <MdAssessment size={20} />,
-      description: "Relatórios e analytics",
-    },
   ];
 
   const clientMenu = [
