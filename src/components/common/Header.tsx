@@ -30,6 +30,82 @@ export const Header: React.FC<HeaderProps> = ({ onMenuToggle, onViewChange }) =>
   const notificationRef = useRef<HTMLDivElement>(null);
   const userDropdownRef = useRef<HTMLDivElement>(null);
 
+  // ===== FUNÇÃO CORRIGIDA DE FORMATAÇÃO DE TEMPO =====
+  const formatTimeAgo = (timestamp: string): string => {
+    if (!timestamp) return 'Data desconhecida';
+    
+    try {
+      // Tenta converter o timestamp para Date
+      let date: Date;
+      
+      // Se for número (timestamp Unix em milissegundos)
+      if (!isNaN(Number(timestamp))) {
+        date = new Date(Number(timestamp));
+      } 
+      // Se for string ISO ou formato comum
+      else {
+        // Tenta diferentes formatos
+        const possibleDate = new Date(timestamp);
+        if (!isNaN(possibleDate.getTime())) {
+          date = possibleDate;
+        } else {
+          // Tenta substituir espaço por T (formato ISO)
+          const normalizedDate = timestamp.replace(' ', 'T');
+          date = new Date(normalizedDate);
+        }
+      }
+      
+      // Verifica se a data é válida
+      if (!date || isNaN(date.getTime())) {
+        console.log('Data inválida:', timestamp);
+        return timestamp; // Retorna o original se não conseguir converter
+      }
+      
+      const now = new Date();
+      const diffMs = now.getTime() - date.getTime();
+      const diffSec = Math.floor(diffMs / 1000);
+      const diffMin = Math.floor(diffSec / 60);
+      const diffHr = Math.floor(diffMin / 60);
+      const diffDay = Math.floor(diffHr / 24);
+      
+      // Menos de 1 minuto
+      if (diffSec < 60) {
+        return 'Agora mesmo';
+      }
+      
+      // Menos de 1 hora
+      if (diffMin < 60) {
+        return `Há ${diffMin} ${diffMin === 1 ? 'minuto' : 'minutos'}`;
+      }
+      
+      // Menos de 24 horas
+      if (diffHr < 24) {
+        return `Há ${diffHr} ${diffHr === 1 ? 'hora' : 'horas'}`;
+      }
+      
+      // 1 dia
+      if (diffDay === 1) {
+        return 'Ontem';
+      }
+      
+      // Menos de 7 dias
+      if (diffDay < 7) {
+        return `Há ${diffDay} dias`;
+      }
+      
+      // Mais de uma semana - mostra data completa
+      return date.toLocaleDateString('pt-BR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+      });
+      
+    } catch (error) {
+      console.error('Erro ao formatar data:', error);
+      return timestamp; // Retorna o original em caso de erro
+    }
+  };
+
   const getUserTypeText = () => {
     return user?.userType === 'OWNER' ? 'Proprietário' : 'Cliente';
   };
@@ -43,12 +119,20 @@ export const Header: React.FC<HeaderProps> = ({ onMenuToggle, onViewChange }) =>
       .slice(0, 2) || 'U';
   };
 
-  // Carregar notificações usando getAllNotifications (mesmo método da página)
+  // Carregar notificações
   const loadNotifications = async () => {
     try {
       setLoading(true);
-      // Usar o mesmo método que a página de notificações usa
       const data = await notificationService.getAllNotifications();
+      
+      // Log para debug dos timestamps
+      console.log('📅 Timestamps recebidos:', data.map(n => ({
+        id: n.id,
+        timestamp: n.timestamp,
+        type: typeof n.timestamp,
+        parsed: new Date(n.timestamp).toString()
+      })));
+      
       setNotifications(data);
     } catch (error) {
       console.error('Erro ao carregar notificações:', error);
@@ -150,22 +234,6 @@ export const Header: React.FC<HeaderProps> = ({ onMenuToggle, onViewChange }) =>
     }
   };
 
-  const formatTime = (timestamp: string) => {
-    const date = new Date(timestamp);
-    const now = new Date();
-    const diff = now.getTime() - date.getTime();
-    const minutes = Math.floor(diff / (1000 * 60));
-    const hours = Math.floor(diff / (1000 * 60 * 60));
-    const days = Math.floor(hours / 24);
-
-    if (minutes < 1) return 'Agora mesmo';
-    if (minutes < 60) return `Há ${minutes} ${minutes === 1 ? 'minuto' : 'minutos'}`;
-    if (hours < 24) return `Há ${hours} ${hours === 1 ? 'hora' : 'horas'}`;
-    if (days === 1) return 'Ontem';
-    if (days < 7) return `Há ${days} dias`;
-    return date.toLocaleDateString('pt-BR');
-  };
-
   return (
     <header className={styles.header}>
       <div className={styles.headerContent}>
@@ -256,7 +324,7 @@ export const Header: React.FC<HeaderProps> = ({ onMenuToggle, onViewChange }) =>
                             {notification.message}
                           </p>
                           <span className={styles.notificationTime}>
-                            {formatTime(notification.timestamp)}
+                            {formatTimeAgo(notification.timestamp)}
                           </span>
                         </div>
                         <button 

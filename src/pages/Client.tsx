@@ -1,12 +1,15 @@
 import React, { useState } from 'react';
 import { Header } from '../components/common/Header';
 import { Sidebar } from '../components/common/Sidebar';
-import { ClientDashboard } from '../components/client/ClientDashboard';
-import { NewBooking } from '../components/client/NewBooking';
+import { ClientPayments } from '../components/client/ClientPayments';
+import { ClientCommunity } from '../components/client/ClientCommunity';
+import { CompanySearch } from '../components/client/CompanySearch';
+import { ClientDocuments } from '../components/client/ClientDocuments';
+import { MyEvents } from '../components/client/MyEvents';
 import styles from './Client.module.css';
 
 export const Client: React.FC = () => {
-  const [activeView, setActiveView] = useState('dashboard');
+  const [activeView, setActiveView] = useState('events'); // events como padrão
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const handleMenuToggle = () => {
@@ -15,24 +18,18 @@ export const Client: React.FC = () => {
 
   const renderActiveView = () => {
     switch (activeView) {
-      case 'dashboard':
-        return <ClientDashboard />;
-      case 'new-booking':
-        return <NewBooking />;
-      case 'profile':
-        return (
-          <div className={styles.placeholderPage}>
-            <div className={styles.placeholderContent}>
-              <div className={styles.placeholderIcon}>👤</div>
-              <h2 className={styles.placeholderTitle}>Meus Dados</h2>
-              <p className={styles.placeholderDescription}>
-                Esta funcionalidade está em desenvolvimento e estará disponível em breve.
-              </p>
-            </div>
-          </div>
-        );
+      case 'events':
+        return <MyEvents />;
+      case 'payments':
+        return <ClientPayments />;
+      case 'community':
+        return <ClientCommunity />;
+      case 'company-search':
+        return <CompanySearch />;
+      case 'documents':
+        return <ClientDocuments />;
       default:
-        return <ClientDashboard />;
+        return <MyEvents />;
     }
   };
 
@@ -43,10 +40,11 @@ export const Client: React.FC = () => {
         onViewChange={setActiveView}
         isMobileOpen={isMobileMenuOpen}
         onMobileToggle={handleMenuToggle}
+        userType="client"
       />
       
       <div className={styles.mainContent}>
-        <Header onMenuToggle={handleMenuToggle} />
+        <Header onMenuToggle={handleMenuToggle} onViewChange={setActiveView} />
         
         <main className={styles.contentArea}>
           <div className={styles.pageHeader}>
@@ -67,22 +65,24 @@ export const Client: React.FC = () => {
   );
 };
 
-// Helper functions
+// Helper functions apenas para os requisitos
 const getPageTitle = (view: string): string => {
   const titles: { [key: string]: string } = {
-    dashboard: 'Meus Eventos',
-    'new-booking': 'Nova Reserva',
-    profile: 'Meus Dados'
+    events: 'Visualizar Eventos',
+    payments: 'Pagamentos e Financeiro',
+    community: 'Comunidade',
+    'company-search': 'Pesquisar Empresas e Notas',
+    documents: 'Espaço de Anexar Documento'
   };
-  return titles[view] || 'Meus Eventos';
+  return titles[view] || 'Visualizar Eventos';
 };
 
 const renderPageActions = (view: string) => {
   switch (view) {
-    case 'dashboard':
+    case 'documents':
       return (
         <button className={styles.primaryButton}>
-          + Nova Reserva
+          + Anexar Documento
         </button>
       );
     default:

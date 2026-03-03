@@ -1,6 +1,14 @@
 import React from "react";
 import { useAuth } from "../../context/AuthContext";
-import { FiCalendar, FiPlusCircle, FiX, FiCheckSquare } from "react-icons/fi";
+import { 
+  FiCalendar, 
+  FiPlusCircle, 
+  FiX, 
+  FiCheckSquare,
+  FiUsers,
+  FiSearch,
+  FiFile
+} from "react-icons/fi";
 import {
   MdEvent,
   MdDashboard,
@@ -8,6 +16,8 @@ import {
   MdAttachMoney,
   MdAssessment,
   MdPerson,
+  MdBusiness,
+  MdReceipt
 } from "react-icons/md";
 import styles from "./Sidebar.module.css";
 import { FaBox } from "react-icons/fa";
@@ -71,22 +81,34 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   const clientMenu = [
     {
-      id: "dashboard",
-      label: "Meus Eventos",
-      icon: <FiCalendar size={20} />,
+      id: "events",
+      label: "Visualizar Eventos",
+      icon: <MdEvent size={20} />,
       description: "Veja seus eventos",
     },
     {
-      id: "new-booking",
-      label: "Nova Reserva",
-      icon: <FiPlusCircle size={20} />,
-      description: "Crie uma nova reserva",
+      id: "payments",
+      label: "Pagamentos",
+      icon: <MdAttachMoney size={20} />,
+      description: "Financeiro e comprovantes",
     },
     {
-      id: "profile",
-      label: "Meus Dados",
-      icon: <MdPerson size={20} />,
-      description: "Gerencie seu perfil",
+      id: "community",
+      label: "Comunidade",
+      icon: <FiUsers size={20} />,
+      description: "Compartilhe experiências",
+    },
+    {
+      id: "company-search",
+      label: "Pesquisar Empresas",
+      icon: <FiSearch size={20} />,
+      description: "Encontre fornecedores",
+    },
+    {
+      id: "documents",
+      label: "Documentos",
+      icon: <FiFile size={20} />,
+      description: "Anexe documentos",
     },
   ];
 
@@ -130,13 +152,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
         {/* Menu Navigation */}
         <nav className={styles.sidebarNav}>
           <div className={styles.navSection}>
-            <span className={styles.sectionLabel}>MENU PRINCIPAL</span>
+            <span className={styles.sectionLabel}>
+              {user?.userType === "OWNER" ? "MENU PRINCIPAL" : "MEU ESPAÇO"}
+            </span>
             <div className={styles.navItems}>
               {menuItems.map((item) => (
                 <button
                   key={item.id}
                   className={`${styles.navItem} ${activeView === item.id ? styles.navItemActive : ""}`}
                   onClick={() => {
+                    console.log('🔀 Navegando para:', item.id);
                     onViewChange(item.id);
                     onMobileToggle?.();
                   }}
