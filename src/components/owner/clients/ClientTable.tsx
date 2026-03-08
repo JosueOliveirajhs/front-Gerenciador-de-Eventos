@@ -1,6 +1,6 @@
 // src/components/admin/clients/components/ClientTable.tsx
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { 
   FiEdit2, 
   FiTrash2, 
@@ -17,15 +17,17 @@ import {
 } from 'react-icons/md';
 import { User } from '../types';
 import { ClientDetailsModal } from './ClientDetailsModal';
+import { Pagination } from '../../common/Pagination/Pagination';
 import styles from './ClientTable.module.css';
 
 interface ClientTableProps {
     clients: User[];
     onEdit: (client: User) => void;
-    onDelete: (client: User) => void; // ✅ AGORA RECEBE CLIENTE INTEIRO, NÃO SÓ O ID
+    onDelete: (client: User) => void;
     onViewReceipts: (client: User) => void;
     onViewBoletos: (client: User) => void;
     isLoading?: boolean;
+    itemsPerPage?: number; // Permite customizar a quantidade de itens por página
 }
 
 type SortField = 'name' | 'cpf' | 'email' | 'phone';
@@ -37,11 +39,20 @@ export const ClientTable: React.FC<ClientTableProps> = ({
     onDelete,
     onViewReceipts,
     onViewBoletos,
-    isLoading = false
+    isLoading = false,
+    itemsPerPage = 10 // Padrão de 10 itens por página
 }) => {
     const [sortField, setSortField] = useState<SortField>('name');
     const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
     const [selectedClientForDetails, setSelectedClientForDetails] = useState<User | null>(null);
+    
+    // Estado da paginação
+    const [currentPage, setCurrentPage] = useState(1);
+
+    // Reseta para a primeira página caso a ordenação ou a quantidade de clientes mude
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [sortField, sortDirection, clients.length]);
 
     const sortedClients = useMemo(() => {
         return [...clients].sort((a, b) => {
@@ -54,6 +65,13 @@ export const ClientTable: React.FC<ClientTableProps> = ({
             return bValue.localeCompare(aValue);
         });
     }, [clients, sortField, sortDirection]);
+
+    // Fatia os dados ordenados para exibir apenas a página atual
+    const paginatedClients = useMemo(() => {
+        const startIndex = (currentPage - 1) * itemsPerPage;
+        const endIndex = startIndex + itemsPerPage;
+        return sortedClients.slice(startIndex, endIndex);
+    }, [sortedClients, currentPage, itemsPerPage]);
 
     const handleSort = (field: SortField) => {
         if (field === sortField) {
@@ -173,7 +191,7 @@ export const ClientTable: React.FC<ClientTableProps> = ({
                         </tr>
                     </thead>
                     <tbody>
-                        {sortedClients.map((client, index) => (
+                        {paginatedClients.map((client, index) => (
                             <tr 
                                 key={client.id} 
                                 className={`${styles.row} ${index % 2 === 0 ? styles.rowEven : ''}`}
@@ -250,7 +268,7 @@ export const ClientTable: React.FC<ClientTableProps> = ({
                                             <span className={styles.actionLabel}>Editar</span>
                                         </button>
                                         <button
-                                            onClick={() => onDelete(client)} // ✅ AGORA PASSA O CLIENTE INTEIRO
+                                            onClick={() => onDelete(client)}
                                             className={`${styles.actionButton} ${styles.deleteButton}`}
                                             title="Excluir cliente"
                                         >
@@ -270,6 +288,14 @@ export const ClientTable: React.FC<ClientTableProps> = ({
                     <FiUser size={14} />
                     Total: {clients.length} {clients.length === 1 ? 'cliente' : 'clientes'}
                 </span>
+                
+                {/* Componente de Paginação Renderizado Aqui */}
+                <Pagination 
+                    currentPage={currentPage}
+                    totalItems={clients.length}
+                    itemsPerPage={itemsPerPage}
+                    onPageChange={setCurrentPage}
+                />
             </div>
 
             {selectedClientForDetails && (

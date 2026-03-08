@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { 
   FiPackage, 
   FiPlus, 
@@ -31,6 +31,7 @@ import {
 } from 'react-icons/fa';
 import { ConfirmationModal } from '../common/Alerts/ConfirmationModal';
 import { ErrorModal } from '../common/Alerts/ErrorModal';
+import { Pagination } from '../common/Pagination/Pagination'; // ✅ Importação da Paginação
 import styles from "./ItemsManagement.module.css";
 import { itemService, Item, CreateItemDTO } from '../../services/items';
 import { eventService, Event } from '../../services/events';
@@ -72,6 +73,10 @@ export const ItemsManagement: React.FC = () => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<number | null>(null);
 
+  // ✅ Estados de Paginação
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+
   // Carregar dados iniciais
   useEffect(() => {
     const fetchData = async () => {
@@ -99,6 +104,11 @@ export const ItemsManagement: React.FC = () => {
 
     fetchData();
   }, []);
+
+  // ✅ Resetar para a primeira página quando os filtros ou total de itens mudarem
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, filterCategory, filterLowStock, items.length]);
 
   const checkAvailability = (itemId: number, date: string, quantity: number): boolean => {
     const itemReservations = reservations.filter(r => 
@@ -177,7 +187,6 @@ export const ItemsManagement: React.FC = () => {
 
   const handleCreateItem = async (itemData: Omit<Item, "id">, reservationData?: { eventId: number, quantity: number }) => {
     try {
-      // Garantir que todos os campos obrigatórios estão presentes e com tipos corretos
       const dataToSend: CreateItemDTO = {
         name: itemData.name,
         category: itemData.category,
@@ -341,6 +350,13 @@ export const ItemsManagement: React.FC = () => {
       return i.minStock ? available <= i.minStock : available < quantityTotal * 0.2;
     })());
 
+  // ✅ Aplicando a paginação nos itens filtrados
+  const paginatedItems = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return filteredItems.slice(startIndex, endIndex);
+  }, [filteredItems, currentPage, itemsPerPage]);
+
   if (loading) {
     return (
       <div className={styles.loading}>
@@ -466,7 +482,8 @@ export const ItemsManagement: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              {filteredItems.map((item) => {
+              {/* ✅ Mapeando sobre os paginatedItems em vez de filteredItems */}
+              {paginatedItems.map((item) => {
                 const alert = getAvailabilityAlert(item);
                 const itemReservations = getItemReservations(item.id);
                 const quantityTotal = getQTotal(item);
@@ -597,6 +614,22 @@ export const ItemsManagement: React.FC = () => {
           </table>
         </div>
 
+        {/* ✅ Rodapé da Tabela com Paginação */}
+        {filteredItems.length > 0 && (
+          <div style={{ padding: '16px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #e2e8f0', background: '#f8fafc' }}>
+            <span style={{ fontSize: '14px', fontWeight: 600, color: '#1e293b' }}>
+              <FiBox size={14} style={{ marginRight: '6px' }}/>
+              Total: {filteredItems.length} {filteredItems.length === 1 ? 'item' : 'itens'}
+            </span>
+            <Pagination 
+              currentPage={currentPage}
+              totalItems={filteredItems.length}
+              itemsPerPage={itemsPerPage}
+              onPageChange={setCurrentPage}
+            />
+          </div>
+        )}
+
         {filteredItems.length === 0 && (
           <div className={styles.emptyState}>
             <div className={styles.emptyIcon}>
@@ -620,6 +653,7 @@ export const ItemsManagement: React.FC = () => {
       </div>
 
       <div className={styles.summaryCards}>
+        {/* Cartões de resumo permanecem inalterados */}
         <div className={styles.summaryCard}>
           <div className={styles.summaryIcon} style={{ background: '#e0f2fe' }}>
             <FiPackage color="#0284c7" size={24} />
@@ -709,6 +743,8 @@ export const ItemsManagement: React.FC = () => {
   );
 };
 
+// ... COMPONENTES INTERNOS MANTIDOS INALTERADOS ...
+
 interface ItemFormProps {
   item?: Item;
   events: Event[];
@@ -743,7 +779,6 @@ const ItemForm: React.FC<ItemFormProps> = ({ item, events, onSubmit, onCancel })
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [loading, setLoading] = useState(false);
 
-  // Handlers específicos para cada input
   const handleQuantityTotalChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setQuantityTotalInput(value);
@@ -788,10 +823,7 @@ const ItemForm: React.FC<ItemFormProps> = ({ item, events, onSubmit, onCancel })
 
   const handleUnitPriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     let value = e.target.value;
-    
-    // Permite apenas números, vírgula e ponto
     value = value.replace(/[^\d,.]/g, '');
-    
     setUnitPriceInput(value);
     
     if (value === '' || value === ',') {
@@ -799,10 +831,8 @@ const ItemForm: React.FC<ItemFormProps> = ({ item, events, onSubmit, onCancel })
       return;
     }
     
-    // Converte para número (formato brasileiro: vírgula como decimal)
     const normalizedValue = value.replace(',', '.');
     const num = parseFloat(normalizedValue);
-    
     if (!isNaN(num)) {
       setFormData(prev => ({ ...prev, unitPrice: num }));
     }
@@ -813,7 +843,6 @@ const ItemForm: React.FC<ItemFormProps> = ({ item, events, onSubmit, onCancel })
       setUnitPriceInput("0,00");
       setFormData(prev => ({ ...prev, unitPrice: 0 }));
     } else {
-      // Formata para 2 casas decimais
       const num = formData.unitPrice;
       setUnitPriceInput(num.toFixed(2).replace('.', ','));
     }
@@ -838,7 +867,6 @@ const ItemForm: React.FC<ItemFormProps> = ({ item, events, onSubmit, onCancel })
       setReservationQuantityInput("1");
       setReservationData(prev => ({ ...prev, quantity: 1 }));
     } else {
-      // Garante que não ultrapasse o máximo
       const max = formData.quantityTotal;
       if (reservationData.quantity > max) {
         setReservationQuantityInput(max.toString());
@@ -876,7 +904,6 @@ const ItemForm: React.FC<ItemFormProps> = ({ item, events, onSubmit, onCancel })
     e.preventDefault();
     if (!validateForm()) return;
 
-    // Garantir que os valores são números válidos antes de enviar
     const dataToSubmit = {
       name: formData.name.trim(),
       category: formData.category,
@@ -886,9 +913,6 @@ const ItemForm: React.FC<ItemFormProps> = ({ item, events, onSubmit, onCancel })
       unitPrice: Number(formData.unitPrice) || 0
     };
 
-    console.log('📝 Dados a serem enviados:', dataToSubmit);
-
-    // Validar novamente antes de enviar
     if (dataToSubmit.quantityTotal < 1) {
       setErrors({ ...errors, quantityTotal: "Quantidade total deve ser no mínimo 1" });
       return;
@@ -1148,7 +1172,6 @@ const ReservationModal: React.FC<ReservationModalProps> = ({ item, events, onCon
   const [selectedDate, setSelectedDate] = useState<string>('');
 
   const qTotal = getQTotal(item);
-  
   const maxAvailable = qTotal;
 
   const handleEventChange = (eventId: number) => {
