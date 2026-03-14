@@ -1,5 +1,4 @@
-// src/components/owner/FinancialReports.tsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { 
   MdAttachMoney,
   MdWarning,
@@ -38,7 +37,7 @@ import {
 } from 'react-icons/fi';
 import { Event } from '../../types/Event';
 import { eventService } from '../../services/events';
-import { expenseService, Expense, CreateExpenseDTO } from '../../services/expense';
+import { expenseService, Expense, CreateExpenseDTO, EXPENSE_CATEGORIES } from '../../services/expense';
 import { ConfirmationModal } from '../common/Alerts/ConfirmationModal';
 import { ErrorModal } from '../common/Alerts/ErrorModal';
 import styles from './FinancialReports.module.css';
@@ -58,28 +57,22 @@ interface EventFinancial {
 
 type PeriodType = 'MONTHLY' | 'QUARTERLY' | 'SEMESTERLY';
 
-interface Category {
-  id: string;
-  name: string;
-  icon: JSX.Element;
-}
-
 // ============ CONSTANTES ============
-const EXPENSE_CATEGORIES: Category[] = [
-  { id: 'food', name: 'Alimentação', icon: <MdRestaurant /> },
-  { id: 'drinks', name: 'Bebidas', icon: <MdLocalBar /> },
-  { id: 'decoration', name: 'Decoração', icon: <MdPalette /> },
-  { id: 'music', name: 'Música/DJ', icon: <FaMusic /> },
-  { id: 'photography', name: 'Fotografia', icon: <FaCamera /> },
-  { id: 'furniture', name: 'Móveis', icon: <FaCrown /> },
-  { id: 'cake', name: 'Bolo/Doces', icon: <MdCake /> },
-  { id: 'staff', name: 'Equipe', icon: <MdPeople /> },
-  { id: 'transport', name: 'Transporte', icon: <FaTruck /> },
-  { id: 'gifts', name: 'Brindes', icon: <FaGift /> },
-  { id: 'venue', name: 'Espaço', icon: <FaCrown /> },
-  { id: 'marketing', name: 'Marketing', icon: <FiTrendingUp /> },
-  { id: 'other', name: 'Outros', icon: <MdInventory /> }
-];
+const CATEGORY_ICONS: Record<string, JSX.Element> = {
+  'Alimentação': <MdRestaurant />,
+  'Bebidas': <MdLocalBar />,
+  'Decoração': <MdPalette />,
+  'Música/DJ': <FaMusic />,
+  'Fotografia': <FaCamera />,
+  'Móveis': <FaCrown />,
+  'Bolo/Doces': <MdCake />,
+  'Equipe': <MdPeople />,
+  'Transporte': <FaTruck />,
+  'Brindes': <FaGift />,
+  'Espaço': <FaCrown />,
+  'Marketing': <FiTrendingUp />,
+  'Outros': <MdInventory />
+};
 
 // ============ UTILS ============
 const formatCurrency = (value: number): string => {
@@ -96,6 +89,16 @@ const formatDate = (dateString: string): string => {
     return date.toLocaleDateString('pt-BR');
   } catch {
     return 'Data inválida';
+  }
+};
+
+const formatDateForInput = (dateString: string): string => {
+  if (!dateString) return '';
+  try {
+    const date = new Date(dateString + 'T12:00:00-03:00');
+    return date.toISOString().split('T')[0];
+  } catch {
+    return '';
   }
 };
 
@@ -162,26 +165,34 @@ export const FinancialReports: React.FC = () => {
   const [expenseToDelete, setExpenseToDelete] = useState<number | null>(null);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [showErrorModal, setShowErrorModal] = useState(false);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   // Carregar dados iniciais
   useEffect(() => {
     loadData();
-  }, []);
+  }, [refreshTrigger]);
 
   const loadData = async () => {
     try {
       setLoading(true);
       setError(null);
       
+      console.log('📊 Carregando dados financeiros...');
+      
       const [eventsData, expensesData] = await Promise.all([
         eventService.getAllEvents(),
         expenseService.getAllExpenses()
       ]);
       
+      console.log('📊 Dados carregados:', {
+        eventos: eventsData.length,
+        despesas: expensesData.length
+      });
+      
       setEvents(eventsData);
       setExpenses(expensesData);
     } catch (error) {
-      console.error('Erro ao carregar dados:', error);
+      console.error('❌ Erro ao carregar dados:', error);
       setError('Erro ao carregar dados financeiros');
     } finally {
       setLoading(false);
@@ -192,13 +203,31 @@ export const FinancialReports: React.FC = () => {
   const handleAddExpense = async (expenseData: CreateExpenseDTO) => {
     try {
       setLoading(true);
+      
+      console.log('📝 handleAddExpense - Dados recebidos:', expenseData);
+      
       const newExpense = await expenseService.createExpense(expenseData);
+      
+      console.log('✅ Despesa criada com sucesso:', newExpense);
+      
       setExpenses(prev => [...prev, newExpense]);
       setSuccessMessage('Despesa adicionada com sucesso!');
       setShowSuccessModal(true);
       setShowExpenseModal(false);
-    } catch (error) {
-      setError('Erro ao adicionar despesa');
+      
+    } catch (error: any) {
+      console.error('❌ Erro no handleAddExpense:', error);
+      
+      let errorMessage = 'Erro ao adicionar despesa';
+      if (error.response?.data) {
+        errorMessage = typeof error.response.data === 'string' 
+          ? error.response.data 
+          : JSON.stringify(error.response.data);
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      setError(errorMessage);
       setShowErrorModal(true);
     } finally {
       setLoading(false);
@@ -209,13 +238,39 @@ export const FinancialReports: React.FC = () => {
     try {
       setLoading(true);
       const updated = await expenseService.updateExpense(id, updates);
+      
+      console.log('✅ Despesa atualizada:', updated);
+      
+      // Atualizar a lista principal
       setExpenses(prev => prev.map(exp => exp.id === id ? updated : exp));
+      
+      // Se houver um evento selecionado no modal de detalhes, atualizar também
+      if (selectedEvent) {
+        const updatedEventExpenses = selectedEvent.expenses.map(exp =>
+          exp.id === id ? updated : exp
+        );
+        setSelectedEvent({
+          ...selectedEvent,
+          expenses: updatedEventExpenses
+        });
+      }
+      
       setSuccessMessage('Despesa atualizada com sucesso!');
       setShowSuccessModal(true);
       setShowExpenseModal(false);
       setEditingExpense(null);
-    } catch (error) {
-      setError('Erro ao atualizar despesa');
+      
+    } catch (error: any) {
+      console.error('❌ Erro ao atualizar despesa:', error);
+      
+      let errorMessage = 'Erro ao atualizar despesa';
+      if (error.response?.data) {
+        errorMessage = typeof error.response.data === 'string' 
+          ? error.response.data 
+          : JSON.stringify(error.response.data);
+      }
+      
+      setError(errorMessage);
       setShowErrorModal(true);
     } finally {
       setLoading(false);
@@ -226,119 +281,223 @@ export const FinancialReports: React.FC = () => {
     try {
       setLoading(true);
       await expenseService.deleteExpense(id);
+      
+      // Atualizar a lista principal
       setExpenses(prev => prev.filter(exp => exp.id !== id));
+      
+      // Se houver um evento selecionado no modal de detalhes, atualizar também
+      if (selectedEvent) {
+        const updatedEventExpenses = selectedEvent.expenses.filter(exp => exp.id !== id);
+        setSelectedEvent({
+          ...selectedEvent,
+          expenses: updatedEventExpenses
+        });
+      }
+      
       setSuccessMessage('Despesa excluída com sucesso!');
       setShowSuccessModal(true);
       setShowDeleteConfirm(false);
       setExpenseToDelete(null);
       
-      // Fechar modal de detalhes se necessário
-      if (selectedEvent) {
-        const updatedEvent = {
-          ...selectedEvent,
-          expenses: selectedEvent.expenses.filter(exp => exp.id !== id)
-        };
-        setSelectedEvent(updatedEvent);
+    } catch (error: any) {
+      console.error('❌ Erro ao excluir despesa:', error);
+      
+      let errorMessage = 'Erro ao excluir despesa';
+      if (error.response?.data) {
+        errorMessage = typeof error.response.data === 'string' 
+          ? error.response.data 
+          : JSON.stringify(error.response.data);
       }
-    } catch (error) {
-      setError('Erro ao excluir despesa');
+      
+      setError(errorMessage);
       setShowErrorModal(true);
     } finally {
       setLoading(false);
     }
   };
 
-  // Filtrar eventos do período
-  const eventsInPeriod = events.filter(event => 
-    isEventInPeriod(event, selectedMonth, selectedPeriod) && 
-    (event.status === 'CONFIRMED' || event.status === 'COMPLETED')
-  );
+  const handleToggleStatus = useCallback(async (expense: Expense) => {
+    try {
+      setLoading(true);
+      
+      const newStatus = expense.status === 'PAID' ? 'PENDING' : 'PAID';
+      console.log(`🔄 Toggle status da despesa ${expense.id} de ${expense.status} para ${newStatus}`);
+      
+      const updatedExpense = await expenseService.updateExpenseStatus(expense.id, newStatus);
+      
+      // Atualizar a lista de despesas
+      setExpenses(prev => prev.map(exp => 
+        exp.id === expense.id ? updatedExpense : exp
+      ));
+      
+      // Se houver um evento selecionado no modal de detalhes, atualizar também
+      if (selectedEvent) {
+        const updatedEventExpenses = selectedEvent.expenses.map(exp =>
+          exp.id === expense.id ? updatedExpense : exp
+        );
+        setSelectedEvent({
+          ...selectedEvent,
+          expenses: updatedEventExpenses
+        });
+      }
+      
+      setSuccessMessage(`Despesa marcada como ${newStatus === 'PAID' ? 'Paga' : 'Pendente'}!`);
+      setShowSuccessModal(true);
+      
+    } catch (error: any) {
+      console.error('❌ Erro ao toggle status:', error);
+      setError('Erro ao atualizar status da despesa');
+      setShowErrorModal(true);
+    } finally {
+      setLoading(false);
+    }
+  }, [selectedEvent]);
 
-  const eventIdsInPeriod = eventsInPeriod.map(e => e.id);
+  // Filtrar eventos do período
+  const eventsInPeriod = useMemo(() => {
+    return events.filter(event => 
+      isEventInPeriod(event, selectedMonth, selectedPeriod) && 
+      (event.status === 'CONFIRMED' || event.status === 'COMPLETED')
+    );
+  }, [events, selectedMonth, selectedPeriod]);
+
+  const eventIdsInPeriod = useMemo(() => 
+    eventsInPeriod.map(e => e.id), 
+  [eventsInPeriod]);
 
   // Despesas do período
-  const expensesInPeriod = expenses.filter(exp => 
-    eventIdsInPeriod.includes(exp.eventId)
-  );
+  const expensesInPeriod = useMemo(() => 
+    expenses.filter(exp => eventIdsInPeriod.includes(exp.eventId)),
+  [expenses, eventIdsInPeriod]);
 
   // Cálculos financeiros
-  const totalRevenue = eventsInPeriod.reduce((sum, event) => {
-    const value = typeof event.totalValue === 'string' 
-      ? parseFloat(event.totalValue) 
-      : event.totalValue || 0;
-    return sum + value;
-  }, 0);
+  const totalRevenue = useMemo(() => 
+    eventsInPeriod.reduce((sum, event) => {
+      const value = typeof event.totalValue === 'string' 
+        ? parseFloat(event.totalValue) 
+        : event.totalValue || 0;
+      return sum + value;
+    }, 0),
+  [eventsInPeriod]);
 
-  const totalExpenses = expensesInPeriod.reduce((sum, exp) => sum + exp.amount, 0);
+  const totalExpenses = useMemo(() => 
+    expensesInPeriod.reduce((sum, exp) => sum + exp.valor, 0),
+  [expensesInPeriod]);
+
   const netProfit = totalRevenue - totalExpenses;
   const profitMargin = totalRevenue > 0 ? (netProfit / totalRevenue) * 100 : 0;
 
   // Despesas por categoria
-  const expensesByCategory = expensesInPeriod.reduce((acc, exp) => {
-    acc[exp.category] = (acc[exp.category] || 0) + exp.amount;
-    return acc;
-  }, {} as Record<string, number>);
+  const expensesByCategory = useMemo(() => 
+    expensesInPeriod.reduce((acc, exp) => {
+      const categoryName = exp.categoria || 'Outros';
+      acc[categoryName] = (acc[categoryName] || 0) + exp.valor;
+      return acc;
+    }, {} as Record<string, number>),
+  [expensesInPeriod]);
 
   // Dados financeiros por evento
-  const eventFinancials: EventFinancial[] = eventsInPeriod.map(event => {
-    const eventExpenses = expenses.filter(exp => exp.eventId === event.id);
-    const revenue = typeof event.totalValue === 'string' 
-      ? parseFloat(event.totalValue) 
-      : event.totalValue || 0;
-    const totalEventExpenses = eventExpenses.reduce((sum, exp) => sum + exp.amount, 0);
-    const netEventProfit = revenue - totalEventExpenses;
-    
-    return {
-      eventId: event.id,
-      eventTitle: event.title,
-      eventDate: event.eventDate,
-      clientName: event.client?.name || 'Cliente não informado',
-      revenue,
-      expenses: eventExpenses,
-      netProfit: netEventProfit,
-      profitMargin: revenue > 0 ? (netEventProfit / revenue) * 100 : 0,
-      status: event.status
-    };
-  }).sort((a, b) => new Date(b.eventDate).getTime() - new Date(a.eventDate).getTime());
+  const eventFinancials = useMemo((): EventFinancial[] => 
+    eventsInPeriod.map(event => {
+      const eventExpenses = expenses.filter(exp => exp.eventId === event.id);
+      const revenue = typeof event.totalValue === 'string' 
+        ? parseFloat(event.totalValue) 
+        : event.totalValue || 0;
+      const totalEventExpenses = eventExpenses.reduce((sum, exp) => sum + exp.valor, 0);
+      const netEventProfit = revenue - totalEventExpenses;
+      
+      return {
+        eventId: event.id,
+        eventTitle: event.title,
+        eventDate: event.eventDate,
+        clientName: event.client?.name || 'Cliente não informado',
+        revenue,
+        expenses: eventExpenses,
+        netProfit: netEventProfit,
+        profitMargin: revenue > 0 ? (netEventProfit / revenue) * 100 : 0,
+        status: event.status
+      };
+    }).sort((a, b) => new Date(b.eventDate).getTime() - new Date(a.eventDate).getTime()),
+  [eventsInPeriod, expenses]);
 
   // Handlers
-  const handleOpenExpenseModal = (expense?: Expense) => {
+  const handleOpenExpenseModal = useCallback((expense?: Expense) => {
     if (expense) {
       setEditingExpense(expense);
     } else {
       setEditingExpense(null);
     }
     setShowExpenseModal(true);
-  };
+  }, []);
 
-  const handleSaveExpense = (formData: FormData) => {
+  const handleSaveExpense = useCallback((formData: FormData) => {
+    const eventId = parseInt(formData.get('eventId') as string);
+    
+    // VALIDAÇÃO: eventId deve ser um número válido
+    if (isNaN(eventId) || eventId <= 0) {
+      setError('Selecione um evento válido');
+      setShowErrorModal(true);
+      return;
+    }
+    
+    const categoria = formData.get('category') as string;
+    
+    // Mapear status
+    const statusValue = formData.get('status') as string;
+    const status = statusValue; // Já vem como 'PAID' ou 'PENDING' do select
+    
     const expenseData: CreateExpenseDTO = {
-      eventId: parseInt(formData.get('eventId') as string),
-      category: formData.get('category') as string,
-      description: formData.get('description') as string,
-      amount: parseFloat(formData.get('amount') as string),
-      date: formData.get('date') as string,
-      supplier: formData.get('supplier') as string || undefined,
-      paymentMethod: formData.get('paymentMethod') as string || undefined,
-      status: formData.get('status') as 'PENDING' | 'PAID'
+      eventId: eventId,
+      descricao: formData.get('description') as string,
+      valor: parseFloat(formData.get('amount') as string),
+      data: formData.get('date') as string,
+      categoria: categoria,
+      fornecedor: formData.get('supplier') as string || undefined,
+      formaPagamento: formData.get('paymentMethod') as string || undefined,
+      status: status
     };
+
+    console.log('📝 Dados formatados para o backend:', expenseData);
+
+    // Validar campos obrigatórios
+    if (!expenseData.descricao) {
+      setError('Descrição é obrigatória');
+      setShowErrorModal(true);
+      return;
+    }
+    
+    if (!expenseData.valor || expenseData.valor <= 0) {
+      setError('Valor deve ser maior que zero');
+      setShowErrorModal(true);
+      return;
+    }
+    
+    if (!expenseData.data) {
+      setError('Data é obrigatória');
+      setShowErrorModal(true);
+      return;
+    }
 
     if (editingExpense) {
       handleUpdateExpense(editingExpense.id, expenseData);
     } else {
       handleAddExpense(expenseData);
     }
-  };
+  }, [editingExpense]);
 
-  const handleViewEventExpenses = (event: EventFinancial) => {
+  const handleViewEventExpenses = useCallback((event: EventFinancial) => {
     setSelectedEvent(event);
     setShowDetailsModal(true);
-  };
+  }, []);
 
-  const confirmDeleteExpense = (id: number) => {
+  const confirmDeleteExpense = useCallback((id: number) => {
     setExpenseToDelete(id);
     setShowDeleteConfirm(true);
-  };
+  }, []);
+
+  const handleRefresh = useCallback(() => {
+    setRefreshTrigger(prev => prev + 1);
+  }, []);
 
   if (loading && events.length === 0) {
     return (
@@ -355,7 +514,7 @@ export const FinancialReports: React.FC = () => {
         <MdWarning size={48} className={styles.errorIcon} />
         <h3>Erro ao carregar</h3>
         <p>{error}</p>
-        <button onClick={loadData} className={styles.retryButton}>
+        <button onClick={handleRefresh} className={styles.retryButton}>
           <FiRefreshCw size={18} />
           Tentar Novamente
         </button>
@@ -397,7 +556,7 @@ export const FinancialReports: React.FC = () => {
                 onChange={(e) => setSelectedMonth(e.target.value)}
                 className={styles.monthInput}
               />
-              <button onClick={loadData} className={styles.refreshButton}>
+              <button onClick={handleRefresh} className={styles.refreshButton}>
                 <FiRefreshCw size={16} />
                 Atualizar
               </button>
@@ -479,7 +638,7 @@ export const FinancialReports: React.FC = () => {
       </div>
 
       {/* Despesas por Categoria */}
-      <div className={`${styles.categorySection} ${styles.card}`}>
+      <div className={styles.categorySection}>
         <div className={styles.sectionHeader}>
           <h2 className={styles.sectionTitle}>
             <FaChartPie size={20} />
@@ -501,7 +660,7 @@ export const FinancialReports: React.FC = () => {
             return (
               <div key={category.id} className={styles.categoryItem}>
                 <div className={styles.categoryIcon}>
-                  {category.icon}
+                  {CATEGORY_ICONS[category.id] || <MdInventory />}
                 </div>
                 <div className={styles.categoryInfo}>
                   <h4 className={styles.categoryName}>{category.name}</h4>
@@ -533,7 +692,7 @@ export const FinancialReports: React.FC = () => {
       </div>
 
       {/* Tabela de Eventos */}
-      <div className={`${styles.eventsSection} ${styles.card}`}>
+      <div className={styles.eventsSection}>
         <div className={styles.sectionHeader}>
           <h2 className={styles.sectionTitle}>
             <MdEvent size={20} />
@@ -576,7 +735,7 @@ export const FinancialReports: React.FC = () => {
                         onClick={() => handleViewEventExpenses(event)}
                         className={styles.expensesButton}
                       >
-                        {formatCurrency(event.expenses.reduce((s, e) => s + e.amount, 0))}
+                        {formatCurrency(event.expenses.reduce((s, e) => s + e.valor, 0))}
                       </button>
                     </td>
                     <td className={`${styles.valueCell} ${event.netProfit >= 0 ? styles.positive : styles.negative}`}>
@@ -618,24 +777,30 @@ export const FinancialReports: React.FC = () => {
                     <tr className={styles.expandedRow}>
                       <td colSpan={9}>
                         <div className={styles.expandedContent}>
-                          <h4>Últimas despesas</h4>
+                          <h4>Despesas do evento</h4>
                           {event.expenses.length > 0 ? (
                             <div className={styles.expandedExpenses}>
-                              {event.expenses.slice(0, 3).map(exp => (
+                              {event.expenses.map(exp => (
                                 <div key={exp.id} className={styles.expandedExpense}>
                                   <span className={styles.expenseCategory}>
-                                    {EXPENSE_CATEGORIES.find(c => c.id === exp.category)?.icon}
-                                    {exp.category}
+                                    {CATEGORY_ICONS[exp.categoria || 'Outros'] || <MdInventory />}
+                                    {exp.categoria || 'Outros'}
                                   </span>
-                                  <span>{exp.description}</span>
+                                  <span>{exp.descricao}</span>
                                   <span className={styles.valueCell}>
-                                    {formatCurrency(exp.amount)}
+                                    {formatCurrency(exp.valor)}
                                   </span>
-                                  <span className={`${styles.statusBadge} ${
-                                    exp.status === 'PAID' ? styles.paid : styles.pending
-                                  }`}>
+                                  <button
+                                    onClick={() => handleToggleStatus(exp)}
+                                    className={`${styles.statusBadge} ${
+                                      exp.status === 'PAID' ? styles.paid : styles.pending
+                                    }`}
+                                    title={`Marcar como ${exp.status === 'PAID' ? 'Pendente' : 'Pago'}`}
+                                    style={{ cursor: 'pointer' }}
+                                  >
+                                    {exp.status === 'PAID' ? <MdCheckCircle size={14} /> : <MdCancel size={14} />}
                                     {exp.status === 'PAID' ? 'Pago' : 'Pendente'}
-                                  </span>
+                                  </button>
                                   <div className={styles.expenseActions}>
                                     <button
                                       onClick={() => handleOpenExpenseModal(exp)}
@@ -654,18 +819,19 @@ export const FinancialReports: React.FC = () => {
                                   </div>
                                 </div>
                               ))}
-                              {event.expenses.length > 3 && (
-                                <button
-                                  onClick={() => handleViewEventExpenses(event)}
-                                  className={styles.viewAllButton}
-                                >
-                                  Ver todas ({event.expenses.length})
-                                </button>
-                              )}
                             </div>
                           ) : (
-                            <p>Nenhuma despesa cadastrada</p>
+                            <p>Nenhuma despesa cadastrada para este evento</p>
                           )}
+                          <button
+                            onClick={() => {
+                              setExpandedEvent(null);
+                              handleViewEventExpenses(event);
+                            }}
+                            className={styles.viewAllButton}
+                          >
+                            Ver detalhes completos
+                          </button>
                         </div>
                       </td>
                     </tr>
@@ -675,7 +841,7 @@ export const FinancialReports: React.FC = () => {
               {eventFinancials.length === 0 && (
                 <tr>
                   <td colSpan={9} className={styles.emptyTableCell}>
-                    Nenhum evento no período
+                    Nenhum evento no período selecionado
                   </td>
                 </tr>
               )}
@@ -706,7 +872,8 @@ export const FinancialReports: React.FC = () => {
             
             <form onSubmit={(e) => {
               e.preventDefault();
-              handleSaveExpense(new FormData(e.currentTarget));
+              const formData = new FormData(e.currentTarget);
+              handleSaveExpense(formData);
             }}>
               <div className={styles.formGroup}>
                 <label>Evento:</label>
@@ -715,10 +882,10 @@ export const FinancialReports: React.FC = () => {
                   required
                   defaultValue={editingExpense?.eventId || ''}
                 >
-                  <option value="">Selecione</option>
+                  <option value="">Selecione um evento</option>
                   {eventsInPeriod.map(event => (
                     <option key={event.id} value={event.id}>
-                      {event.title}
+                      {event.title} - {formatDate(event.eventDate)}
                     </option>
                   ))}
                 </select>
@@ -729,9 +896,9 @@ export const FinancialReports: React.FC = () => {
                 <select 
                   name="category" 
                   required
-                  defaultValue={editingExpense?.category || ''}
+                  defaultValue={editingExpense?.categoria || ''}
                 >
-                  <option value="">Selecione</option>
+                  <option value="">Selecione uma categoria</option>
                   {EXPENSE_CATEGORIES.map(cat => (
                     <option key={cat.id} value={cat.id}>
                       {cat.name}
@@ -746,7 +913,8 @@ export const FinancialReports: React.FC = () => {
                   type="text" 
                   name="description" 
                   required 
-                  defaultValue={editingExpense?.description || ''}
+                  defaultValue={editingExpense?.descricao || ''}
+                  placeholder="Ex: Buffet, Decoração, etc"
                 />
               </div>
               
@@ -757,8 +925,10 @@ export const FinancialReports: React.FC = () => {
                     type="number" 
                     name="amount" 
                     step="0.01" 
+                    min="0"
                     required 
-                    defaultValue={editingExpense?.amount || ''}
+                    defaultValue={editingExpense?.valor || ''}
+                    placeholder="0,00"
                   />
                 </div>
                 
@@ -768,7 +938,7 @@ export const FinancialReports: React.FC = () => {
                     type="date" 
                     name="date" 
                     required 
-                    defaultValue={editingExpense?.date || new Date().toISOString().split('T')[0]}
+                    defaultValue={editingExpense ? formatDateForInput(editingExpense.data) : new Date().toISOString().split('T')[0]}
                   />
                 </div>
               </div>
@@ -779,13 +949,14 @@ export const FinancialReports: React.FC = () => {
                   <input 
                     type="text" 
                     name="supplier" 
-                    defaultValue={editingExpense?.supplier || ''}
+                    defaultValue={editingExpense?.fornecedor || ''}
+                    placeholder="Nome do fornecedor"
                   />
                 </div>
                 
                 <div className={styles.formGroup}>
-                  <label>Pagamento:</label>
-                  <select name="paymentMethod" defaultValue={editingExpense?.paymentMethod || ''}>
+                  <label>Forma de Pagamento:</label>
+                  <select name="paymentMethod" defaultValue={editingExpense?.formaPagamento || ''}>
                     <option value="">Selecione</option>
                     <option value="DINHEIRO">Dinheiro</option>
                     <option value="CARTAO_CREDITO">Cartão de Crédito</option>
@@ -815,8 +986,8 @@ export const FinancialReports: React.FC = () => {
                 >
                   Cancelar
                 </button>
-                <button type="submit" className={styles.submitButton}>
-                  {editingExpense ? 'Atualizar' : 'Salvar'}
+                <button type="submit" className={styles.submitButton} disabled={loading}>
+                  {loading ? 'Salvando...' : (editingExpense ? 'Atualizar' : 'Salvar')}
                 </button>
               </div>
             </form>
@@ -824,7 +995,7 @@ export const FinancialReports: React.FC = () => {
         </div>
       )}
 
-      {/* Modal de Detalhes - CORRIGIDO */}
+      {/* Modal de Detalhes */}
       {showDetailsModal && selectedEvent && (
         <div className={styles.modal} onClick={() => setShowDetailsModal(false)}>
           <div className={`${styles.modalContent} ${styles.detailsModal}`} onClick={e => e.stopPropagation()}>
@@ -841,7 +1012,7 @@ export const FinancialReports: React.FC = () => {
             <div className={styles.detailsSummary}>
               <div className={styles.summaryItem}>
                 <span>Total Despesas</span>
-                <strong>{formatCurrency(selectedEvent.expenses.reduce((s, e) => s + e.amount, 0))}</strong>
+                <strong>{formatCurrency(selectedEvent.expenses.reduce((s, e) => s + e.valor, 0))}</strong>
               </div>
               <div className={styles.summaryItem}>
                 <span>Quantidade</span>
@@ -869,27 +1040,32 @@ export const FinancialReports: React.FC = () => {
                       <th>Descrição</th>
                       <th>Valor</th>
                       <th>Status</th>
-                      <th></th>
+                      <th>Ações</th>
                     </tr>
                   </thead>
                   <tbody>
                     {selectedEvent.expenses.map(expense => (
                       <tr key={expense.id}>
-                        <td>{formatDate(expense.date)}</td>
+                        <td>{formatDate(expense.data)}</td>
                         <td>
                           <span className={styles.categoryBadge}>
-                            {EXPENSE_CATEGORIES.find(c => c.id === expense.category)?.icon}
-                            {expense.category}
+                            {CATEGORY_ICONS[expense.categoria || 'Outros'] || <MdInventory />}
+                            {expense.categoria || 'Outros'}
                           </span>
                         </td>
-                        <td>{expense.description}</td>
-                        <td className={styles.valueCell}>{formatCurrency(expense.amount)}</td>
+                        <td>{expense.descricao}</td>
+                        <td className={styles.valueCell}>{formatCurrency(expense.valor)}</td>
                         <td>
-                          <span className={`${styles.statusBadge} ${
-                            expense.status === 'PAID' ? styles.paid : styles.pending
-                          }`}>
+                          <button
+                            onClick={() => handleToggleStatus(expense)}
+                            className={`${styles.statusBadge} ${
+                              expense.status === 'PAID' ? styles.paid : styles.pending
+                            }`}
+                            style={{ cursor: 'pointer', border: 'none' }}
+                          >
+                            {expense.status === 'PAID' ? <MdCheckCircle size={14} /> : <MdCancel size={14} />}
                             {expense.status === 'PAID' ? 'Pago' : 'Pendente'}
-                          </span>
+                          </button>
                         </td>
                         <td>
                           <div className={styles.actionButtons}>
@@ -960,7 +1136,7 @@ export const FinancialReports: React.FC = () => {
       <ConfirmationModal
         isOpen={showDeleteConfirm}
         title="Confirmar Exclusão"
-        message="Tem certeza que deseja excluir esta despesa?"
+        message="Tem certeza que deseja excluir esta despesa? Esta ação não pode ser desfeita."
         type="warning"
         onConfirm={() => expenseToDelete && handleDeleteExpense(expenseToDelete)}
         onCancel={() => {
@@ -968,6 +1144,7 @@ export const FinancialReports: React.FC = () => {
           setExpenseToDelete(null);
         }}
         confirmText="Excluir"
+        cancelText="Cancelar"
       />
 
       <ConfirmationModal

@@ -1,7 +1,7 @@
 // src/services/receipts.ts
 
 import { api } from './api';
-import { Receipt, UploadReceiptData, ApiResponse } from '../components/admin/clients/types';
+import { Receipt, UploadReceiptData, ApiResponse } from '../components/pages/developer/clients/types';
 
 export const receiptService = {
     /**

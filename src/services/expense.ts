@@ -1,31 +1,92 @@
-// src/services/expense.ts
 import { api } from './api';
 
 export interface Expense {
   id: number;
   eventId: number;
   eventTitle?: string;
-  category: string;
-  description: string;
-  amount: number;
-  date: string;
-  supplier?: string;
-  paymentMethod?: string;
-  status: 'PENDING' | 'PAID';
+  descricao: string;
+  valor: number;
+  data: string;
+  categoria?: string;
+  fornecedor?: string;
+  formaPagamento?: string;
+  status: string; // "PAID" ou "PENDING" no frontend
   createdAt?: string;
   updatedAt?: string;
 }
 
 export interface CreateExpenseDTO {
   eventId: number;
-  category: string;
-  description: string;
-  amount: number;
-  date: string;
-  supplier?: string;
-  paymentMethod?: string;
-  status: 'PENDING' | 'PAID';
+  descricao: string;
+  valor: number;
+  data: string;
+  categoria?: string;
+  fornecedor?: string;
+  formaPagamento?: string;
+  status: string; // "PAID" ou "PENDING"
 }
+
+export const EXPENSE_CATEGORIES = [
+  { id: 'Alimentação', name: 'Alimentação' },
+  { id: 'Bebidas', name: 'Bebidas' },
+  { id: 'Decoração', name: 'Decoração' },
+  { id: 'Música/DJ', name: 'Música/DJ' },
+  { id: 'Fotografia', name: 'Fotografia' },
+  { id: 'Móveis', name: 'Móveis' },
+  { id: 'Bolo/Doces', name: 'Bolo/Doces' },
+  { id: 'Equipe', name: 'Equipe' },
+  { id: 'Transporte', name: 'Transporte' },
+  { id: 'Brindes', name: 'Brindes' },
+  { id: 'Espaço', name: 'Espaço' },
+  { id: 'Marketing', name: 'Marketing' },
+  { id: 'Outros', name: 'Outros' }
+];
+
+// Mapeamento de status do frontend para o backend
+const STATUS_MAP_TO_BACKEND: Record<string, string> = {
+  'PENDING': 'Pendente',
+  'PAID': 'Pago'
+};
+
+// Mapeamento de status do backend para o frontend
+const STATUS_MAP_TO_FRONTEND: Record<string, string> = {
+  'Pendente': 'PENDING',
+  'Pago': 'PAID'
+};
+
+// Mapeamento de categorias do frontend para o backend
+export const CATEGORY_MAP_TO_BACKEND: Record<string, string> = {
+  'Alimentação': 'Alimentação',
+  'Bebidas': 'Bebidas',
+  'Decoração': 'Decoração',
+  'Música/DJ': 'Música/DJ',
+  'Fotografia': 'Fotografia',
+  'Móveis': 'Móveis',
+  'Bolo/Doces': 'Bolo/Doces',
+  'Equipe': 'Equipe',
+  'Transporte': 'Transporte',
+  'Brindes': 'Brindes',
+  'Espaço': 'Espaço',
+  'Marketing': 'Marketing',
+  'Outros': 'Outros'
+};
+
+// Mapeamento de categorias do backend para o frontend
+export const CATEGORY_MAP_TO_FRONTEND: Record<string, string> = {
+  'Alimentação': 'Alimentação',
+  'Bebidas': 'Bebidas',
+  'Decoração': 'Decoração',
+  'Música/DJ': 'Música/DJ',
+  'Fotografia': 'Fotografia',
+  'Móveis': 'Móveis',
+  'Bolo/Doces': 'Bolo/Doces',
+  'Equipe': 'Equipe',
+  'Transporte': 'Transporte',
+  'Brindes': 'Brindes',
+  'Espaço': 'Espaço',
+  'Marketing': 'Marketing',
+  'Outros': 'Outros'
+};
 
 export const expenseService = {
   /**
@@ -34,18 +95,27 @@ export const expenseService = {
   getAllExpenses: async (): Promise<Expense[]> => {
     try {
       console.log('💰 Buscando todas as despesas...');
-      const response = await api.get('/api/expenses');
-      console.log('✅ Despesas carregadas:', response.data.length);
-      return response.data;
+      const response = await api.get('/api/despesas');
+      console.log('✅ Despesas carregadas:', response.data);
+      
+      // Mapear a resposta para o formato do frontend
+      const expenses = response.data.map((expense: any) => ({
+        id: expense.id,
+        eventId: expense.idEvento,
+        eventTitle: expense.nomeEvento,
+        descricao: expense.descricao,
+        valor: expense.valor,
+        data: expense.data,
+        categoria: expense.categoria,
+        fornecedor: expense.fornecedor,
+        formaPagamento: expense.formaPagamento,
+        status: STATUS_MAP_TO_FRONTEND[expense.status] || expense.status
+      }));
+      
+      return expenses;
     } catch (error: any) {
       console.error('❌ Erro ao buscar despesas:', error);
-      
-      // Se o endpoint não existir, retorna array vazio
-      if (error.response?.status === 404) {
-        console.log('⚠️ Endpoint de despesas não encontrado');
-        return [];
-      }
-      throw error;
+      return [];
     }
   },
 
@@ -54,34 +124,11 @@ export const expenseService = {
    */
   getExpensesByEvent: async (eventId: number): Promise<Expense[]> => {
     try {
-      console.log(`💰 Buscando despesas do evento ${eventId}...`);
-      const response = await api.get(`/api/expenses/event/${eventId}`);
-      return response.data;
-    } catch (error: any) {
-      console.error(`❌ Erro ao buscar despesas do evento ${eventId}:`, error);
-      if (error.response?.status === 404) {
-        return [];
-      }
-      throw error;
-    }
-  },
-
-  /**
-   * Busca despesas por período
-   */
-  getExpensesByPeriod: async (startDate: string, endDate: string): Promise<Expense[]> => {
-    try {
-      console.log(`💰 Buscando despesas de ${startDate} até ${endDate}...`);
-      const response = await api.get(`/api/expenses/period`, {
-        params: { startDate, endDate }
-      });
-      return response.data;
-    } catch (error: any) {
-      console.error('❌ Erro ao buscar despesas por período:', error);
-      if (error.response?.status === 404) {
-        return [];
-      }
-      throw error;
+      const allExpenses = await expenseService.getAllExpenses();
+      return allExpenses.filter(expense => expense.eventId === eventId);
+    } catch (error) {
+      console.error('❌ Erro ao buscar despesas do evento:', error);
+      return [];
     }
   },
 
@@ -92,22 +139,50 @@ export const expenseService = {
     try {
       console.log('📝 Criando despesa:', expenseData);
       
+      // Validar dados
+      if (!expenseData.eventId) throw new Error('eventId é obrigatório');
+      if (!expenseData.descricao) throw new Error('descrição é obrigatória');
+      if (!expenseData.valor || expenseData.valor <= 0) throw new Error('valor deve ser maior que zero');
+      if (!expenseData.data) throw new Error('data é obrigatória');
+      
       const payload = {
-        eventId: expenseData.eventId,
-        categoria: expenseData.category,
-        descricao: expenseData.description,
-        valor: expenseData.amount,
-        data: expenseData.date,
-        fornecedor: expenseData.supplier || null,
-        metodoPagamento: expenseData.paymentMethod || null,
-        status: expenseData.status
+        descricao: expenseData.descricao,
+        valor: expenseData.valor,
+        data: expenseData.data,
+        categoria: expenseData.categoria || null,
+        fornecedor: expenseData.fornecedor || null,
+        formaPagamento: expenseData.formaPagamento || null,
+        status: STATUS_MAP_TO_BACKEND[expenseData.status] || expenseData.status,
+        idEvento: expenseData.eventId
       };
       
-      const response = await api.post('/api/expenses', payload);
-      console.log('✅ Despesa criada:', response.data);
-      return response.data;
+      console.log('📦 Payload enviado:', payload);
+      
+      const response = await api.post('/api/despesas', payload);
+      console.log('✅ Resposta:', response.data);
+      
+      // Mapear a resposta
+      return {
+        id: response.data.id,
+        eventId: response.data.idEvento,
+        eventTitle: response.data.nomeEvento,
+        descricao: response.data.descricao,
+        valor: response.data.valor,
+        data: response.data.data,
+        categoria: response.data.categoria,
+        fornecedor: response.data.fornecedor,
+        formaPagamento: response.data.formaPagamento,
+        status: STATUS_MAP_TO_FRONTEND[response.data.status] || response.data.status
+      };
+      
     } catch (error: any) {
       console.error('❌ Erro ao criar despesa:', error);
+      if (error.response) {
+        console.error('📋 Detalhes do erro:', {
+          status: error.response.status,
+          data: error.response.data
+        });
+      }
       throw error;
     }
   },
@@ -119,21 +194,60 @@ export const expenseService = {
     try {
       console.log(`✏️ Atualizando despesa ${id}:`, expenseData);
       
-      const payload: any = {};
-      if (expenseData.eventId) payload.eventId = expenseData.eventId;
-      if (expenseData.category) payload.categoria = expenseData.category;
-      if (expenseData.description) payload.descricao = expenseData.description;
-      if (expenseData.amount !== undefined) payload.valor = expenseData.amount;
-      if (expenseData.date) payload.data = expenseData.date;
-      if (expenseData.supplier !== undefined) payload.fornecedor = expenseData.supplier;
-      if (expenseData.paymentMethod !== undefined) payload.metodoPagamento = expenseData.paymentMethod;
-      if (expenseData.status) payload.status = expenseData.status;
+      // Buscar a despesa atual primeiro para manter os dados existentes
+      const currentExpenses = await expenseService.getAllExpenses();
+      const currentExpense = currentExpenses.find(e => e.id === id);
       
-      const response = await api.put(`/api/expenses/${id}`, payload);
-      console.log('✅ Despesa atualizada:', response.data);
-      return response.data;
+      if (!currentExpense) {
+        throw new Error('Despesa não encontrada');
+      }
+      
+      // Construir payload com todos os campos necessários
+      const payload: any = {
+        descricao: expenseData.descricao || currentExpense.descricao,
+        valor: expenseData.valor !== undefined ? expenseData.valor : currentExpense.valor,
+        data: expenseData.data || currentExpense.data,
+        categoria: expenseData.categoria !== undefined ? expenseData.categoria : currentExpense.categoria,
+        fornecedor: expenseData.fornecedor !== undefined ? expenseData.fornecedor : currentExpense.fornecedor,
+        formaPagamento: expenseData.formaPagamento !== undefined ? expenseData.formaPagamento : currentExpense.formaPagamento,
+        status: expenseData.status ? STATUS_MAP_TO_BACKEND[expenseData.status] : STATUS_MAP_TO_BACKEND[currentExpense.status],
+        idEvento: expenseData.eventId || currentExpense.eventId
+      };
+      
+      console.log('📦 Payload atualização:', payload);
+      
+      const response = await api.put(`/api/despesas/${id}`, payload);
+      
+      return {
+        id: response.data.id,
+        eventId: response.data.idEvento,
+        eventTitle: response.data.nomeEvento,
+        descricao: response.data.descricao,
+        valor: response.data.valor,
+        data: response.data.data,
+        categoria: response.data.categoria,
+        fornecedor: response.data.fornecedor,
+        formaPagamento: response.data.formaPagamento,
+        status: STATUS_MAP_TO_FRONTEND[response.data.status] || response.data.status
+      };
     } catch (error: any) {
       console.error(`❌ Erro ao atualizar despesa ${id}:`, error);
+      throw error;
+    }
+  },
+
+  /**
+   * Atualiza apenas o status de uma despesa - CORRIGIDO: usa o endpoint PUT
+   */
+  updateExpenseStatus: async (id: number, status: 'PENDING' | 'PAID'): Promise<Expense> => {
+    try {
+      console.log(`🔄 Atualizando status da despesa ${id} para:`, status);
+      
+      // Usar o endpoint PUT existente, atualizando apenas o status
+      return await expenseService.updateExpense(id, { status });
+      
+    } catch (error: any) {
+      console.error(`❌ Erro ao atualizar status da despesa ${id}:`, error);
       throw error;
     }
   },
@@ -144,43 +258,10 @@ export const expenseService = {
   deleteExpense: async (id: number): Promise<void> => {
     try {
       console.log(`🗑️ Deletando despesa ${id}...`);
-      await api.delete(`/api/expenses/${id}`);
-      console.log(`✅ Despesa ${id} deletada com sucesso`);
+      await api.delete(`/api/despesas/${id}`);
+      console.log(`✅ Despesa ${id} deletada`);
     } catch (error: any) {
       console.error(`❌ Erro ao deletar despesa ${id}:`, error);
-      throw error;
-    }
-  },
-
-  /**
-   * Marca despesa como paga
-   */
-  markAsPaid: async (id: number): Promise<Expense> => {
-    try {
-      console.log(`💰 Marcando despesa ${id} como paga...`);
-      const response = await api.patch(`/api/expenses/${id}/pay`);
-      return response.data;
-    } catch (error: any) {
-      console.error(`❌ Erro ao marcar despesa ${id} como paga:`, error);
-      throw error;
-    }
-  },
-
-  /**
-   * Busca resumo financeiro por período
-   */
-  getFinancialSummary: async (startDate: string, endDate: string): Promise<any> => {
-    try {
-      console.log(`📊 Buscando resumo financeiro de ${startDate} até ${endDate}...`);
-      const response = await api.get(`/api/expenses/summary`, {
-        params: { startDate, endDate }
-      });
-      return response.data;
-    } catch (error: any) {
-      console.error('❌ Erro ao buscar resumo financeiro:', error);
-      if (error.response?.status === 404) {
-        return null;
-      }
       throw error;
     }
   }
