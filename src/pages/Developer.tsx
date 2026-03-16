@@ -32,12 +32,12 @@ import {
   FaChartPie
 } from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext';
-import { DeveloperDashboard } from '../components/pages/developer/DeveloperDashboard';
-import { Companies } from '../components/pages/developer/Companies';
-import { CRM } from '../components/pages/developer/CRM';
-import { GlobalSupport } from '../components/pages/developer/GlobalSupport';
-import { Logs } from '../components/pages/developer/Logs';
-import { Settings } from '../components/pages/developer/Settings';
+import { DeveloperDashboard } from '../components/developer/pages/DeveloperDashboard';
+import { Companies } from '../components/developer/pages/Companies';
+import { CRM } from '../components/developer/pages/CRM';
+import { GlobalSupport } from '../components/developer/pages/GlobalSupport';
+import { Logs } from '../components/developer/pages/Logs';
+import { Settings } from '../components/developer/pages/Settings';
 import styles from './Developer.module.css';
 
 type TabType = 

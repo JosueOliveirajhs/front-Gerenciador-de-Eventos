@@ -1,57 +1,64 @@
 import { api } from './api';
 
+// Modelo baseado no backend (Empresa.java)
 export interface Company {
   id: number;
   nome: string;
-  cnpj: string;
-  email: string;
-  telefone: string;
-  endereco: string;
-  cidade: string;
-  estado: string;
-  cep: string;
-  plano: 'BASIC' | 'PRO' | 'ENTERPRISE';
-  status: 'ACTIVE' | 'INACTIVE' | 'SUSPENDED';
-  dataCadastro: string;
-  dataVencimento: string;
-  logo?: string;
-  createdAt?: string;
-  updatedAt?: string;
+  descricao?: string;
+  categoria: 'Buffet' | 'Decoracao' | 'Fotografia' | 'Outros';
+  avaliacao?: number;
+  observacao?: string;
+  localizacao?: string;
+  telefone?: string;
+  email?: string;
+  verificado: boolean;
 }
 
+// DTO para criação/atualização (baseado em EmpresaDTO.Request)
 export interface CreateCompanyDTO {
   nome: string;
-  cnpj: string;
-  email: string;
-  telefone: string;
-  endereco: string;
-  cidade: string;
-  estado: string;
-  cep: string;
-  plano: 'BASIC' | 'PRO' | 'ENTERPRISE';
-  status?: 'ACTIVE' | 'INACTIVE' | 'SUSPENDED';
-  dataVencimento: string;
-  logo?: string;
+  descricao?: string;
+  categoria: 'Buffet' | 'Decoracao' | 'Fotografia' | 'Outros';
+  localizacao?: string;
+  telefone?: string;
+  email?: string;
 }
 
+// DTO de resposta (baseado em EmpresaDTO.Response)
+export interface CompanyResponse {
+  id: number;
+  nome: string;
+  descricao?: string;
+  categoria: string;
+  avaliacao?: number;
+  observacao?: string;
+  localizacao?: string;
+  telefone?: string;
+  email?: string;
+  verificado: boolean;
+}
+
+// Estatísticas adaptadas para o modelo de eventos
 export interface CompanyStats {
-  totalUsers: number;
-  totalEvents: number;
-  totalRevenue: number;
-  activeEvents: number;
-  completedEvents: number;
-  monthlyGrowth: number;
-  lastMonthRevenue: number;
+  totalEmpresas: number;
+  porCategoria: Record<string, number>;
+  verificado: number;
+  naoVerificado: number;
+  mediaAvaliacoes: number;
 }
 
 export const companyService = {
   /**
-   * Lista todas as empresas
+   * Lista todas as empresas com filtros opcionais
    */
-  getAllCompanies: async (): Promise<Company[]> => {
+  getAllCompanies: async (busca?: string, categoria?: string): Promise<CompanyResponse[]> => {
     try {
       console.log('🏢 Buscando todas as empresas...');
-      const response = await api.get('/api/companies');
+      const params = new URLSearchParams();
+      if (busca) params.append('busca', busca);
+      if (categoria) params.append('categoria', categoria);
+      
+      const response = await api.get('/api/empresas', { params });
       console.log('✅ Empresas carregadas:', response.data.length);
       return response.data;
     } catch (error: any) {
@@ -66,10 +73,10 @@ export const companyService = {
   /**
    * Busca empresa por ID
    */
-  getCompanyById: async (id: number): Promise<Company> => {
+  getCompanyById: async (id: number): Promise<CompanyResponse> => {
     try {
       console.log(`🏢 Buscando empresa ${id}...`);
-      const response = await api.get(`/api/companies/${id}`);
+      const response = await api.get(`/api/empresas/${id}`);
       return response.data;
     } catch (error) {
       console.error(`❌ Erro ao buscar empresa ${id}:`, error);
@@ -80,16 +87,15 @@ export const companyService = {
   /**
    * Cria nova empresa
    */
-  createCompany: async (data: CreateCompanyDTO): Promise<Company> => {
+  createCompany: async (data: CreateCompanyDTO): Promise<CompanyResponse> => {
     try {
       console.log('📝 Criando empresa:', data);
       
       // Validações básicas
       if (!data.nome) throw new Error('Nome é obrigatório');
-      if (!data.cnpj) throw new Error('CNPJ é obrigatório');
-      if (!data.email) throw new Error('Email é obrigatório');
+      if (!data.categoria) throw new Error('Categoria é obrigatória');
       
-      const response = await api.post('/api/companies', data);
+      const response = await api.post('/api/empresas', data);
       console.log('✅ Empresa criada:', response.data);
       return response.data;
     } catch (error: any) {
@@ -107,10 +113,10 @@ export const companyService = {
   /**
    * Atualiza empresa
    */
-  updateCompany: async (id: number, data: Partial<CreateCompanyDTO>): Promise<Company> => {
+  updateCompany: async (id: number, data: Partial<CreateCompanyDTO>): Promise<CompanyResponse> => {
     try {
       console.log(`✏️ Atualizando empresa ${id}:`, data);
-      const response = await api.put(`/api/companies/${id}`, data);
+      const response = await api.put(`/api/empresas/${id}`, data);
       console.log('✅ Empresa atualizada:', response.data);
       return response.data;
     } catch (error: any) {
@@ -125,7 +131,7 @@ export const companyService = {
   deleteCompany: async (id: number): Promise<void> => {
     try {
       console.log(`🗑️ Deletando empresa ${id}...`);
-      await api.delete(`/api/companies/${id}`);
+      await api.delete(`/api/empresas/${id}`);
       console.log(`✅ Empresa ${id} deletada com sucesso`);
     } catch (error: any) {
       console.error(`❌ Erro ao deletar empresa ${id}:`, error);
@@ -134,251 +140,184 @@ export const companyService = {
   },
 
   /**
-   * Altera status da empresa
+   * Salva anotação/observação da empresa
    */
-  toggleCompanyStatus: async (id: number, status: 'ACTIVE' | 'INACTIVE' | 'SUSPENDED'): Promise<Company> => {
+  saveAnnotation: async (id: number, texto: string): Promise<CompanyResponse> => {
     try {
-      console.log(`🔄 Alterando status da empresa ${id} para:`, status);
-      const response = await api.patch(`/api/companies/${id}/status`, { status });
-      return response.data;
-    } catch (error: any) {
-      console.error(`❌ Erro ao alterar status da empresa ${id}:`, error);
-      throw error;
-    }
-  },
-
-  /**
-   * Busca estatísticas da empresa
-   */
-  getCompanyStats: async (id: number): Promise<CompanyStats> => {
-    try {
-      console.log(`📊 Buscando estatísticas da empresa ${id}...`);
-      const response = await api.get(`/api/companies/${id}/stats`);
-      return response.data;
-    } catch (error: any) {
-      console.error(`❌ Erro ao buscar estatísticas da empresa ${id}:`, error);
-      if (error.response?.status === 404) {
-        return {
-          totalUsers: 0,
-          totalEvents: 0,
-          totalRevenue: 0,
-          activeEvents: 0,
-          completedEvents: 0,
-          monthlyGrowth: 0,
-          lastMonthRevenue: 0
-        };
-      }
-      throw error;
-    }
-  },
-
-  /**
-   * Busca empresas ativas
-   */
-  getActiveCompanies: async (): Promise<Company[]> => {
-    try {
-      const allCompanies = await companyService.getAllCompanies();
-      return allCompanies.filter(company => company.status === 'ACTIVE');
-    } catch (error) {
-      console.error('❌ Erro ao buscar empresas ativas:', error);
-      return [];
-    }
-  },
-
-  /**
-   * Busca empresas por plano
-   */
-  getCompaniesByPlan: async (plan: 'BASIC' | 'PRO' | 'ENTERPRISE'): Promise<Company[]> => {
-    try {
-      const allCompanies = await companyService.getAllCompanies();
-      return allCompanies.filter(company => company.plano === plan);
-    } catch (error) {
-      console.error(`❌ Erro ao buscar empresas do plano ${plan}:`, error);
-      return [];
-    }
-  },
-
-  /**
-   * Busca empresas com vencimento próximo
-   */
-  getCompaniesNearExpiration: async (days: number = 30): Promise<Company[]> => {
-    try {
-      const allCompanies = await companyService.getAllCompanies();
-      const today = new Date();
-      const futureDate = new Date();
-      futureDate.setDate(today.getDate() + days);
-      
-      return allCompanies.filter(company => {
-        const expDate = new Date(company.dataVencimento);
-        return expDate >= today && expDate <= futureDate;
+      console.log(`📝 Salvando anotação para empresa ${id}...`);
+      const response = await api.patch(`/api/empresas/${id}/anotacao`, texto, {
+        headers: {
+          'Content-Type': 'text/plain'
+        }
       });
+      console.log('✅ Anotação salva com sucesso');
+      return response.data;
+    } catch (error: any) {
+      console.error(`❌ Erro ao salvar anotação:`, error);
+      throw error;
+    }
+  },
+
+  /**
+   * Busca empresas por categoria
+   */
+  getCompaniesByCategory: async (categoria: string): Promise<CompanyResponse[]> => {
+    try {
+      return await companyService.getAllCompanies(undefined, categoria);
     } catch (error) {
-      console.error('❌ Erro ao buscar empresas próximas do vencimento:', error);
+      console.error('❌ Erro ao buscar empresas por categoria:', error);
       return [];
     }
   },
 
   /**
-   * Busca empresas por CNPJ
+   * Busca empresas por nome (search)
    */
-  getCompanyByCNPJ: async (cnpj: string): Promise<Company | null> => {
+  searchCompanies: async (termo: string): Promise<CompanyResponse[]> => {
     try {
-      const allCompanies = await companyService.getAllCompanies();
-      const company = allCompanies.find(c => c.cnpj === cnpj.replace(/\D/g, ''));
-      return company || null;
+      return await companyService.getAllCompanies(termo);
     } catch (error) {
-      console.error('❌ Erro ao buscar empresa por CNPJ:', error);
-      return null;
+      console.error('❌ Erro ao buscar empresas por nome:', error);
+      return [];
     }
   },
 
   /**
-   * Busca empresas por email
+   * Busca empresas verificadas
    */
-  getCompanyByEmail: async (email: string): Promise<Company | null> => {
+  getVerifiedCompanies: async (): Promise<CompanyResponse[]> => {
     try {
-      const allCompanies = await companyService.getAllCompanies();
-      const company = allCompanies.find(c => c.email.toLowerCase() === email.toLowerCase());
-      return company || null;
+      const companies = await companyService.getAllCompanies();
+      return companies.filter(company => company.verificado);
     } catch (error) {
-      console.error('❌ Erro ao buscar empresa por email:', error);
-      return null;
+      console.error('❌ Erro ao buscar empresas verificadas:', error);
+      return [];
     }
   },
 
   /**
-   * Valida CNPJ
+   * Busca estatísticas das empresas
    */
-  validateCNPJ: (cnpj: string): boolean => {
-    const cnpjClean = cnpj.replace(/\D/g, '');
-    
-    if (cnpjClean.length !== 14) return false;
-    
-    // Elimina CNPJs inválidos conhecidos
-    if (/^(\d)\1+$/.test(cnpjClean)) return false;
-    
-    // Validação do primeiro dígito verificador
-    let size = cnpjClean.length - 2;
-    let numbers = cnpjClean.substring(0, size);
-    const digits = cnpjClean.substring(size);
-    let sum = 0;
-    let pos = size - 7;
-    
-    for (let i = size; i >= 1; i--) {
-      sum += parseInt(numbers.charAt(size - i)) * pos--;
-      if (pos < 2) pos = 9;
+  getCompanyStats: async (): Promise<CompanyStats> => {
+    try {
+      const companies = await companyService.getAllCompanies();
+      
+      // Contagem por categoria
+      const porCategoria = companies.reduce((acc, company) => {
+        acc[company.categoria] = (acc[company.categoria] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>);
+
+      // Média das avaliações
+      const avaliacoes = companies
+        .filter(c => c.avaliacao !== undefined && c.avaliacao !== null)
+        .map(c => c.avaliacao as number);
+      
+      const mediaAvaliacoes = avaliacoes.length > 0
+        ? avaliacoes.reduce((a, b) => a + b, 0) / avaliacoes.length
+        : 0;
+
+      return {
+        totalEmpresas: companies.length,
+        porCategoria,
+        verificado: companies.filter(c => c.verificado).length,
+        naoVerificado: companies.filter(c => !c.verificado).length,
+        mediaAvaliacoes: Number(mediaAvaliacoes.toFixed(1))
+      };
+    } catch (error) {
+      console.error('❌ Erro ao buscar estatísticas:', error);
+      return {
+        totalEmpresas: 0,
+        porCategoria: {},
+        verificado: 0,
+        naoVerificado: 0,
+        mediaAvaliacoes: 0
+      };
     }
-    
-    let result = sum % 11 < 2 ? 0 : 11 - (sum % 11);
-    if (result !== parseInt(digits.charAt(0))) return false;
-    
-    // Validação do segundo dígito verificador
-    size = size + 1;
-    numbers = cnpjClean.substring(0, size);
-    sum = 0;
-    pos = size - 7;
-    
-    for (let i = size; i >= 1; i--) {
-      sum += parseInt(numbers.charAt(size - i)) * pos--;
-      if (pos < 2) pos = 9;
-    }
-    
-    result = sum % 11 < 2 ? 0 : 11 - (sum % 11);
-    return result === parseInt(digits.charAt(1));
   },
 
   /**
-   * Formata CNPJ
+   * Valida email
    */
-  formatCNPJ: (cnpj: string): string => {
-    const cleaned = cnpj.replace(/\D/g, '');
-    return cleaned.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, '$1.$2.$3/$4-$5');
+  validateEmail: (email: string): boolean => {
+    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return re.test(email);
   },
 
   /**
-   * Conta empresas por status
+   * Valida telefone (formato brasileiro)
    */
-  countByStatus: async (): Promise<Record<string, number>> => {
+  validatePhone: (phone: string): boolean => {
+    const cleaned = phone.replace(/\D/g, '');
+    return cleaned.length >= 10 && cleaned.length <= 11;
+  },
+
+  /**
+   * Formata telefone
+   */
+  formatPhone: (phone: string): string => {
+    const cleaned = phone.replace(/\D/g, '');
+    if (cleaned.length === 11) {
+      return cleaned.replace(/^(\d{2})(\d{5})(\d{4})$/, '($1) $2-$3');
+    }
+    return cleaned.replace(/^(\d{2})(\d{4})(\d{4})$/, '($1) $2-$3');
+  },
+
+  /**
+   * Categorias disponíveis
+   */
+  getCategorias: (): Array<{ value: string; label: string }> => {
+    return [
+      { value: 'Buffet', label: 'Buffet' },
+      { value: 'Decoracao', label: 'Decoração' },
+      { value: 'Fotografia', label: 'Fotografia' },
+      { value: 'Outros', label: 'Outros' }
+    ];
+  },
+
+  /**
+   * Conta empresas por categoria
+   */
+  countByCategory: async (): Promise<Record<string, number>> => {
     try {
       const companies = await companyService.getAllCompanies();
       return companies.reduce((acc, company) => {
-        acc[company.status] = (acc[company.status] || 0) + 1;
+        acc[company.categoria] = (acc[company.categoria] || 0) + 1;
         return acc;
       }, {} as Record<string, number>);
     } catch (error) {
-      console.error('❌ Erro ao contar empresas por status:', error);
+      console.error('❌ Erro ao contar empresas por categoria:', error);
       return {};
     }
   },
 
   /**
-   * Conta empresas por plano
+   * Busca empresas com avaliação acima de X
    */
-  countByPlan: async (): Promise<Record<string, number>> => {
+  getCompaniesWithRatingAbove: async (minRating: number): Promise<CompanyResponse[]> => {
     try {
       const companies = await companyService.getAllCompanies();
-      return companies.reduce((acc, company) => {
-        acc[company.plano] = (acc[company.plano] || 0) + 1;
-        return acc;
-      }, {} as Record<string, number>);
-    } catch (error) {
-      console.error('❌ Erro ao contar empresas por plano:', error);
-      return {};
-    }
-  },
-
-  /**
-   * Busca empresas criadas em um período
-   */
-  getCompaniesByDateRange: async (startDate: string, endDate: string): Promise<Company[]> => {
-    try {
-      const allCompanies = await companyService.getAllCompanies();
-      return allCompanies.filter(company => 
-        company.dataCadastro >= startDate && company.dataCadastro <= endDate
+      return companies.filter(company => 
+        company.avaliacao !== undefined && company.avaliacao >= minRating
       );
     } catch (error) {
-      console.error('❌ Erro ao buscar empresas por período:', error);
+      console.error('❌ Erro ao buscar empresas por avaliação:', error);
       return [];
     }
   },
 
   /**
-   * Busca estatísticas gerais das empresas
+   * Busca empresas com anotações
    */
-  getGeneralStats: async (): Promise<{
-    total: number;
-    active: number;
-    inactive: number;
-    suspended: number;
-    byPlan: Record<string, number>;
-    newThisMonth: number;
-  }> => {
+  getCompaniesWithNotes: async (): Promise<CompanyResponse[]> => {
     try {
       const companies = await companyService.getAllCompanies();
-      const now = new Date();
-      const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
-      
-      return {
-        total: companies.length,
-        active: companies.filter(c => c.status === 'ACTIVE').length,
-        inactive: companies.filter(c => c.status === 'INACTIVE').length,
-        suspended: companies.filter(c => c.status === 'SUSPENDED').length,
-        byPlan: companies.reduce((acc, c) => {
-          acc[c.plano] = (acc[c.plano] || 0) + 1;
-          return acc;
-        }, {} as Record<string, number>),
-        newThisMonth: companies.filter(c => c.dataCadastro >= firstDayOfMonth).length
-      };
+      return companies.filter(company => 
+        company.observacao && company.observacao.trim().length > 0
+      );
     } catch (error) {
-      console.error('❌ Erro ao buscar estatísticas gerais:', error);
-      return {
-        total: 0,
-        active: 0,
-        inactive: 0,
-        suspended: 0,
-        byPlan: {},
-        newThisMonth: 0
-      };
+      console.error('❌ Erro ao buscar empresas com anotações:', error);
+      return [];
     }
   }
 };

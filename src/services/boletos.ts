@@ -1,7 +1,7 @@
 // src/services/boletos.ts
 
 import { api } from './api';
-import { Boleto, GenerateBoletoData, ApiResponse } from '../components/pages/developer/clients/types';
+import { Boleto, GenerateBoletoData, ApiResponse } from '../components/developer/pages/developer/clients/types';
 
 export const boletoService = {
     /**
