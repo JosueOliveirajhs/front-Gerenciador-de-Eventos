@@ -18,23 +18,14 @@ import {
   FaShieldAlt,
   FaHeadset,
 } from 'react-icons/fa';
-<<<<<<< HEAD:src/pages/Developer/Developer.tsx
 import { useAuth } from '../../context/AuthContext';
 import { DeveloperDashboard } from '../../components/DeveloperCompents/DeveloperDashboard/DeveloperDashboard';
 import { Companies } from '../../components/DeveloperCompents/Companies/Companies';
 import { CRM } from '../../components/DeveloperCompents/CRM/CRM';
 import { GlobalSupport } from '../../components/DeveloperCompents/GlobalSupport/GlobalSupport';
-import { Logs } from '../../components/DeveloperCompents/Logs/Logs';
+import { LogViewer } from '../../components/DeveloperCompents/LogViewer/LogViewer';
 import { Settings } from '../../components/DeveloperCompents/Settings/Settings';
-=======
-import { useAuth } from '../context/AuthContext';
-import { DeveloperDashboard } from '../components/developer/pages/DeveloperDashboard';
-import { Companies } from '../components/developer/pages/Companies';
-import { CRM } from '../components/developer/pages/CRM';
-import { GlobalSupport } from '../components/developer/pages/GlobalSupport';
-import { Logs } from '../components/developer/pages/Logs';
-import { Settings } from '../components/developer/pages/Settings';
->>>>>>> 357e2042b6c5fc9f18cffdbb8d062af4000fe7c1:src/pages/Developer.tsx
+
 import styles from './Developer.module.css';
 
 type TabType = 

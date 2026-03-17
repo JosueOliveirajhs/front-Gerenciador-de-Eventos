@@ -1,361 +1,340 @@
-// src/components/developer/CompanyForm.tsx
-
+// src/components/DeveloperCompents/CompanyForm/CompanyForm.tsx
 import React, { useState, useEffect } from 'react';
-import {
-  MdClose,
+import { useNavigate, useParams } from 'react-router-dom';
+import { 
   MdSave,
+  MdCancel,
   MdBusiness,
+  MdDescription,
   MdEmail,
   MdPhone,
   MdLocationOn,
-  MdAttachMoney,
-  MdCalendarToday,
-  MdCloudUpload,
-  MdWarning
+  MdCategory,
+  MdError,
+  MdArrowBack
 } from 'react-icons/md';
-import { FaRegIdCard, FaRegBuilding } from 'react-icons/fa';
+import { companyService, EmpresaResponse, CreateEmpresaDTO } from '../../../services/company';
 import styles from './CompanyForm.module.css';
 
 interface CompanyFormProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onSave: (data: any) => void;
-  initialData?: any;
+  companyId?: number | null;
+  onSuccess: () => void;
+  onCancel: () => void;
 }
 
-export const CompanyForm: React.FC<CompanyFormProps> = ({
-  isOpen,
-  onClose,
-  onSave,
-  initialData
+export const CompanyForm: React.FC<CompanyFormProps> = ({ 
+  companyId, 
+  onSuccess, 
+  onCancel 
 }) => {
-  const [formData, setFormData] = useState({
-    nome: '',
-    cnpj: '',
-    email: '',
-    telefone: '',
-    endereco: '',
-    cidade: '',
-    estado: '',
-    cep: '',
-    plano: 'BASIC' as 'BASIC' | 'PRO' | 'ENTERPRISE',
-    status: 'ACTIVE' as 'ACTIVE' | 'INACTIVE' | 'SUSPENDED',
-    dataVencimento: '',
-    logo: ''
-  });
+  const navigate = useNavigate();
+  const params = useParams<{ id: string }>();
+  
+  // Prioridade: props > params
+  const id = companyId ?? (params.id ? Number(params.id) : undefined);
+  const isEditing = !!id;
 
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  console.log('🔍 CompanyForm - Props companyId:', companyId);
+  console.log('🔍 CompanyForm - Params id:', params.id);
+  console.log('🔍 CompanyForm - ID final:', id);
+  console.log('🔍 CompanyForm - isEditing:', isEditing);
+
+  const [formData, setFormData] = useState<CreateEmpresaDTO>({
+    nome: '',
+    descricao: '',
+    categoria: 'Outros',
+    localizacao: '',
+    telefone: '',
+    email: ''
+  });
+  
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
+  const [notFound, setNotFound] = useState(false);
+
+  const categorias = companyService.getCategorias();
 
   useEffect(() => {
-    if (initialData) {
+    console.log('🔍 CompanyForm useEffect - ID recebido:', id);
+    if (isEditing && id) {
+      loadCompany();
+    }
+  }, [id]);
+
+  const loadCompany = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      setNotFound(false);
+      
+      console.log(`🔍 Carregando empresa ID: ${id}`);
+      const numericId = Number(id);
+      console.log(`🔍 ID numérico: ${numericId}`);
+      
+      const data = await companyService.getCompanyById(numericId);
+      console.log('✅ Empresa carregada:', data);
+      
       setFormData({
-        nome: initialData.nome || '',
-        cnpj: initialData.cnpj || '',
-        email: initialData.email || '',
-        telefone: initialData.telefone || '',
-        endereco: initialData.endereco || '',
-        cidade: initialData.cidade || '',
-        estado: initialData.estado || '',
-        cep: initialData.cep || '',
-        plano: initialData.plano || 'BASIC',
-        status: initialData.status || 'ACTIVE',
-        dataVencimento: initialData.dataVencimento || '',
-        logo: initialData.logo || ''
+        nome: data.nome,
+        descricao: data.descricao || '',
+        categoria: data.categoria,
+        localizacao: data.localizacao || '',
+        telefone: data.telefone || '',
+        email: data.email || ''
       });
+      
+    } catch (err: any) {
+      console.error('❌ Erro ao carregar empresa:', err);
+      
+      if (err.response?.status === 404) {
+        setNotFound(true);
+        setError('Empresa não encontrada.');
+      } else if (err.response?.status === 403) {
+        setError('Acesso negado. Verifique suas permissões.');
+        console.error('🔐 Detalhes do erro 403:', err.response?.data);
+      } else {
+        setError('Erro ao carregar dados da empresa. Tente novamente.');
+      }
+    } finally {
+      setLoading(false);
     }
-  }, [initialData]);
-
-  const validateForm = () => {
-    const newErrors: Record<string, string> = {};
-
-    if (!formData.nome) newErrors.nome = 'Nome é obrigatório';
-    if (!formData.cnpj) newErrors.cnpj = 'CNPJ é obrigatório';
-    else if (!/^\d{14}$/.test(formData.cnpj.replace(/\D/g, ''))) {
-      newErrors.cnpj = 'CNPJ inválido';
-    }
-
-    if (!formData.email) newErrors.email = 'Email é obrigatório';
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = 'Email inválido';
-    }
-
-    if (!formData.telefone) newErrors.telefone = 'Telefone é obrigatório';
-    if (!formData.endereco) newErrors.endereco = 'Endereço é obrigatório';
-    if (!formData.cidade) newErrors.cidade = 'Cidade é obrigatória';
-    if (!formData.estado) newErrors.estado = 'Estado é obrigatório';
-    if (!formData.cep) newErrors.cep = 'CEP é obrigatório';
-    if (!formData.dataVencimento) newErrors.dataVencimento = 'Data de vencimento é obrigatória';
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
-    // Limpar erro do campo quando começar a digitar
-    if (errors[name]) {
-      setErrors(prev => ({ ...prev, [name]: '' }));
-    }
-  };
-
-  const handleCnpjChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let value = e.target.value.replace(/\D/g, '');
-    if (value.length <= 14) {
-      // Formatar CNPJ: 00.000.000/0000-00
-      value = value.replace(/^(\d{2})(\d)/, '$1.$2');
-      value = value.replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3');
-      value = value.replace(/\.(\d{3})(\d)/, '.$1/$2');
-      value = value.replace(/(\d{4})(\d)/, '$1-$2');
-      setFormData(prev => ({ ...prev, cnpj: value }));
-    }
-  };
-
-  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let value = e.target.value.replace(/\D/g, '');
-    if (value.length <= 11) {
-      // Formatar telefone: (00) 00000-0000
-      value = value.replace(/^(\d{2})(\d)/, '($1) $2');
-      value = value.replace(/(\d{5})(\d)/, '$1-$2');
-      setFormData(prev => ({ ...prev, telefone: value }));
-    }
-  };
-
-  const handleCepChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let value = e.target.value.replace(/\D/g, '');
-    if (value.length <= 8) {
-      // Formatar CEP: 00000-000
-      value = value.replace(/^(\d{5})(\d)/, '$1-$2');
-      setFormData(prev => ({ ...prev, cep: value }));
-    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!validateForm()) return;
-
-    setIsSubmitting(true);
     try {
-      // Limpar formatação antes de enviar
-      const dataToSubmit = {
-        ...formData,
-        cnpj: formData.cnpj.replace(/\D/g, ''),
-        telefone: formData.telefone.replace(/\D/g, ''),
-        cep: formData.cep.replace(/\D/g, '')
-      };
-      await onSave(dataToSubmit);
-      onClose();
-    } catch (error) {
-      console.error('Erro ao salvar empresa:', error);
+      setLoading(true);
+      setError(null);
+      
+      console.log('🔍 Submetendo formulário:', formData);
+      
+      // Validações
+      if (!formData.nome.trim()) {
+        setError('Nome é obrigatório');
+        setLoading(false);
+        return;
+      }
+
+      if (formData.email && !companyService.validateEmail(formData.email)) {
+        setError('Email inválido');
+        setLoading(false);
+        return;
+      }
+
+      if (formData.telefone && !companyService.validatePhone(formData.telefone)) {
+        setError('Telefone inválido. Use formato (11) 99999-9999');
+        setLoading(false);
+        return;
+      }
+
+      let response;
+      if (isEditing) {
+        console.log(`🔍 Atualizando empresa ID: ${id}`);
+        response = await companyService.updateCompany(Number(id), formData);
+      } else {
+        console.log('🔍 Criando nova empresa');
+        response = await companyService.createCompany(formData);
+      }
+      
+      console.log('✅ Resposta do servidor:', response);
+      
+      setSuccess(true);
+      setTimeout(() => {
+        onSuccess();
+      }, 1500);
+      
+    } catch (err: any) {
+      console.error('❌ Erro ao salvar empresa:', err);
+      
+      if (err.response?.status === 403) {
+        setError('Acesso negado. Você não tem permissão para esta ação.');
+      } else if (err.response?.status === 404) {
+        setError('Empresa não encontrada.');
+      } else {
+        setError('Erro ao salvar empresa. Tente novamente.');
+      }
     } finally {
-      setIsSubmitting(false);
+      setLoading(false);
     }
   };
 
-  if (!isOpen) return null;
+  if (loading && isEditing) {
+    return (
+      <div className={styles.loadingContainer}>
+        <div className={styles.spinner}></div>
+        <p>Carregando empresa...</p>
+      </div>
+    );
+  }
+
+  if (notFound) {
+    return (
+      <div className={styles.errorContainer}>
+        <MdError size={48} />
+        <h2>Empresa não encontrada</h2>
+        <p>A empresa que você está tentando editar não existe ou foi removida.</p>
+        <button onClick={onCancel} className={styles.backButton}>
+          <MdArrowBack />
+          Voltar para lista
+        </button>
+      </div>
+    );
+  }
 
   return (
-    <div className={styles.modal} onClick={onClose}>
-      <div className={styles.modalContent} onClick={e => e.stopPropagation()}>
-        <div className={styles.modalHeader}>
-          <h3>
+    <div className={styles.formContainer}>
+      <div className={styles.formHeader}>
+        <h1>
+          <MdBusiness />
+          {isEditing ? 'Editar Empresa' : 'Nova Empresa'}
+        </h1>
+      </div>
+
+      {error && (
+        <div className={styles.errorMessage}>
+          <MdError />
+          {error}
+        </div>
+      )}
+
+      {success && (
+        <div className={styles.successMessage}>
+          Empresa {isEditing ? 'atualizada' : 'criada'} com sucesso!
+        </div>
+      )}
+
+      <form onSubmit={handleSubmit} className={styles.form}>
+        <div className={styles.formGroup}>
+          <label htmlFor="nome">
             <MdBusiness />
-            {initialData ? 'Editar Empresa' : 'Nova Empresa'}
-          </h3>
-          <button onClick={onClose} className={styles.closeButton}>
-            <MdClose />
-          </button>
+            Nome da Empresa *
+          </label>
+          <input
+            type="text"
+            id="nome"
+            name="nome"
+            value={formData.nome}
+            onChange={handleInputChange}
+            placeholder="Digite o nome da empresa"
+            required
+            disabled={loading || success}
+          />
         </div>
 
-        <form onSubmit={handleSubmit} className={styles.form}>
-          <div className={styles.formGrid}>
-            {/* Nome */}
-            <div className={`${styles.formGroup} ${styles.fullWidth}`}>
-              <label>Nome da Empresa *</label>
-              <input
-                type="text"
-                name="nome"
-                value={formData.nome}
-                onChange={handleInputChange}
-                placeholder="Razão Social"
-                className={errors.nome ? styles.error : ''}
-              />
-              {errors.nome && <span className={styles.errorMessage}>{errors.nome}</span>}
-            </div>
+        <div className={styles.formGroup}>
+          <label htmlFor="categoria">
+            <MdCategory />
+            Categoria *
+          </label>
+          <select
+            id="categoria"
+            name="categoria"
+            value={formData.categoria}
+            onChange={handleInputChange}
+            required
+            disabled={loading || success}
+          >
+            {categorias.map(cat => (
+              <option key={cat.value} value={cat.value}>
+                {cat.label}
+              </option>
+            ))}
+          </select>
+        </div>
 
-            {/* CNPJ e Email */}
-            <div className={styles.formGroup}>
-              <label>CNPJ *</label>
-              <input
-                type="text"
-                name="cnpj"
-                value={formData.cnpj}
-                onChange={handleCnpjChange}
-                placeholder="00.000.000/0000-00"
-                maxLength={18}
-                className={errors.cnpj ? styles.error : ''}
-              />
-              {errors.cnpj && <span className={styles.errorMessage}>{errors.cnpj}</span>}
-            </div>
+        <div className={styles.formGroup}>
+          <label htmlFor="descricao">
+            <MdDescription />
+            Descrição
+          </label>
+          <textarea
+            id="descricao"
+            name="descricao"
+            value={formData.descricao}
+            onChange={handleInputChange}
+            placeholder="Descreva os serviços da empresa"
+            rows={4}
+            disabled={loading || success}
+          />
+        </div>
 
-            <div className={styles.formGroup}>
-              <label>Email *</label>
-              <input
-                type="email"
-                name="email"
-                value={formData.email}
-                onChange={handleInputChange}
-                placeholder="contato@empresa.com"
-                className={errors.email ? styles.error : ''}
-              />
-              {errors.email && <span className={styles.errorMessage}>{errors.email}</span>}
-            </div>
-
-            {/* Telefone e Plano */}
-            <div className={styles.formGroup}>
-              <label>Telefone *</label>
-              <input
-                type="text"
-                name="telefone"
-                value={formData.telefone}
-                onChange={handlePhoneChange}
-                placeholder="(00) 00000-0000"
-                maxLength={15}
-                className={errors.telefone ? styles.error : ''}
-              />
-              {errors.telefone && <span className={styles.errorMessage}>{errors.telefone}</span>}
-            </div>
-
-            <div className={styles.formGroup}>
-              <label>Plano *</label>
-              <select name="plano" value={formData.plano} onChange={handleInputChange}>
-                <option value="BASIC">Basic</option>
-                <option value="PRO">Pro</option>
-                <option value="ENTERPRISE">Enterprise</option>
-              </select>
-            </div>
-
-            {/* Endereço */}
-            <div className={`${styles.formGroup} ${styles.fullWidth}`}>
-              <label>Endereço *</label>
-              <input
-                type="text"
-                name="endereco"
-                value={formData.endereco}
-                onChange={handleInputChange}
-                placeholder="Rua, número, complemento"
-                className={errors.endereco ? styles.error : ''}
-              />
-              {errors.endereco && <span className={styles.errorMessage}>{errors.endereco}</span>}
-            </div>
-
-            {/* Cidade, Estado, CEP */}
-            <div className={styles.formGroup}>
-              <label>Cidade *</label>
-              <input
-                type="text"
-                name="cidade"
-                value={formData.cidade}
-                onChange={handleInputChange}
-                placeholder="São Paulo"
-                className={errors.cidade ? styles.error : ''}
-              />
-              {errors.cidade && <span className={styles.errorMessage}>{errors.cidade}</span>}
-            </div>
-
-            <div className={styles.formGroup}>
-              <label>Estado *</label>
-              <input
-                type="text"
-                name="estado"
-                value={formData.estado}
-                onChange={handleInputChange}
-                placeholder="SP"
-                maxLength={2}
-                className={errors.estado ? styles.error : ''}
-              />
-              {errors.estado && <span className={styles.errorMessage}>{errors.estado}</span>}
-            </div>
-
-            <div className={styles.formGroup}>
-              <label>CEP *</label>
-              <input
-                type="text"
-                name="cep"
-                value={formData.cep}
-                onChange={handleCepChange}
-                placeholder="00000-000"
-                maxLength={9}
-                className={errors.cep ? styles.error : ''}
-              />
-              {errors.cep && <span className={styles.errorMessage}>{errors.cep}</span>}
-            </div>
-
-            {/* Status e Data de Vencimento */}
-            <div className={styles.formGroup}>
-              <label>Status</label>
-              <select name="status" value={formData.status} onChange={handleInputChange}>
-                <option value="ACTIVE">Ativo</option>
-                <option value="INACTIVE">Inativo</option>
-                <option value="SUSPENDED">Suspenso</option>
-              </select>
-            </div>
-
-            <div className={styles.formGroup}>
-              <label>Data de Vencimento *</label>
-              <input
-                type="date"
-                name="dataVencimento"
-                value={formData.dataVencimento}
-                onChange={handleInputChange}
-                className={errors.dataVencimento ? styles.error : ''}
-              />
-              {errors.dataVencimento && <span className={styles.errorMessage}>{errors.dataVencimento}</span>}
-            </div>
-
-            {/* Logo (opcional) */}
-            <div className={`${styles.formGroup} ${styles.fullWidth}`}>
-              <label>Logo URL (opcional)</label>
-              <input
-                type="url"
-                name="logo"
-                value={formData.logo}
-                onChange={handleInputChange}
-                placeholder="https://exemplo.com/logo.png"
-              />
-            </div>
+        <div className={styles.formRow}>
+          <div className={styles.formGroup}>
+            <label htmlFor="email">
+              <MdEmail />
+              Email
+            </label>
+            <input
+              type="email"
+              id="email"
+              name="email"
+              value={formData.email}
+              onChange={handleInputChange}
+              placeholder="email@empresa.com"
+              disabled={loading || success}
+            />
           </div>
 
-          {Object.keys(errors).length > 0 && (
-            <div className={styles.warningBox}>
-              <MdWarning />
-              <span>Preencha todos os campos obrigatórios corretamente.</span>
-            </div>
-          )}
-
-          <div className={styles.modalFooter}>
-            <button type="button" onClick={onClose} className={styles.cancelButton}>
-              Cancelar
-            </button>
-            <button 
-              type="submit" 
-              className={styles.submitButton}
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? (
-                <>Salvando...</>
-              ) : (
-                <>
-                  <MdSave />
-                  {initialData ? 'Atualizar' : 'Salvar'}
-                </>
-              )}
-            </button>
+          <div className={styles.formGroup}>
+            <label htmlFor="telefone">
+              <MdPhone />
+              Telefone
+            </label>
+            <input
+              type="text"
+              id="telefone"
+              name="telefone"
+              value={formData.telefone}
+              onChange={handleInputChange}
+              placeholder="(11) 99999-9999"
+              disabled={loading || success}
+            />
           </div>
-        </form>
-      </div>
+        </div>
+
+        <div className={styles.formGroup}>
+          <label htmlFor="localizacao">
+            <MdLocationOn />
+            Localização
+          </label>
+          <input
+            type="text"
+            id="localizacao"
+            name="localizacao"
+            value={formData.localizacao}
+            onChange={handleInputChange}
+            placeholder="Cidade, Estado ou endereço completo"
+            disabled={loading || success}
+          />
+        </div>
+
+        <div className={styles.formActions}>
+          <button 
+            type="button" 
+            className={styles.cancelButton}
+            onClick={onCancel}
+            disabled={loading || success}
+          >
+            <MdCancel />
+            Cancelar
+          </button>
+          <button 
+            type="submit" 
+            className={styles.saveButton}
+            disabled={loading || success}
+          >
+            <MdSave />
+            {loading ? 'Salvando...' : isEditing ? 'Atualizar' : 'Salvar'}
+          </button>
+        </div>
+      </form>
     </div>
   );
 };
