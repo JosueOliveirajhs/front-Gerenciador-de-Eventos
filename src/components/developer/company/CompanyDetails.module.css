@@ -1,0 +1,396 @@
+/* src/pages/developer/CompanyDetails.module.css */
+
+.companyDetails {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* Header */
+.header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: white;
+  padding: 16px 24px;
+  border-radius: 16px;
+  border: 1px solid #e2e8f0;
+}
+
+.backButton {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 16px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #475569;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.backButton:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+.title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 20px;
+  font-weight: 600;
+  color: #0f172a;
+  margin: 0;
+  flex: 1;
+}
+
+.title svg {
+  color: #00B4D8;
+}
+
+.headerActions {
+  display: flex;
+  gap: 8px;
+}
+
+.editButton,
+.suspendButton,
+.activateButton,
+.refreshButton {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.editButton {
+  background: #00B4D8;
+  color: white;
+}
+
+.editButton:hover {
+  background: #0096b0;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px -1px rgba(0, 180, 216, 0.3);
+}
+
+.suspendButton {
+  background: #fee2e2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+}
+
+.suspendButton:hover {
+  background: #dc2626;
+  color: white;
+}
+
+.activateButton {
+  background: #d1fae5;
+  color: #059669;
+  border: 1px solid #a7f3d0;
+}
+
+.activateButton:hover {
+  background: #059669;
+  color: white;
+}
+
+.refreshButton {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  color: #475569;
+}
+
+.refreshButton:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+/* Company Card */
+.companyCard {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 24px;
+}
+
+.companyHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 24px;
+}
+
+.companyInfo {
+  display: flex;
+  gap: 20px;
+}
+
+.companyAvatar {
+  width: 64px;
+  height: 64px;
+  background: #f1f5f9;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #94a3b8;
+  font-size: 32px;
+  overflow: hidden;
+}
+
+.companyAvatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.companyDetails h2 {
+  font-size: 20px;
+  font-weight: 600;
+  color: #0f172a;
+  margin: 0 0 8px 0;
+}
+
+.companyDetails p {
+  font-size: 14px;
+  color: #64748b;
+  margin: 4px 0;
+}
+
+.companyStatus {
+  display: flex;
+  gap: 12px;
+}
+
+.statusBadge {
+  padding: 6px 16px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.statusActive {
+  background: #d1fae5;
+  color: #059669;
+}
+
+.statusTrial {
+  background: #dbeafe;
+  color: #2563eb;
+}
+
+.statusSuspended {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.statusCancelled {
+  background: #e2e8f0;
+  color: #64748b;
+}
+
+.planBadge {
+  padding: 6px 16px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.planBasic {
+  background: #e2e8f0;
+  color: #475569;
+}
+
+.planPro {
+  background: #dbeafe;
+  color: #2563eb;
+}
+
+.planEnterprise {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.companyMetrics {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  padding-top: 20px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.metricItem {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.metricLabel {
+  font-size: 12px;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.metricValue {
+  font-size: 18px;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+/* Tabs */
+.tabs {
+  display: flex;
+  gap: 8px;
+  background: white;
+  padding: 8px;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  overflow-x: auto;
+}
+
+.tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 16px;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.tab:hover {
+  background: #f8fafc;
+  color: #0f172a;
+}
+
+.tab.active {
+  background: #00B4D8;
+  color: white;
+}
+
+.tab svg {
+  font-size: 18px;
+}
+
+.tabContent {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 24px;
+}
+
+/* Loading */
+.loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  gap: 16px;
+}
+
+.spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid #e2e8f0;
+  border-top: 4px solid #00B4D8;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Error */
+.error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  gap: 16px;
+  text-align: center;
+  padding: 32px;
+  background: white;
+  border-radius: 16px;
+  border: 1px solid #e2e8f0;
+}
+
+.error svg {
+  color: #ef4444;
+}
+
+.error h3 {
+  font-size: 20px;
+  font-weight: 600;
+  color: #0f172a;
+  margin: 0;
+}
+
+@media (max-width: 768px) {
+  .header {
+    flex-wrap: wrap;
+  }
+
+  .title {
+    order: -1;
+    width: 100%;
+  }
+
+  .headerActions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  .companyHeader {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .companyInfo {
+    width: 100%;
+  }
+
+  .companyStatus {
+    width: 100%;
+  }
+
+  .statusBadge,
+  .planBadge {
+    flex: 1;
+    text-align: center;
+  }
+
+  .companyMetrics {
+    grid-template-columns: 1fr;
+  }
+
+  .tabs {
+    flex-wrap: wrap;
+  }
+
+  .tab {
+    flex: 1;
+    justify-content: center;
+  }
+}

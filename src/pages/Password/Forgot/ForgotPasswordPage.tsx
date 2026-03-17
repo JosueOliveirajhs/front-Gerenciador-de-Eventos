@@ -36,7 +36,7 @@ export const ForgotPasswordPage: React.FC = () => {
             alt="EventosFáceis" 
             className={styles.logo}
           />
-          <h1 className={styles.logoText}>EventosFáceis</h1>
+          <h1 className={styles.logoText}>E. E. M. S.</h1>
         </div>
 
         <h2 className={styles.title}>Esqueceu sua senha?</h2>

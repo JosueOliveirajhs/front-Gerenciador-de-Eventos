@@ -52,7 +52,7 @@ export const ResetPasswordPage: React.FC = () => {
         <div className={styles.resetPasswordCard}>
           <div className={styles.logoContainer}>
             <img src={logoEventosFaceis} alt="EventosFáceis" className={styles.logo} />
-            <h1 className={styles.logoText}>EventosFáceis</h1>
+            <h1 className={styles.logoText}>Easy Event Management System</h1>
           </div>
           <div className={styles.invalidToken}>
             <div className={styles.errorIcon}>⚠️</div>
