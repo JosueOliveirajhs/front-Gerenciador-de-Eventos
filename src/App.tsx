@@ -4,13 +4,13 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
-import { Login } from './pages/Login';
-import { Owner } from './pages/Owner';
-import { Client } from './pages/Client';
-import { Developer } from './pages/Developer'; // Import do Developer
-import { ForgotPasswordPage } from './pages/ForgotPasswordPage';
-import { ResetPasswordPage } from './pages/ResetPasswordPage';
-import { LoadingSpinner as Loading } from './components/common/LoadingSpinner';
+import { Login } from './pages/Login/Login';
+import { Owner } from './pages/Owner/Owner';
+import { Client } from './pages/Client/Client';
+import { Developer } from './pages/Developer/Developer'; // Import do Developer
+import { ForgotPasswordPage } from './pages/Password/Forgot/ForgotPasswordPage';
+import { ResetPasswordPage } from './pages/Password/Reset/ResetPasswordPage';
+import { LoadingSpinner as Loading } from './components/common/Loading/LoadingSpinner';
 import styles from './App.module.css';
 
 const AppRoutes: React.FC = () => {
