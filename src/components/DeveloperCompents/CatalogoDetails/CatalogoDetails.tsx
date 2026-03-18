@@ -1,4 +1,4 @@
-// src/pages/developer/CompanyDetails.tsx
+// src/components/DeveloperCompents/Catalogo/CatalogoDetails.tsx
 import React, { useState, useEffect } from 'react';
 import {
   MdArrowBack,
@@ -10,52 +10,48 @@ import {
   MdLocationOn,
   MdStar,
   MdNote,
-  MdCheckCircle
+  MdCheckCircle,
+  MdInfoOutline,
+  MdCategory
 } from 'react-icons/md';
-import { companyService, EmpresaResponse } from '../../../services/company';
-import styles from './CompanyDetails.module.css';
+import { catalogoService } from '../../../services/catalogo';
+import { EmpresaResponse } from '../../../types/developer';
+import styles from './CatalogoDetails.module.css';
 
-interface CompanyDetailsProps {
-  companyId: number;
+interface CatalogoDetailsProps {
+  empresaId: number;
   onBack: () => void;
   onEdit: () => void;
 }
 
-export const CompanyDetails: React.FC<CompanyDetailsProps> = ({ 
-  companyId, 
+export const CatalogoDetails: React.FC<CatalogoDetailsProps> = ({ 
+  empresaId, 
   onBack, 
   onEdit 
 }) => {
-  const [company, setCompany] = useState<EmpresaResponse | null>(null);
+  const [empresa, setEmpresa] = useState<EmpresaResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let isMounted = true;
 
-    const loadCompany = async () => {
-      if (!companyId) {
-        setError('ID da empresa não fornecido');
-        setLoading(false);
-        return;
-      }
-
+    const loadEmpresa = async () => {
       try {
         setLoading(true);
         setError(null);
         
-        console.log(`🔍 Carregando empresa ID: ${companyId}`);
-        const data = await companyService.getCompanyById(companyId);
+        console.log(`🔍 Carregando empresa ID: ${empresaId}`);
+        const data = await catalogoService.getEmpresaById(empresaId);
         
         if (isMounted) {
-          console.log('✅ Empresa carregada:', data);
-          setCompany(data);
+          setEmpresa(data);
         }
       } catch (err: any) {
         console.error('❌ Erro ao carregar empresa:', err);
         if (isMounted) {
           if (err.response?.status === 404) {
-            setError('Empresa não encontrada.');
+            setError('Empresa não encontrada no catálogo.');
           } else if (err.response?.status === 403) {
             setError('Acesso negado. Verifique suas permissões.');
           } else {
@@ -69,17 +65,17 @@ export const CompanyDetails: React.FC<CompanyDetailsProps> = ({
       }
     };
 
-    loadCompany();
+    loadEmpresa();
 
     return () => {
       isMounted = false;
     };
-  }, [companyId]);
+  }, [empresaId]);
 
   const renderStars = (avaliacao?: number) => {
     if (!avaliacao) return null;
     
-    const stars = companyService.getStarRating(avaliacao);
+    const stars = catalogoService.getStarRating(avaliacao);
     
     return (
       <div className={styles.stars}>
@@ -103,14 +99,14 @@ export const CompanyDetails: React.FC<CompanyDetailsProps> = ({
     );
   }
 
-  if (error || !company) {
+  if (error || !empresa) {
     return (
       <div className={styles.errorContainer}>
         <MdError size={48} />
         <h3>{error || 'Empresa não encontrada'}</h3>
         <button onClick={onBack} className={styles.backButton}>
           <MdArrowBack />
-          Voltar para lista
+          Voltar para catálogo
         </button>
       </div>
     );
@@ -126,7 +122,7 @@ export const CompanyDetails: React.FC<CompanyDetailsProps> = ({
         </button>
         <h1 className={styles.title}>
           <MdBusiness />
-          {company.nome}
+          {empresa.nome}
         </h1>
         <button onClick={onEdit} className={styles.editButton}>
           <MdEdit />
@@ -134,7 +130,7 @@ export const CompanyDetails: React.FC<CompanyDetailsProps> = ({
         </button>
       </div>
 
-      {/* Company Info Card */}
+      {/* Company Card */}
       <div className={styles.companyCard}>
         <div className={styles.companyHeader}>
           <div className={styles.companyInfo}>
@@ -142,71 +138,80 @@ export const CompanyDetails: React.FC<CompanyDetailsProps> = ({
               <MdBusiness size={48} />
             </div>
             <div className={styles.companyDetails}>
-              <h2>{company.nome}</h2>
-              <p><strong>Categoria:</strong> {company.categoria}</p>
-              {company.verificado && (
-                <span className={styles.verifiedBadge}>
-                  <MdCheckCircle />
-                  Verificado
+              <h2>{empresa.nome}</h2>
+              <div className={styles.companyMeta}>
+                <span 
+                  className={styles.categoryBadge}
+                  style={{ backgroundColor: catalogoService.getCategoriaColor(empresa.categoria) + '20', 
+                           color: catalogoService.getCategoriaColor(empresa.categoria) }}
+                >
+                  <MdCategory />
+                  {empresa.categoria}
                 </span>
-              )}
+                {empresa.verificado && (
+                  <span className={styles.verifiedBadge}>
+                    <MdCheckCircle />
+                    Verificado
+                  </span>
+                )}
+              </div>
             </div>
           </div>
         </div>
 
-        {company.avaliacao && (
+        {empresa.avaliacao && (
           <div className={styles.ratingSection}>
             <h3>Avaliação</h3>
-            {renderStars(company.avaliacao)}
+            {renderStars(empresa.avaliacao)}
           </div>
         )}
 
         <div className={styles.infoSection}>
           <h3>Informações de Contato</h3>
           <div className={styles.infoGrid}>
-            {company.email && (
+            {empresa.email && (
               <div className={styles.infoItem}>
                 <MdEmail />
                 <div>
                   <strong>Email:</strong>
-                  <a href={`mailto:${company.email}`}>{company.email}</a>
+                  <a href={`mailto:${empresa.email}`}>{empresa.email}</a>
                 </div>
               </div>
             )}
-            {company.telefone && (
+            {empresa.telefone && (
               <div className={styles.infoItem}>
                 <MdPhone />
                 <div>
                   <strong>Telefone:</strong>
-                  <a href={`tel:${company.telefone}`}>{companyService.formatPhone(company.telefone)}</a>
+                  <a href={`tel:${empresa.telefone}`}>{catalogoService.formatPhone(empresa.telefone)}</a>
                 </div>
               </div>
             )}
-            {company.localizacao && (
+            {empresa.localizacao && (
               <div className={styles.infoItem}>
                 <MdLocationOn />
                 <div>
                   <strong>Localização:</strong>
-                  <span>{company.localizacao}</span>
+                  <span>{empresa.localizacao}</span>
                 </div>
               </div>
             )}
           </div>
         </div>
 
-        {company.descricao && (
+        {empresa.descricao && (
           <div className={styles.descriptionSection}>
             <h3>Descrição</h3>
-            <p>{company.descricao}</p>
+            <p>{empresa.descricao}</p>
           </div>
         )}
 
-        {company.observacao && (
+        {empresa.observacao && (
           <div className={styles.noteSection}>
             <h3>Observações</h3>
             <div className={styles.noteCard}>
               <MdNote />
-              <p>{company.observacao}</p>
+              <p>{empresa.observacao}</p>
             </div>
           </div>
         )}

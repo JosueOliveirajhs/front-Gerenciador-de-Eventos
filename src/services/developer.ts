@@ -1,10 +1,74 @@
 // types/developer.ts
 
-// Categorias baseadas no enum CategoriaEmpresa do backend
+// ==================== ORGANIZATION (Empresas Assinantes) ====================
+
+// Planos disponíveis (baseado no enum PlanType)
+export type PlanType = 'ESSENCIAL' | 'PROFISSIONAL' | 'PREMIUM' | 'ENTERPRISE';
+
+// Status possíveis da organização
+export type OrgStatus = 'ACTIVE' | 'TRIAL' | 'SUSPENDED' | 'CANCELLED';
+
+// Interface principal da Organization
+export interface Organization {
+  id: number;
+  name: string;
+  cnpj?: string;
+  planType: PlanType;
+  status: OrgStatus;
+  createdAt: string;
+  
+  // Relacionamentos (opcionais para listagem)
+  users?: User[];
+  events?: Event[];
+}
+
+// DTO para criação/atualização de Organization
+export interface CreateOrganizationDTO {
+  name: string;
+  cnpj?: string;
+  planType: PlanType;
+  status: OrgStatus;
+}
+
+// Resumo da organização (para a aba Resumo)
+export interface OrganizationSummary {
+  id: number;
+  name: string;
+  cnpj?: string;
+  planType: PlanType;
+  status: OrgStatus;
+  createdAt: string;
+  
+  // Métricas
+  totalUsers: number;
+  totalEvents: number;
+  totalClients: number;
+  financialVolume: number;
+  
+  // Últimos eventos
+  recentEvents: Event[];
+  recentUsers: User[];
+}
+
+// Estatísticas gerais de Organizations
+export interface OrganizationStats {
+  total: number;
+  active: number;
+  trial: number;
+  suspended: number;
+  cancelled: number;
+  byPlan: Record<PlanType, number>;
+  newThisMonth: number;
+  mrr: number; // Monthly Recurring Revenue
+}
+
+// ==================== EMPRESA (Catálogo de Fornecedores) ====================
+
+// Categorias baseadas no enum CategoriaEmpresa
 export type CategoriaEmpresa = 'Buffet' | 'Decoracao' | 'Fotografia' | 'Outros';
 
-// Interface principal da Empresa (baseada no modelo Empresa.java)
-export interface Company {
+// Interface da Empresa (Catálogo)
+export interface Empresa {
   id: number;
   nome: string;
   descricao?: string;
@@ -17,8 +81,8 @@ export interface Company {
   verificado: boolean;
 }
 
-// DTO para criação de empresa (baseado no backend)
-export interface CreateCompanyDTO {
+// DTO para criação de empresa (catálogo)
+export interface CreateEmpresaDTO {
   nome: string;
   descricao?: string;
   categoria: CategoriaEmpresa;
@@ -27,7 +91,7 @@ export interface CreateCompanyDTO {
   email?: string;
 }
 
-// Resposta da API (igual ao Company, mas explícito)
+// Resposta da API (igual ao Empresa)
 export interface EmpresaResponse {
   id: number;
   nome: string;
@@ -41,14 +105,8 @@ export interface EmpresaResponse {
   verificado: boolean;
 }
 
-// Filtros para busca
-export interface CompanyFilters {
-  busca?: string;
-  categoria?: string;
-}
-
-// Estatísticas calculadas no frontend
-export interface CompanyStats {
+// Estatísticas do catálogo
+export interface CatalogoStats {
   total: number;
   porCategoria: Record<CategoriaEmpresa, number>;
   verificadas: number;
@@ -56,19 +114,36 @@ export interface CompanyStats {
   mediaAvaliacoes: number;
 }
 
-// Status possíveis (para UI, não existem no backend)
-export type CompanyStatus = 'ACTIVE' | 'TRIAL' | 'SUSPENDED' | 'CANCELED';
+// Filtros para busca no catálogo
+export interface CatalogoFilters {
+  busca?: string;
+  categoria?: string;
+  verificado?: boolean;
+  avaliacaoMin?: number;
+}
 
-// Planos (existem no backend em User.plan_type)
-export type CompanyPlan = 'ESSENCIAL' | 'PROFISSIONAL' | 'PREMIUM' | 'ENTERPRISE';
+// ==================== COMPARTILHADOS ====================
 
-// Configuração de status para UI
-export interface StatusConfig {
-  color: string;
-  text: string;
-  badgeClass: string;
-  icon: string;
-  description: string;
+// Usuário da organização
+export interface User {
+  id: number;
+  name: string;
+  email: string;
+  role: string;
+  status: 'ACTIVE' | 'INACTIVE';
+  lastAccess?: string;
+  createdAt: string;
+}
+
+// Evento da organização
+export interface Event {
+  id: number;
+  title: string;
+  type: string;
+  date: string;
+  status: 'SCHEDULED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
+  clientCount: number;
+  value: number;
 }
 
 // Configuração de plano para UI
@@ -78,16 +153,19 @@ export interface PlanConfig {
   color: string;
   badgeClass: string;
   features: string[];
+  limits: {
+    users: number;
+    events: number;
+    clients: number;
+    storage: number; // em GB
+  };
 }
 
-// Estatísticas gerais do dashboard
-export interface DashboardStats {
-  totalEmpresas: number;
-  totalUsuarios: number;
-  totalEventos: number;
-  totalClientes: number;
-  volumeFinanceiro: number;
-  empresasPorCategoria: Record<CategoriaEmpresa, number>;
-  empresasVerificadas: number;
-  empresasNaoVerificadas: number;
+// Configuração de status para UI
+export interface StatusConfig {
+  color: string;
+  text: string;
+  badgeClass: string;
+  icon: string;
+  description: string;
 }

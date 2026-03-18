@@ -1,4 +1,4 @@
-// src/components/DeveloperCompents/Companies/Companies.tsx
+// src/components/DeveloperCompents/Catalogo/Catalogo.tsx
 import React, { useState, useEffect } from 'react';
 import { 
   MdAdd,
@@ -16,75 +16,73 @@ import {
   MdCheckCircle,
   MdInfoOutline,
   MdClose,
-  MdRefresh
+  MdRefresh,
+  MdCategory
 } from 'react-icons/md';
-import { companyService, EmpresaResponse } from '../../../services/company';
-import { CompanyFilters } from '../../../types/developer';
+import { catalogoService } from '../../../services/catalogo';
+import { EmpresaResponse, CatalogoFilters } from '../../../types/developer';
 import { ConfirmationModal } from '../../common/Alerts/ConfirmationModal';
 import { ErrorModal } from '../../common/Alerts/ErrorModal';
-import { CompanyForm } from '../CompanyForm/CompanyForm';
-import { CompanyDetails } from '../CompanyDetails/CompanyDetails';
-import styles from './Companies.module.css';
+import { CatalogoForm } from './CatalogoForm';
+import { CatalogoDetails } from './CatalogoDetails';
+import styles from './Catalogo.module.css';
 
-type ViewMode = 'grid' | 'table';
-type CompaniesView = 'list' | 'form' | 'details';
-
-interface CompaniesProps {
-  // Se precisar receber props do Developer
+interface CatalogoProps {
+  onNavigate: (tab: string, view: string, id?: number) => void;
 }
 
-export const Companies: React.FC<CompaniesProps> = () => {
+type ViewMode = 'grid' | 'table';
+
+export const Catalogo: React.FC<CatalogoProps> = ({ onNavigate }) => {
   // Estados principais
-  const [companies, setCompanies] = useState<EmpresaResponse[]>([]);
-  const [filteredCompanies, setFilteredCompanies] = useState<EmpresaResponse[]>([]);
+  const [empresas, setEmpresas] = useState<EmpresaResponse[]>([]);
+  const [filteredEmpresas, setFilteredEmpresas] = useState<EmpresaResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [stats, setStats] = useState<any>(null);
   
   // Estados de UI
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
-  const [currentView, setCurrentView] = useState<CompaniesView>('list');
   const [showFilters, setShowFilters] = useState(false);
-  const [selectedCompanyId, setSelectedCompanyId] = useState<number | null>(null);
   
   // Estados de filtros
-  const [filters, setFilters] = useState<CompanyFilters>({
+  const [filters, setFilters] = useState<CatalogoFilters>({
     busca: '',
-    categoria: undefined
+    categoria: undefined,
+    verificado: undefined
   });
   
   // Estados de modais
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showNoteModal, setShowNoteModal] = useState(false);
-  const [selectedCompany, setSelectedCompany] = useState<EmpresaResponse | null>(null);
+  const [selectedEmpresa, setSelectedEmpresa] = useState<EmpresaResponse | null>(null);
   const [noteText, setNoteText] = useState('');
 
   // Categorias disponíveis
-  const categorias = companyService.getCategorias();
+  const categorias = catalogoService.getCategorias();
 
   useEffect(() => {
-    loadCompanies();
+    loadEmpresas();
   }, []);
 
   useEffect(() => {
-    if (companies.length > 0) {
-      filterCompanies();
+    if (empresas.length > 0) {
+      filterEmpresas();
     } else {
-      setFilteredCompanies([]);
+      setFilteredEmpresas([]);
     }
-  }, [companies, filters]);
+  }, [empresas, filters]);
 
-  const loadCompanies = async () => {
+  const loadEmpresas = async () => {
     try {
       setLoading(true);
-      const data = await companyService.getAllCompanies();
-      console.log('📦 Empresas carregadas:', data);
-      setCompanies(Array.isArray(data) ? data : []);
+      const data = await catalogoService.getAllEmpresas();
+      setEmpresas(Array.isArray(data) ? data : []);
       await loadStats();
     } catch (error) {
       console.error('❌ Erro ao carregar empresas:', error);
       setError('Erro ao carregar lista de empresas');
-      setCompanies([]);
+      setEmpresas([]);
     } finally {
       setLoading(false);
     }
@@ -92,101 +90,97 @@ export const Companies: React.FC<CompaniesProps> = () => {
 
   const loadStats = async () => {
     try {
-      const data = await companyService.getCompanyStats();
+      const data = await catalogoService.getCatalogoStats();
       setStats(data);
     } catch (error) {
       console.error('❌ Erro ao carregar estatísticas:', error);
     }
   };
 
-  const filterCompanies = () => {
-    if (!companies || companies.length === 0) {
-      setFilteredCompanies([]);
+  const filterEmpresas = () => {
+    if (!empresas || empresas.length === 0) {
+      setFilteredEmpresas([]);
       return;
     }
 
-    let filtered = [...companies];
+    let filtered = [...empresas];
 
     if (filters.busca) {
       const term = filters.busca.toLowerCase();
-      filtered = filtered.filter(company =>
-        company.nome.toLowerCase().includes(term) ||
-        company.email?.toLowerCase().includes(term) ||
-        company.localizacao?.toLowerCase().includes(term)
+      filtered = filtered.filter(empresa =>
+        empresa.nome.toLowerCase().includes(term) ||
+        empresa.email?.toLowerCase().includes(term) ||
+        empresa.localizacao?.toLowerCase().includes(term)
       );
     }
 
     if (filters.categoria) {
-      filtered = filtered.filter(company => company.categoria === filters.categoria);
+      filtered = filtered.filter(empresa => empresa.categoria === filters.categoria);
     }
 
-    setFilteredCompanies(filtered);
+    if (filters.verificado !== undefined) {
+      filtered = filtered.filter(empresa => empresa.verificado === filters.verificado);
+    }
+
+    setFilteredEmpresas(filtered);
   };
 
   const handleSearch = () => {
-    filterCompanies();
+    filterEmpresas();
   };
 
-  const handleFilterChange = (key: keyof CompanyFilters, value: any) => {
+  const handleFilterChange = (key: keyof CatalogoFilters, value: any) => {
     setFilters(prev => ({ ...prev, [key]: value }));
   };
 
   const handleClearFilters = () => {
     setFilters({
       busca: '',
-      categoria: undefined
+      categoria: undefined,
+      verificado: undefined
     });
   };
 
-  const handleViewCompany = (id: number) => {
-    setSelectedCompanyId(id);
-    setCurrentView('details');
+  const handleViewEmpresa = (id: number) => {
+    onNavigate('catalogo', 'details', id);
   };
 
-  const handleEditCompany = (id: number) => {
-    setSelectedCompanyId(id);
-    setCurrentView('form');
+  const handleEditEmpresa = (id: number) => {
+    onNavigate('catalogo', 'form', id);
   };
 
-  const handleNewCompany = () => {
-    setSelectedCompanyId(null);
-    setCurrentView('form');
+  const handleNewEmpresa = () => {
+    onNavigate('catalogo', 'form');
   };
 
-  const handleBackToList = () => {
-    setCurrentView('list');
-    setSelectedCompanyId(null);
-    loadCompanies(); // Recarrega a lista
-  };
-
-  const handleDeleteCompany = async () => {
-    if (!selectedCompany) return;
+  const handleDeleteEmpresa = async () => {
+    if (!selectedEmpresa) return;
 
     try {
-      await companyService.deleteCompany(selectedCompany.id);
-      await loadCompanies();
+      await catalogoService.deleteEmpresa(selectedEmpresa.id);
+      await loadEmpresas();
       setShowDeleteConfirm(false);
-      setSelectedCompany(null);
+      setSelectedEmpresa(null);
     } catch (error) {
       console.error('❌ Erro ao deletar empresa:', error);
       setError('Erro ao deletar empresa');
     }
   };
 
-  const handleOpenNoteModal = (company: EmpresaResponse) => {
-    setSelectedCompany(company);
-    setNoteText(company.observacao || '');
+  const handleOpenNoteModal = (empresa: EmpresaResponse) => {
+    setSelectedEmpresa(empresa);
+    setNoteText(empresa.observacao || '');
     setShowNoteModal(true);
   };
 
   const handleSaveNote = async () => {
-    if (!selectedCompany) return;
+    if (!selectedEmpresa) return;
 
     try {
-      await companyService.saveAnnotation(selectedCompany.id, noteText);
-      await loadCompanies();
+      await catalogoService.saveAnnotation(selectedEmpresa.id, noteText);
+      await loadEmpresas();
       setShowNoteModal(false);
-      setSelectedCompany(null);
+      setSelectedEmpresa(null);
       setNoteText('');
     } catch (error) {
       console.error('❌ Erro ao salvar anotação:', error);
@@ -197,7 +191,7 @@ export const Companies: React.FC<CompaniesProps> = () => {
   const renderStars = (avaliacao?: number) => {
     if (!avaliacao) return null;
     
-    const stars = companyService.getStarRating(avaliacao);
+    const stars = catalogoService.getStarRating(avaliacao);
     
     return (
       <div className={styles.stars}>
@@ -212,46 +206,23 @@ export const Companies: React.FC<CompaniesProps> = () => {
     );
   };
 
-  // Renderiza o formulário
-  if (currentView === 'form') {
-    return (
-      <CompanyForm 
-        companyId={selectedCompanyId} 
-        onSuccess={handleBackToList}
-        onCancel={handleBackToList}
-      />
-    );
-  }
-
-  // Renderiza os detalhes
-  if (currentView === 'details' && selectedCompanyId) {
-    return (
-      <CompanyDetails 
-        companyId={selectedCompanyId}
-        onBack={handleBackToList}
-        onEdit={() => setCurrentView('form')}
-      />
-    );
-  }
-
-  // Renderiza a lista
   if (loading) {
     return (
       <div className={styles.loadingContainer}>
         <div className={styles.spinner}></div>
-        <p>Carregando empresas...</p>
+        <p>Carregando catálogo...</p>
       </div>
     );
   }
 
   return (
-    <div className={styles.companies}>
+    <div className={styles.catalogo}>
       {/* Header */}
       <div className={styles.header}>
         <div className={styles.headerLeft}>
           <h1 className={styles.title}>
             <MdBusiness />
-            Empresas Parceiras
+            Catálogo de Fornecedores
           </h1>
           {stats && (
             <div className={styles.statsBadges}>
@@ -271,7 +242,7 @@ export const Companies: React.FC<CompaniesProps> = () => {
         <div className={styles.headerActions}>
           <button 
             className={styles.primaryButton}
-            onClick={handleNewCompany}
+            onClick={handleNewEmpresa}
           >
             <MdAdd />
             Nova Empresa
@@ -285,7 +256,7 @@ export const Companies: React.FC<CompaniesProps> = () => {
           </button>
           <button 
             className={styles.iconButton}
-            onClick={loadCompanies}
+            onClick={loadEmpresas}
             title="Atualizar"
           >
             <MdRefresh />
@@ -348,7 +319,22 @@ export const Companies: React.FC<CompaniesProps> = () => {
             </select>
           </div>
 
-          {(filters.categoria) && (
+          <div className={styles.filterGroup}>
+            <label>Verificação:</label>
+            <select 
+              value={filters.verificado === undefined ? '' : filters.verificado.toString()}
+              onChange={(e) => {
+                const value = e.target.value;
+                handleFilterChange('verificado', value === '' ? undefined : value === 'true');
+              }}
+            >
+              <option value="">Todos</option>
+              <option value="true">Verificados</option>
+              <option value="false">Não verificados</option>
+            </select>
+          </div>
+
+          {(filters.categoria || filters.verificado !== undefined) && (
             <button 
               className={styles.clearFiltersButton}
               onClick={handleClearFilters}
@@ -362,17 +348,17 @@ export const Companies: React.FC<CompaniesProps> = () => {
       {/* Grid de Cards */}
       {viewMode === 'grid' && (
         <div className={styles.grid}>
-          {filteredCompanies.length > 0 ? (
-            filteredCompanies.map(company => (
-              <div key={company.id} className={styles.card}>
+          {filteredEmpresas.length > 0 ? (
+            filteredEmpresas.map(empresa => (
+              <div key={empresa.id} className={styles.card}>
                 <div className={styles.cardHeader}>
                   <div className={styles.cardHeaderLeft}>
                     <div className={styles.cardIcon}>
                       <MdBusiness size={24} />
                     </div>
-                    <h3 className={styles.companyName}>{company.nome}</h3>
+                    <h3 className={styles.companyName}>{empresa.nome}</h3>
                   </div>
-                  {company.verificado && (
+                  {empresa.verificado && (
                     <span className={styles.verifiedBadge} title="Verificado">
                       <MdCheckCircle />
                     </span>
@@ -382,45 +368,45 @@ export const Companies: React.FC<CompaniesProps> = () => {
                 <div className={styles.cardBody}>
                   <span 
                     className={styles.categoryBadge}
-                    style={{ backgroundColor: companyService.getCategoriaColor(company.categoria) + '20', color: companyService.getCategoriaColor(company.categoria) }}
+                    style={{ backgroundColor: catalogoService.getCategoriaColor(empresa.categoria) + '20', color: catalogoService.getCategoriaColor(empresa.categoria) }}
                   >
-                    {company.categoria}
+                    {empresa.categoria}
                   </span>
 
-                  {renderStars(company.avaliacao)}
+                  {renderStars(empresa.avaliacao)}
 
-                  {company.descricao && (
-                    <p className={styles.description}>{company.descricao}</p>
+                  {empresa.descricao && (
+                    <p className={styles.description}>{empresa.descricao}</p>
                   )}
 
                   <div className={styles.contactInfo}>
-                    {company.email && (
+                    {empresa.email && (
                       <div className={styles.contactItem}>
                         <MdEmail className={styles.contactIcon} />
-                        <span>{company.email}</span>
+                        <span>{empresa.email}</span>
                       </div>
                     )}
-                    {company.telefone && (
+                    {empresa.telefone && (
                       <div className={styles.contactItem}>
                         <MdPhone className={styles.contactIcon} />
-                        <span>{companyService.formatPhone(company.telefone)}</span>
+                        <span>{catalogoService.formatPhone(empresa.telefone)}</span>
                       </div>
                     )}
-                    {company.localizacao && (
+                    {empresa.localizacao && (
                       <div className={styles.contactItem}>
                         <MdLocationOn className={styles.contactIcon} />
-                        <span>{company.localizacao}</span>
+                        <span>{empresa.localizacao}</span>
                       </div>
                     )}
                   </div>
 
-                  {company.observacao && (
+                  {empresa.observacao && (
                     <div className={styles.notePreview}>
                       <MdNote className={styles.noteIcon} />
                       <span className={styles.noteText}>
-                        {company.observacao.length > 60 
-                          ? company.observacao.substring(0, 60) + '...' 
-                          : company.observacao}
+                        {empresa.observacao.length > 60 
+                          ? empresa.observacao.substring(0, 60) + '...' 
+                          : empresa.observacao}
                       </span>
                     </div>
                   )}
@@ -429,7 +415,7 @@ export const Companies: React.FC<CompaniesProps> = () => {
                 <div className={styles.cardFooter}>
                   <button 
                     className={styles.noteButton}
-                    onClick={() => handleOpenNoteModal(company)}
+                    onClick={() => handleOpenNoteModal(empresa)}
                     title="Anotações"
                   >
                     <MdNote />
@@ -437,7 +423,7 @@ export const Companies: React.FC<CompaniesProps> = () => {
                   </button>
                   <button 
                     className={styles.editButton}
-                    onClick={() => handleEditCompany(company.id)}
+                    onClick={() => handleEditEmpresa(empresa.id)}
                     title="Editar"
                   >
                     <MdEdit />
@@ -445,7 +431,7 @@ export const Companies: React.FC<CompaniesProps> = () => {
                   </button>
                   <button 
                     className={styles.viewButton}
-                    onClick={() => handleViewCompany(company.id)}
+                    onClick={() => handleViewEmpresa(empresa.id)}
                     title="Visualizar"
                   >
                     <MdVisibility />
@@ -454,7 +440,7 @@ export const Companies: React.FC<CompaniesProps> = () => {
                   <button 
                     className={styles.deleteButton}
                     onClick={() => {
-                      setSelectedCompany(company);
+                      setSelectedEmpresa(empresa);
                       setShowDeleteConfirm(true);
                     }}
                     title="Excluir"
@@ -470,11 +456,11 @@ export const Companies: React.FC<CompaniesProps> = () => {
               <MdBusiness size={48} />
               <h3>Nenhuma empresa encontrada</h3>
               <p>
-                {filters.busca || filters.categoria
+                {filters.busca || filters.categoria || filters.verificado !== undefined
                   ? 'Tente ajustar seus filtros para encontrar empresas.'
-                  : 'Comece cadastrando sua primeira empresa parceira.'}
+                  : 'Comece cadastrando sua primeira empresa no catálogo.'}
               </p>
-              {filters.busca || filters.categoria ? (
+              {filters.busca || filters.categoria || filters.verificado !== undefined ? (
                 <button 
                   className={styles.secondaryButton}
                   onClick={handleClearFilters}
@@ -484,7 +470,7 @@ export const Companies: React.FC<CompaniesProps> = () => {
               ) : (
                 <button 
                   className={styles.primaryButton}
-                  onClick={handleNewCompany}
+                  onClick={handleNewEmpresa}
                 >
                   <MdAdd />
                   Nova Empresa
@@ -511,38 +497,38 @@ export const Companies: React.FC<CompaniesProps> = () => {
               </tr>
             </thead>
             <tbody>
-              {filteredCompanies.length > 0 ? (
-                filteredCompanies.map(company => (
-                  <tr key={company.id}>
+              {filteredEmpresas.length > 0 ? (
+                filteredEmpresas.map(empresa => (
+                  <tr key={empresa.id}>
                     <td className={styles.companyCell}>
                       <div className={styles.companyInfo}>
-                        <strong>{company.nome}</strong>
-                        {company.verificado && (
+                        <strong>{empresa.nome}</strong>
+                        {empresa.verificado && (
                           <MdCheckCircle className={styles.verifiedIcon} />
                         )}
                       </div>
                     </td>
                     <td>
                       <span className={styles.categoryBadge}>
-                        {company.categoria}
+                        {empresa.categoria}
                       </span>
                     </td>
                     <td>
-                      {company.avaliacao ? (
-                        <span>⭐ {company.avaliacao.toFixed(1)}</span>
+                      {empresa.avaliacao ? (
+                        <span>⭐ {empresa.avaliacao.toFixed(1)}</span>
                       ) : (
                         '-'
                       )}
                     </td>
                     <td>
                       <div className={styles.contactInfo}>
-                        {company.email && <div>{company.email}</div>}
-                        {company.telefone && <div>{companyService.formatPhone(company.telefone)}</div>}
+                        {empresa.email && <div>{empresa.email}</div>}
+                        {empresa.telefone && <div>{catalogoService.formatPhone(empresa.telefone)}</div>}
                       </div>
                     </td>
-                    <td>{company.localizacao || '-'}</td>
+                    <td>{empresa.localizacao || '-'}</td>
                     <td>
-                      {company.verificado ? (
+                      {empresa.verificado ? (
                         <span className={styles.verified}>Verificado</span>
                       ) : (
                         <span className={styles.unverified}>Não verificado</span>
@@ -552,21 +538,21 @@ export const Companies: React.FC<CompaniesProps> = () => {
                       <div className={styles.actionButtons}>
                         <button 
                           className={styles.actionButton}
-                          onClick={() => handleViewCompany(company.id)}
+                          onClick={() => handleViewEmpresa(empresa.id)}
                           title="Visualizar"
                         >
                           <MdVisibility />
                         </button>
                         <button 
                           className={styles.actionButton}
-                          onClick={() => handleEditCompany(company.id)}
+                          onClick={() => handleEditEmpresa(empresa.id)}
                           title="Editar"
                         >
                           <MdEdit />
                         </button>
                         <button 
                           className={styles.actionButton}
-                          onClick={() => handleOpenNoteModal(company)}
+                          onClick={() => handleOpenNoteModal(empresa)}
                           title="Anotações"
                         >
                           <MdNote />
@@ -574,7 +560,7 @@ export const Companies: React.FC<CompaniesProps> = () => {
                         <button 
                           className={`${styles.actionButton} ${styles.dangerButton}`}
                           onClick={() => {
-                            setSelectedCompany(company);
+                            setSelectedEmpresa(empresa);
                             setShowDeleteConfirm(true);
                           }}
                           title="Excluir"
@@ -601,28 +587,28 @@ export const Companies: React.FC<CompaniesProps> = () => {
       <ConfirmationModal
         isOpen={showDeleteConfirm}
         title="Confirmar Exclusão"
-        message={`Tem certeza que deseja excluir a empresa ${selectedCompany?.nome}?`}
+        message={`Tem certeza que deseja excluir a empresa ${selectedEmpresa?.nome} do catálogo?`}
         type="danger"
-        onConfirm={handleDeleteCompany}
+        onConfirm={handleDeleteEmpresa}
         onCancel={() => {
           setShowDeleteConfirm(false);
-          setSelectedCompany(null);
+          setSelectedEmpresa(null);
         }}
         confirmText="Excluir"
         cancelText="Cancelar"
       />
 
       {/* Modal de anotações */}
-      {showNoteModal && selectedCompany && (
+      {showNoteModal && selectedEmpresa && (
         <div className={styles.modalOverlay}>
           <div className={styles.modal}>
             <div className={styles.modalHeader}>
-              <h2>Anotações - {selectedCompany.nome}</h2>
+              <h2>Anotações - {selectedEmpresa.nome}</h2>
               <button 
                 className={styles.closeButton}
                 onClick={() => {
                   setShowNoteModal(false);
-                  setSelectedCompany(null);
+                  setSelectedEmpresa(null);
                   setNoteText('');
                 }}
               >
@@ -646,7 +632,7 @@ export const Companies: React.FC<CompaniesProps> = () => {
                 className={styles.cancelButton}
                 onClick={() => {
                   setShowNoteModal(false);
-                  setSelectedCompany(null);
+                  setSelectedEmpresa(null);
                   setNoteText('');
                 }}
               >

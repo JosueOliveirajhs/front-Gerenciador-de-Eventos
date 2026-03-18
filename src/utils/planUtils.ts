@@ -1,6 +1,6 @@
-import { CompanyPlan, PlanConfig } from '../types/developer';
+import { PlanType, PlanConfig } from '../types/developer';
 
-export const planConfigs: Record<CompanyPlan, PlanConfig> = {
+export const planConfigs: Record<PlanType, PlanConfig> = {
   ESSENCIAL: {
     name: 'ESSENCIAL',
     label: 'Essencial',
@@ -14,10 +14,10 @@ export const planConfigs: Record<CompanyPlan, PlanConfig> = {
       'Até 50 eventos/mês'
     ],
     limits: {
-      usuarios: 5,
-      eventos: 50,
-      clientes: 200,
-      armazenamento: 10
+      users: 5,
+      events: 50,
+      clients: 200,
+      storage: 10
     }
   },
   PROFISSIONAL: {
@@ -35,10 +35,10 @@ export const planConfigs: Record<CompanyPlan, PlanConfig> = {
       'Até 200 eventos/mês'
     ],
     limits: {
-      usuarios: 15,
-      eventos: 200,
-      clientes: 1000,
-      armazenamento: 50
+      users: 15,
+      events: 200,
+      clients: 1000,
+      storage: 50
     }
   },
   PREMIUM: {
@@ -56,10 +56,10 @@ export const planConfigs: Record<CompanyPlan, PlanConfig> = {
       'Eventos ilimitados'
     ],
     limits: {
-      usuarios: 30,
-      eventos: -1, // ilimitado
-      clientes: -1, // ilimitado
-      armazenamento: 200
+      users: 30,
+      events: -1, // ilimitado
+      clients: -1, // ilimitado
+      storage: 200
     }
   },
   ENTERPRISE: {
@@ -77,53 +77,39 @@ export const planConfigs: Record<CompanyPlan, PlanConfig> = {
       'Eventos ilimitados'
     ],
     limits: {
-      usuarios: -1, // ilimitado
-      eventos: -1, // ilimitado
-      clientes: -1, // ilimitado
-      armazenamento: 1000
+      users: -1, // ilimitado
+      events: -1, // ilimitado
+      clients: -1, // ilimitado
+      storage: 1000
     }
   }
 };
 
-export const getPlanConfig = (plan: CompanyPlan): PlanConfig => {
+export const getPlanConfig = (plan: PlanType): PlanConfig => {
   return planConfigs[plan];
 };
 
-export const getPlanLabel = (plan: CompanyPlan): string => {
+export const getPlanLabel = (plan: PlanType): string => {
   return planConfigs[plan].label;
 };
 
-export const getPlanColor = (plan: CompanyPlan): string => {
+export const getPlanColor = (plan: PlanType): string => {
   return planConfigs[plan].color;
 };
 
-export const getPlanBadgeClass = (plan: CompanyPlan): string => {
+export const getPlanBadgeClass = (plan: PlanType): string => {
   return planConfigs[plan].badgeClass;
 };
 
-export const getPlanFeatures = (plan: CompanyPlan): string[] => {
+export const getPlanFeatures = (plan: PlanType): string[] => {
   return planConfigs[plan].features;
 };
 
-export const getPlanLimits = (plan: CompanyPlan): PlanConfig['limits'] => {
+export const getPlanLimits = (plan: PlanType): PlanConfig['limits'] => {
   return planConfigs[plan].limits;
 };
 
-export const getPlanProgress = (
-  plan: CompanyPlan,
-  current: { usuarios: number; eventos: number; clientes: number; armazenamento: number }
-): { usuarios: number; eventos: number; clientes: number; armazenamento: number } => {
-  const limits = planConfigs[plan].limits;
-  
-  return {
-    usuarios: limits.usuarios === -1 ? 0 : (current.usuarios / limits.usuarios) * 100,
-    eventos: limits.eventos === -1 ? 0 : (current.eventos / limits.eventos) * 100,
-    clientes: limits.clientes === -1 ? 0 : (current.clientes / limits.clientes) * 100,
-    armazenamento: (current.armazenamento / limits.armazenamento) * 100
-  };
-};
-
-export const getAvailablePlans = (): Array<{ value: CompanyPlan; label: string }> => {
+export const getAvailablePlans = (): Array<{ value: PlanType; label: string }> => {
   return [
     { value: 'ESSENCIAL', label: 'Essencial' },
     { value: 'PROFISSIONAL', label: 'Profissional' },

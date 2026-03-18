@@ -1,12 +1,9 @@
-/* src/pages/developer/Companies.module.css */
+/* src/components/DeveloperCompents/Catalogo/Catalogo.module.css */
 
-.companies {
+.catalogo {
   display: flex;
   flex-direction: column;
   gap: 20px;
-  padding: 24px;
-  background: #f8fafc;
-  min-height: 100vh;
 }
 
 /* Header */
@@ -27,6 +24,7 @@
   display: flex;
   align-items: center;
   gap: 16px;
+  flex-wrap: wrap;
 }
 
 .title {
@@ -46,6 +44,7 @@
 .statsBadges {
   display: flex;
   gap: 8px;
+  flex-wrap: wrap;
 }
 
 .statBadge {
@@ -243,7 +242,7 @@
   font-size: 14px;
   font-weight: 500;
   color: #475569;
-  min-width: 70px;
+  min-width: 80px;
 }
 
 .filterGroup select {
@@ -523,33 +522,6 @@
   color: #ef4444;
 }
 
-/* Empty State */
-.emptyState {
-  grid-column: 1 / -1;
-  text-align: center;
-  padding: 60px 20px;
-  background: white;
-  border-radius: 16px;
-  border: 1px solid #e2e8f0;
-}
-
-.emptyState svg {
-  color: #94a3b8;
-  margin-bottom: 16px;
-}
-
-.emptyState h3 {
-  font-size: 20px;
-  font-weight: 600;
-  color: #0f172a;
-  margin: 0 0 8px 0;
-}
-
-.emptyState p {
-  color: #64748b;
-  margin: 0 0 24px 0;
-}
-
 /* Table View */
 .tableContainer {
   background: white;
@@ -648,6 +620,33 @@
   padding: 40px !important;
   color: #94a3b8;
   font-style: italic;
+}
+
+/* Empty State */
+.emptyState {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 60px 20px;
+  background: white;
+  border-radius: 16px;
+  border: 1px solid #e2e8f0;
+}
+
+.emptyState svg {
+  color: #94a3b8;
+  margin-bottom: 16px;
+}
+
+.emptyState h3 {
+  font-size: 20px;
+  font-weight: 600;
+  color: #0f172a;
+  margin: 0 0 8px 0;
+}
+
+.emptyState p {
+  color: #64748b;
+  margin: 0 0 24px 0;
 }
 
 /* Modals */
@@ -811,8 +810,8 @@
 
 /* Responsive */
 @media (max-width: 768px) {
-  .companies {
-    padding: 16px;
+  .catalogo {
+    padding: 0;
   }
 
   .header {
@@ -821,11 +820,13 @@
   }
 
   .headerLeft {
-    flex-wrap: wrap;
+    width: 100%;
+    justify-content: space-between;
   }
 
   .statsBadges {
-    flex-wrap: wrap;
+    width: 100%;
+    justify-content: flex-start;
   }
 
   .headerActions {

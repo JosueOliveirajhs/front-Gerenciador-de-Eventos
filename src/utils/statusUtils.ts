@@ -1,96 +1,67 @@
-import { CompanyStatus } from '../types/developer';
+import { OrgStatus, StatusConfig } from '../types/developer';
 
-interface StatusConfig {
-  color: string;
-  text: string;
-  badgeClass: string;
-  icon: string;
-  description: string;
-  actions: string[];
-}
-
-export const statusConfigs: Record<CompanyStatus, StatusConfig> = {
+export const statusConfigs: Record<OrgStatus, StatusConfig> = {
   ACTIVE: {
     color: '#10b981',
     text: 'Ativa',
     badgeClass: 'statusActive',
     icon: '✅',
-    description: 'Empresa com acesso total à plataforma',
-    actions: ['suspender', 'cancelar']
+    description: 'Empresa com acesso total à plataforma'
   },
   TRIAL: {
     color: '#f59e0b',
     text: 'Trial',
     badgeClass: 'statusTrial',
     icon: '⏳',
-    description: 'Período de teste gratuito',
-    actions: ['ativar', 'suspender', 'cancelar']
+    description: 'Período de teste gratuito'
   },
   SUSPENDED: {
     color: '#ef4444',
     text: 'Suspensa',
     badgeClass: 'statusSuspended',
     icon: '⚠️',
-    description: 'Acesso temporariamente bloqueado',
-    actions: ['reativar', 'cancelar']
+    description: 'Acesso temporariamente bloqueado'
   },
-  CANCELED: {
+  CANCELLED: {
     color: '#6b7280',
     text: 'Cancelada',
-    badgeClass: 'statusCanceled',
+    badgeClass: 'statusCancelled',
     icon: '❌',
-    description: 'Assinatura encerrada',
-    actions: []
+    description: 'Assinatura encerrada'
   }
 };
 
-export const getStatusConfig = (status: CompanyStatus): StatusConfig => {
+export const getStatusConfig = (status: OrgStatus): StatusConfig => {
   return statusConfigs[status];
 };
 
-export const getStatusText = (status: CompanyStatus): string => {
+export const getStatusText = (status: OrgStatus): string => {
   return statusConfigs[status].text;
 };
 
-export const getStatusColor = (status: CompanyStatus): string => {
+export const getStatusColor = (status: OrgStatus): string => {
   return statusConfigs[status].color;
 };
 
-export const getStatusBadgeClass = (status: CompanyStatus): string => {
+export const getStatusBadgeClass = (status: OrgStatus): string => {
   return statusConfigs[status].badgeClass;
 };
 
-export const getStatusIcon = (status: CompanyStatus): string => {
+export const getStatusIcon = (status: OrgStatus): string => {
   return statusConfigs[status].icon;
 };
 
-export const getStatusDescription = (status: CompanyStatus): string => {
-  return statusConfigs[status].description;
-};
-
-export const getAvailableActions = (status: CompanyStatus): string[] => {
-  return statusConfigs[status].actions;
-};
-
-export const getNextStatusOptions = (currentStatus: CompanyStatus): CompanyStatus[] => {
+export const getNextStatusOptions = (currentStatus: OrgStatus): OrgStatus[] => {
   switch (currentStatus) {
     case 'ACTIVE':
-      return ['SUSPENDED', 'CANCELED'];
+      return ['SUSPENDED', 'CANCELLED'];
     case 'TRIAL':
-      return ['ACTIVE', 'SUSPENDED', 'CANCELED'];
+      return ['ACTIVE', 'SUSPENDED', 'CANCELLED'];
     case 'SUSPENDED':
-      return ['ACTIVE', 'CANCELED'];
-    case 'CANCELED':
+      return ['ACTIVE', 'CANCELLED'];
+    case 'CANCELLED':
       return [];
     default:
       return [];
   }
-};
-
-export const getStatusBadgeStyle = (status: CompanyStatus): React.CSSProperties => {
-  return {
-    backgroundColor: statusConfigs[status].color + '20', // 20% opacity
-    color: statusConfigs[status].color,
-    borderColor: statusConfigs[status].color + '40'
-  };
 };

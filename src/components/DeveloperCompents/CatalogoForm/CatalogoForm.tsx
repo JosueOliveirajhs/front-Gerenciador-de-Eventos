@@ -1,6 +1,5 @@
-// src/components/DeveloperCompents/CompanyForm/CompanyForm.tsx
+// src/components/DeveloperCompents/Catalogo/CatalogoForm.tsx
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
 import { 
   MdSave,
   MdCancel,
@@ -13,31 +12,22 @@ import {
   MdError,
   MdArrowBack
 } from 'react-icons/md';
-import { companyService, EmpresaResponse, CreateEmpresaDTO } from '../../../services/company';
-import styles from './CompanyForm.module.css';
+import { catalogoService } from '../../../services/catalogo';
+import { EmpresaResponse, CreateEmpresaDTO, CategoriaEmpresa } from '../../../types/developer';
+import styles from './CatalogoForm.module.css';
 
-interface CompanyFormProps {
-  companyId?: number | null;
+interface CatalogoFormProps {
+  empresaId?: number | null;
   onSuccess: () => void;
   onCancel: () => void;
 }
 
-export const CompanyForm: React.FC<CompanyFormProps> = ({ 
-  companyId, 
+export const CatalogoForm: React.FC<CatalogoFormProps> = ({ 
+  empresaId, 
   onSuccess, 
   onCancel 
 }) => {
-  const navigate = useNavigate();
-  const params = useParams<{ id: string }>();
-  
-  // Prioridade: props > params
-  const id = companyId ?? (params.id ? Number(params.id) : undefined);
-  const isEditing = !!id;
-
-  console.log('🔍 CompanyForm - Props companyId:', companyId);
-  console.log('🔍 CompanyForm - Params id:', params.id);
-  console.log('🔍 CompanyForm - ID final:', id);
-  console.log('🔍 CompanyForm - isEditing:', isEditing);
+  const isEditing = !!empresaId;
 
   const [formData, setFormData] = useState<CreateEmpresaDTO>({
     nome: '',
@@ -51,30 +41,19 @@ export const CompanyForm: React.FC<CompanyFormProps> = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
-  const [notFound, setNotFound] = useState(false);
 
-  const categorias = companyService.getCategorias();
+  const categorias = catalogoService.getCategorias();
 
   useEffect(() => {
-    console.log('🔍 CompanyForm useEffect - ID recebido:', id);
-    if (isEditing && id) {
-      loadCompany();
+    if (isEditing) {
+      loadEmpresa();
     }
-  }, [id]);
+  }, [empresaId]);
 
-  const loadCompany = async () => {
+  const loadEmpresa = async () => {
     try {
       setLoading(true);
-      setError(null);
-      setNotFound(false);
-      
-      console.log(`🔍 Carregando empresa ID: ${id}`);
-      const numericId = Number(id);
-      console.log(`🔍 ID numérico: ${numericId}`);
-      
-      const data = await companyService.getCompanyById(numericId);
-      console.log('✅ Empresa carregada:', data);
-      
+      const data = await catalogoService.getEmpresaById(empresaId!);
       setFormData({
         nome: data.nome,
         descricao: data.descricao || '',
@@ -83,19 +62,9 @@ export const CompanyForm: React.FC<CompanyFormProps> = ({
         telefone: data.telefone || '',
         email: data.email || ''
       });
-      
-    } catch (err: any) {
-      console.error('❌ Erro ao carregar empresa:', err);
-      
-      if (err.response?.status === 404) {
-        setNotFound(true);
-        setError('Empresa não encontrada.');
-      } else if (err.response?.status === 403) {
-        setError('Acesso negado. Verifique suas permissões.');
-        console.error('🔐 Detalhes do erro 403:', err.response?.data);
-      } else {
-        setError('Erro ao carregar dados da empresa. Tente novamente.');
-      }
+    } catch (error) {
+      console.error('❌ Erro ao carregar empresa:', error);
+      setError('Erro ao carregar dados da empresa');
     } finally {
       setLoading(false);
     }
@@ -113,8 +82,6 @@ export const CompanyForm: React.FC<CompanyFormProps> = ({
       setLoading(true);
       setError(null);
       
-      console.log('🔍 Submetendo formulário:', formData);
-      
       // Validações
       if (!formData.nome.trim()) {
         setError('Nome é obrigatório');
@@ -122,28 +89,23 @@ export const CompanyForm: React.FC<CompanyFormProps> = ({
         return;
       }
 
-      if (formData.email && !companyService.validateEmail(formData.email)) {
+      if (formData.email && !catalogoService.validateEmail(formData.email)) {
         setError('Email inválido');
         setLoading(false);
         return;
       }
 
-      if (formData.telefone && !companyService.validatePhone(formData.telefone)) {
+      if (formData.telefone && !catalogoService.validatePhone(formData.telefone)) {
         setError('Telefone inválido. Use formato (11) 99999-9999');
         setLoading(false);
         return;
       }
 
-      let response;
       if (isEditing) {
-        console.log(`🔍 Atualizando empresa ID: ${id}`);
-        response = await companyService.updateCompany(Number(id), formData);
+        await catalogoService.updateEmpresa(empresaId!, formData);
       } else {
-        console.log('🔍 Criando nova empresa');
-        response = await companyService.createCompany(formData);
+        await catalogoService.createEmpresa(formData);
       }
-      
-      console.log('✅ Resposta do servidor:', response);
       
       setSuccess(true);
       setTimeout(() => {
@@ -152,11 +114,8 @@ export const CompanyForm: React.FC<CompanyFormProps> = ({
       
     } catch (err: any) {
       console.error('❌ Erro ao salvar empresa:', err);
-      
       if (err.response?.status === 403) {
         setError('Acesso negado. Você não tem permissão para esta ação.');
-      } else if (err.response?.status === 404) {
-        setError('Empresa não encontrada.');
       } else {
         setError('Erro ao salvar empresa. Tente novamente.');
       }
@@ -174,26 +133,12 @@ export const CompanyForm: React.FC<CompanyFormProps> = ({
     );
   }
 
-  if (notFound) {
-    return (
-      <div className={styles.errorContainer}>
-        <MdError size={48} />
-        <h2>Empresa não encontrada</h2>
-        <p>A empresa que você está tentando editar não existe ou foi removida.</p>
-        <button onClick={onCancel} className={styles.backButton}>
-          <MdArrowBack />
-          Voltar para lista
-        </button>
-      </div>
-    );
-  }
-
   return (
     <div className={styles.formContainer}>
       <div className={styles.formHeader}>
         <h1>
           <MdBusiness />
-          {isEditing ? 'Editar Empresa' : 'Nova Empresa'}
+          {isEditing ? 'Editar Empresa' : 'Nova Empresa no Catálogo'}
         </h1>
       </div>
 
@@ -206,7 +151,7 @@ export const CompanyForm: React.FC<CompanyFormProps> = ({
 
       {success && (
         <div className={styles.successMessage}>
-          Empresa {isEditing ? 'atualizada' : 'criada'} com sucesso!
+          Empresa {isEditing ? 'atualizada' : 'cadastrada'} com sucesso!
         </div>
       )}
 
@@ -331,7 +276,7 @@ export const CompanyForm: React.FC<CompanyFormProps> = ({
             disabled={loading || success}
           >
             <MdSave />
-            {loading ? 'Salvando...' : isEditing ? 'Atualizar' : 'Salvar'}
+            {loading ? 'Salvando...' : isEditing ? 'Atualizar' : 'Cadastrar'}
           </button>
         </div>
       </form>

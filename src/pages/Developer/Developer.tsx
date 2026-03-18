@@ -1,9 +1,9 @@
 // src/pages/Developer.tsx
-
 import React, { useState } from 'react';
 import { 
   MdDashboard,
   MdBusiness,
+  MdStore,
   MdStorage,
   MdTerminal,
   MdSettings,
@@ -12,7 +12,10 @@ import {
   MdClose,
   MdNotifications,
   MdCode,
-  MdAttachMoney
+  MdAttachMoney,
+  MdPeople,
+  MdEvent,
+  MdReceipt
 } from 'react-icons/md';
 import {
   FaShieldAlt,
@@ -20,42 +23,112 @@ import {
 } from 'react-icons/fa';
 import { useAuth } from '../../context/AuthContext';
 import { DeveloperDashboard } from '../../components/DeveloperCompents/DeveloperDashboard/DeveloperDashboard';
-import { Companies } from '../../components/DeveloperCompents/Companies/Companies';
+import { Organizations } from '../../components/DeveloperCompents/Organizations/Organizations';
+import { OrganizationDetails } from '../../components/DeveloperCompents/OrganizationsDetails/OrganizationsDetails';
+import { OrganizationForm } from '../../components/DeveloperCompents/OrganizationsForm/OrganizationsForm';
+import { Catalogo } from '../../components/DeveloperCompents/Catalogo/Catalogo';
+import { CatalogoForm } from '../../components/DeveloperCompents/CatalogoForm/CatalogoForm';
+import { CatalogoDetails } from '../../components/DeveloperCompents/CatalogoDetails/CatalogoDetails';
 import { CRM } from '../../components/DeveloperCompents/CRM/CRM';
 import { GlobalSupport } from '../../components/DeveloperCompents/GlobalSupport/GlobalSupport';
 import { LogViewer } from '../../components/DeveloperCompents/LogViewer/LogViewer';
 import { Settings } from '../../components/DeveloperCompents/Settings/Settings';
-
 import styles from './Developer.module.css';
 
 type TabType = 
   | 'dashboard' 
-  | 'companies' 
+  | 'organizations'      // Assinantes do SaaS
+  | 'catalogo'           // Catálogo de fornecedores
   | 'crm' 
   | 'support' 
-  | 'sandbox' 
-  | 'system' 
-  | 'database' 
   | 'logs' 
   | 'settings';
 
-export const Developer: React.FC = () => {  // ✅ Exportação correta aqui
+type SubViewType = 'list' | 'details' | 'form';
+
+export const Developer: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabType>('dashboard');
+  const [subView, setSubView] = useState<SubViewType>('list');
+  const [selectedId, setSelectedId] = useState<number | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const { user, logout } = useAuth();
 
+  const handleNavigate = (tab: TabType, view: SubViewType = 'list', id?: number) => {
+    setActiveTab(tab);
+    setSubView(view);
+    if (id) setSelectedId(id);
+  };
+
+  const handleBack = () => {
+    setSubView('list');
+    setSelectedId(null);
+  };
+
   const renderContent = () => {
+    // Organizations (Assinantes)
+    if (activeTab === 'organizations') {
+      if (subView === 'form') {
+        return (
+          <OrganizationForm 
+            organizationId={selectedId} 
+            onSuccess={handleBack}
+            onCancel={handleBack}
+          />
+        );
+      }
+      if (subView === 'details' && selectedId) {
+        return (
+          <OrganizationDetails 
+            organizationId={selectedId}
+            onBack={handleBack}
+            onEdit={() => setSubView('form')}
+          />
+        );
+      }
+      return (
+        <Organizations 
+          onNavigate={handleNavigate}
+        />
+      );
+    }
+
+    // Catálogo de Fornecedores
+    if (activeTab === 'catalogo') {
+      if (subView === 'form') {
+        return (
+          <CatalogoForm 
+            empresaId={selectedId} 
+            onSuccess={handleBack}
+            onCancel={handleBack}
+          />
+        );
+      }
+      if (subView === 'details' && selectedId) {
+        return (
+          <CatalogoDetails 
+            empresaId={selectedId}
+            onBack={handleBack}
+            onEdit={() => setSubView('form')}
+          />
+        );
+      }
+      return (
+        <Catalogo 
+          onNavigate={handleNavigate}
+        />
+      );
+    }
+
+    // Outras abas
     switch (activeTab) {
       case 'dashboard':
         return <DeveloperDashboard />;
-      case 'companies':
-        return <Companies />;
       case 'crm':
         return <CRM />;
       case 'support':
         return <GlobalSupport />;
       case 'logs':
-        return <Logs />;
+        return <LogViewer />;
       case 'settings':
         return <Settings />;
       default:
@@ -89,7 +162,7 @@ export const Developer: React.FC = () => {  // ✅ Exportação correta aqui
         <nav className={styles.sidebarNav}>
           <button
             className={`${styles.navItem} ${activeTab === 'dashboard' ? styles.active : ''}`}
-            onClick={() => setActiveTab('dashboard')}
+            onClick={() => handleNavigate('dashboard')}
             title={!sidebarOpen ? 'Dashboard' : ''}
           >
             <MdDashboard />
@@ -97,17 +170,26 @@ export const Developer: React.FC = () => {  // ✅ Exportação correta aqui
           </button>
 
           <button
-            className={`${styles.navItem} ${activeTab === 'companies' ? styles.active : ''}`}
-            onClick={() => setActiveTab('companies')}
-            title={!sidebarOpen ? 'Empresas' : ''}
+            className={`${styles.navItem} ${activeTab === 'organizations' ? styles.active : ''}`}
+            onClick={() => handleNavigate('organizations')}
+            title={!sidebarOpen ? 'Organizações' : ''}
           >
             <MdBusiness />
-            {sidebarOpen && <span>Empresas</span>}
+            {sidebarOpen && <span>Organizações</span>}
+          </button>
+
+          <button
+            className={`${styles.navItem} ${activeTab === 'catalogo' ? styles.active : ''}`}
+            onClick={() => handleNavigate('catalogo')}
+            title={!sidebarOpen ? 'Catálogo' : ''}
+          >
+            <MdStore />
+            {sidebarOpen && <span>Catálogo</span>}
           </button>
 
           <button
             className={`${styles.navItem} ${activeTab === 'crm' ? styles.active : ''}`}
-            onClick={() => setActiveTab('crm')}
+            onClick={() => handleNavigate('crm')}
             title={!sidebarOpen ? 'CRM' : ''}
           >
             <MdAttachMoney />
@@ -116,17 +198,16 @@ export const Developer: React.FC = () => {  // ✅ Exportação correta aqui
 
           <button
             className={`${styles.navItem} ${activeTab === 'support' ? styles.active : ''}`}
-            onClick={() => setActiveTab('support')}
+            onClick={() => handleNavigate('support')}
             title={!sidebarOpen ? 'Suporte' : ''}
           >
             <FaHeadset />
             {sidebarOpen && <span>Suporte</span>}
           </button>
 
-
           <button
             className={`${styles.navItem} ${activeTab === 'logs' ? styles.active : ''}`}
-            onClick={() => setActiveTab('logs')}
+            onClick={() => handleNavigate('logs')}
             title={!sidebarOpen ? 'Logs' : ''}
           >
             <MdTerminal />
@@ -135,7 +216,7 @@ export const Developer: React.FC = () => {  // ✅ Exportação correta aqui
 
           <button
             className={`${styles.navItem} ${activeTab === 'settings' ? styles.active : ''}`}
-            onClick={() => setActiveTab('settings')}
+            onClick={() => handleNavigate('settings')}
             title={!sidebarOpen ? 'Config' : ''}
           >
             <MdSettings />
@@ -183,12 +264,10 @@ export const Developer: React.FC = () => {  // ✅ Exportação correta aqui
           <div className={styles.headerLeft}>
             <h1 className={styles.pageTitle}>
               {activeTab === 'dashboard' && 'Dashboard do Desenvolvedor'}
-              {activeTab === 'companies' && 'Gerenciar Empresas'}
+              {activeTab === 'organizations' && 'Organizações - Empresas Assinantes'}
+              {activeTab === 'catalogo' && 'Catálogo de Fornecedores'}
               {activeTab === 'crm' && 'CRM Comercial'}
               {activeTab === 'support' && 'Suporte Global'}
-              {activeTab === 'sandbox' && 'Ambiente de Testes'}
-              {activeTab === 'system' && 'Saúde do Sistema'}
-              {activeTab === 'database' && 'Banco de Dados'}
               {activeTab === 'logs' && 'Logs do Sistema'}
               {activeTab === 'settings' && 'Configurações Técnicas'}
             </h1>
@@ -213,5 +292,4 @@ export const Developer: React.FC = () => {  // ✅ Exportação correta aqui
   );
 };
 
-// ✅ Exportação padrão também para garantir
 export default Developer;
