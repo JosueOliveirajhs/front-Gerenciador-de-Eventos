@@ -1,3 +1,4 @@
+// src/pages/Owner/Owner.tsx
 import React, { useState } from "react";
 import { Header } from "../../components/common/Header/Header";
 import { Sidebar } from "../../components/common/Sidebar/Sidebar";
@@ -12,6 +13,7 @@ import { EventManagement } from "../../components/OwnerCompoents/events/EventMan
 import FinancialReports from "../../components/OwnerCompoents/OwnerManagement/FinalcialReports/FinancialReports";
 import { ClientManagement } from "../../components/OwnerCompoents/OwnerManagement/ClientManagement/ClientManagement";
 import ItemsManagement from "../../components/OwnerCompoents/OwnerManagement/ItemsManagement/ItemsManagement";
+import { TeamManagement } from "../../components/OwnerCompoents/OwnerManagement/TeamManagement/TeamManagement"; // Importar o TeamManagement
 
 export const Owner: React.FC = () => {
   const [activeView, setActiveView] = useState("dashboard");
@@ -40,6 +42,8 @@ export const Owner: React.FC = () => {
         return <ClientManagement />;
       case "itens":
         return <ItemsManagement />;
+      case "team": // Nova opção para gerenciar equipe
+        return <TeamManagement />;
       case "configuracoes":
         return <SettingsPage />;
       case "perfil":
@@ -76,7 +80,7 @@ export const Owner: React.FC = () => {
       <div className={styles.mainContent}>
         <Header 
           onMenuToggle={handleMenuToggle} 
-          onViewChange={handleViewChange} // Passando a função para o Header
+          onViewChange={handleViewChange}
         />
 
         <main className={styles.contentArea}>
@@ -104,6 +108,7 @@ const getPageTitle = (view: string): string => {
     financial: "Relatórios Financeiros",
     reports: "Relatórios Detalhados",
     checklist: "Checklists de Eventos",
+    team: "Gerenciar Equipe", // Título para a página de equipe
     configuracoes: "Configurações do Sistema",
     perfil: "Meu Perfil",
     notificacoes: "Notificações",
@@ -121,6 +126,8 @@ const renderPageActions = (view: string) => {
       return "";
     case "checklist":
       return "";
+    case "team":
+      return ""; // Pode adicionar botões específicos para equipe se necessário
     default:
       return null;
   }

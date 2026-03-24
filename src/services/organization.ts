@@ -1,3 +1,4 @@
+// src/services/organization.ts
 import { api } from './api';
 import { 
   Organization, 
@@ -33,11 +34,9 @@ export const organizationService = {
       params.append('page', page.toString());
       params.append('limit', limit.toString());
       
-      // CORRIGIDO: Adicionado /DEVELOPER/ no caminho
       const response = await api.get('/api/DEVELOPER/organizations', { params });
       
       if (response.data.content) {
-        // Spring Pageable response
         return {
           organizations: response.data.content,
           total: response.data.totalElements,
@@ -45,7 +44,6 @@ export const organizationService = {
         };
       }
       
-      // Array direto
       return {
         organizations: Array.isArray(response.data) ? response.data : [],
         total: Array.isArray(response.data) ? response.data.length : 0,
@@ -64,7 +62,6 @@ export const organizationService = {
   getOrganizationById: async (id: number): Promise<Organization> => {
     try {
       console.log(`🏢 Buscando organização ${id}...`);
-      // CORRIGIDO: Adicionado /DEVELOPER/ no caminho
       const response = await api.get(`/api/DEVELOPER/organizations/${id}`);
       return response.data;
     } catch (error) {
@@ -80,12 +77,13 @@ export const organizationService = {
     try {
       console.log('📝 Criando organização:', data);
       
-      // Validações
       if (!data.name) throw new Error('Nome é obrigatório');
       if (!data.planType) throw new Error('Plano é obrigatório');
       if (!data.status) throw new Error('Status é obrigatório');
+      if (!data.adminName) throw new Error('Nome do administrador é obrigatório');
+      if (!data.adminEmail) throw new Error('E-mail do administrador é obrigatório');
+      if (!data.adminCpf) throw new Error('CPF do administrador é obrigatório');
       
-      // CORRIGIDO: Adicionado /DEVELOPER/ no caminho
       const response = await api.post('/api/DEVELOPER/organizations', data);
       console.log('✅ Organização criada:', response.data);
       return response.data;
@@ -102,7 +100,6 @@ export const organizationService = {
   updateOrganization: async (id: number, data: Partial<CreateOrganizationDTO>): Promise<Organization> => {
     try {
       console.log(`✏️ Atualizando organização ${id}:`, data);
-      // CORRIGIDO: Adicionado /DEVELOPER/ no caminho
       const response = await api.put(`/api/DEVELOPER/organizations/${id}`, data);
       return response.data;
     } catch (error) {
@@ -117,7 +114,6 @@ export const organizationService = {
   updateOrganizationStatus: async (id: number, status: OrgStatus, motivo?: string): Promise<Organization> => {
     try {
       console.log(`🔄 Alterando status da organização ${id} para ${status}...`);
-      // CORRIGIDO: Adicionado /DEVELOPER/ no caminho
       const response = await api.patch(`/api/DEVELOPER/organizations/${id}/status`, { status, motivo });
       return response.data;
     } catch (error) {
@@ -132,7 +128,6 @@ export const organizationService = {
   updateOrganizationPlan: async (id: number, planType: PlanType): Promise<Organization> => {
     try {
       console.log(`🔄 Alterando plano da organização ${id} para ${planType}...`);
-      // CORRIGIDO: Adicionado /DEVELOPER/ no caminho
       const response = await api.patch(`/api/DEVELOPER/organizations/${id}/plan`, { planType });
       return response.data;
     } catch (error) {
@@ -147,7 +142,6 @@ export const organizationService = {
   deleteOrganization: async (id: number): Promise<void> => {
     try {
       console.log(`🗑️ Deletando organização ${id}...`);
-      // CORRIGIDO: Adicionado /DEVELOPER/ no caminho
       await api.delete(`/api/DEVELOPER/organizations/${id}`);
       console.log(`✅ Organização ${id} deletada com sucesso`);
     } catch (error) {
@@ -165,7 +159,6 @@ export const organizationService = {
    */
   getOrganizationSummary: async (id: number): Promise<OrganizationSummary> => {
     try {
-      // CORRIGIDO: Adicionado /DEVELOPER/ no caminho
       const response = await api.get(`/api/DEVELOPER/organizations/${id}/summary`);
       return response.data;
     } catch (error) {
@@ -179,7 +172,6 @@ export const organizationService = {
    */
   getOrganizationStats: async (): Promise<OrganizationStats> => {
     try {
-      // CORRIGIDO: Adicionado /DEVELOPER/ no caminho
       const response = await api.get('/api/DEVELOPER/organizations/stats');
       return response.data;
     } catch (error) {
@@ -197,7 +189,6 @@ export const organizationService = {
    */
   getOrganizationUsers: async (id: number): Promise<User[]> => {
     try {
-      // CORRIGIDO: Adicionado /DEVELOPER/ no caminho
       const response = await api.get(`/api/DEVELOPER/organizations/${id}/users`);
       return response.data;
     } catch (error) {
@@ -215,7 +206,6 @@ export const organizationService = {
    */
   getOrganizationEvents: async (id: number): Promise<Event[]> => {
     try {
-      // CORRIGIDO: Adicionado /DEVELOPER/ no caminho
       const response = await api.get(`/api/DEVELOPER/organizations/${id}/events`);
       return response.data;
     } catch (error) {
@@ -232,8 +222,18 @@ export const organizationService = {
    * Formata CNPJ
    */
   formatCNPJ: (cnpj: string): string => {
+    if (!cnpj) return '';
     const cleaned = cnpj.replace(/\D/g, '');
     return cleaned.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, '$1.$2.$3/$4-$5');
+  },
+
+  /**
+   * Formata CPF
+   */
+  formatCPF: (cpf: string): string => {
+    if (!cpf) return '';
+    const cleaned = cpf.replace(/\D/g, '');
+    return cleaned.replace(/^(\d{3})(\d{3})(\d{3})(\d{2})$/, '$1.$2.$3-$4');
   },
 
   /**

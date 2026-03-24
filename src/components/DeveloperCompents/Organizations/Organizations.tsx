@@ -15,8 +15,6 @@ import {
   MdPlayArrow,
   MdCancel,
   MdClose,
-  MdCheckCircle,
-  MdWarning,
   MdMoreVert,
   MdDownload
 } from 'react-icons/md';
@@ -26,6 +24,7 @@ import { getPlanConfig, getAvailablePlans } from '../../../utils/planUtils';
 import { getStatusConfig, getNextStatusOptions } from '../../../utils/statusUtils';
 import { ConfirmationModal } from '../../common/Alerts/ConfirmationModal';
 import { ErrorModal } from '../../common/Alerts/ErrorModal';
+import { CreateOrganization } from '../CreateOrganization/CreateOrganization';
 import styles from './Organizations.module.css';
 
 interface OrganizationsProps {
@@ -47,6 +46,7 @@ export const Organizations: React.FC<OrganizationsProps> = ({ onNavigate }) => {
   const [showFilters, setShowFilters] = useState(false);
   const [showBulkActions, setShowBulkActions] = useState(false);
   const [selectedOrganizations, setSelectedOrganizations] = useState<number[]>([]);
+  const [showCreateModal, setShowCreateModal] = useState(false);
   
   // Estados de filtros
   const [filters, setFilters] = useState({
@@ -58,7 +58,6 @@ export const Organizations: React.FC<OrganizationsProps> = ({ onNavigate }) => {
   // Estados de paginação
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [totalOrganizations, setTotalOrganizations] = useState(0);
   
   // Estados de modais
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -70,7 +69,6 @@ export const Organizations: React.FC<OrganizationsProps> = ({ onNavigate }) => {
   const [newStatus, setNewStatus] = useState<OrgStatus | null>(null);
   const [newPlan, setNewPlan] = useState<PlanType | null>(null);
 
-  // Planos disponíveis
   const availablePlans = getAvailablePlans();
 
   useEffect(() => {
@@ -82,6 +80,12 @@ export const Organizations: React.FC<OrganizationsProps> = ({ onNavigate }) => {
     filterOrganizations();
   }, [organizations, filters]);
 
+  useEffect(() => {
+    if (currentPage > 1) {
+      loadOrganizations();
+    }
+  }, [currentPage]);
+
   const loadOrganizations = async () => {
     try {
       setLoading(true);
@@ -91,7 +95,6 @@ export const Organizations: React.FC<OrganizationsProps> = ({ onNavigate }) => {
       );
       setOrganizations(response.organizations);
       setTotalPages(response.pages);
-      setTotalOrganizations(response.total);
     } catch (error) {
       console.error('❌ Erro ao carregar organizações:', error);
       setError('Erro ao carregar lista de organizações');
@@ -131,6 +134,7 @@ export const Organizations: React.FC<OrganizationsProps> = ({ onNavigate }) => {
   const handleFilterChange = (key: string, value: any) => {
     setFilters(prev => ({ ...prev, [key]: value }));
     setCurrentPage(1);
+    setTimeout(() => loadOrganizations(), 100);
   };
 
   const handleClearFilters = () => {
@@ -152,7 +156,13 @@ export const Organizations: React.FC<OrganizationsProps> = ({ onNavigate }) => {
   };
 
   const handleNewOrganization = () => {
-    onNavigate('organizations', 'form');
+    setShowCreateModal(true);
+  };
+
+  const handleOrganizationCreated = () => {
+    setShowCreateModal(false);
+    loadOrganizations();
+    loadStats();
   };
 
   const handleDeleteOrganization = async () => {
@@ -233,6 +243,8 @@ export const Organizations: React.FC<OrganizationsProps> = ({ onNavigate }) => {
   };
 
   const handleExportData = () => {
+    if (filteredOrganizations.length === 0) return;
+
     const data = filteredOrganizations.map(org => ({
       'ID': org.id,
       'Empresa': org.name,
@@ -244,23 +256,20 @@ export const Organizations: React.FC<OrganizationsProps> = ({ onNavigate }) => {
 
     const csv = [
       Object.keys(data[0]).join(','),
-      ...data.map(row => Object.values(row).join(','))
+      ...data.map(row => Object.values(row).map(value => 
+        typeof value === 'string' && value.includes(',') ? `"${value}"` : value
+      ).join(','))
     ].join('\n');
 
-    const blob = new Blob([csv], { type: 'text/csv' });
+    const blob = new Blob(["\uFEFF" + csv], { type: 'text/csv;charset=utf-8;' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
     a.download = `organizacoes-${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(a);
     a.click();
-  };
-
-  const getStatusBadgeClass = (status: OrgStatus) => {
-    return getStatusConfig(status).badgeClass;
-  };
-
-  const getPlanBadgeClass = (plan: PlanType) => {
-    return getPlanConfig(plan).badgeClass;
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
   };
 
   if (loading && organizations.length === 0) {
@@ -274,7 +283,7 @@ export const Organizations: React.FC<OrganizationsProps> = ({ onNavigate }) => {
 
   return (
     <div className={styles.organizations}>
-      {/* Header com estatísticas */}
+      {/* Header */}
       <div className={styles.header}>
         <div className={styles.headerLeft}>
           <h1 className={styles.title}>
@@ -284,29 +293,26 @@ export const Organizations: React.FC<OrganizationsProps> = ({ onNavigate }) => {
           {stats && (
             <div className={styles.statsBadges}>
               <span className={styles.statBadge}>
-                Total: {stats.total}
+                Total: {stats.totalOrganizations || stats.total || 0}
               </span>
               <span className={`${styles.statBadge} ${styles.activeBadge}`}>
-                Ativas: {stats.active}
+                Ativas: {stats.activeOrganizations || stats.active || 0}
               </span>
               <span className={`${styles.statBadge} ${styles.trialBadge}`}>
-                Trial: {stats.trial}
+                Trial: {stats.trialOrganizations || stats.trial || 0}
               </span>
               <span className={`${styles.statBadge} ${styles.suspendedBadge}`}>
-                Suspensas: {stats.suspended}
+                Suspensas: {stats.suspendedOrganizations || stats.suspended || 0}
               </span>
               <span className={`${styles.statBadge} ${styles.cancelledBadge}`}>
-                Canceladas: {stats.cancelled}
+                Canceladas: {stats.cancelledOrganizations || stats.cancelled || 0}
               </span>
             </div>
           )}
         </div>
 
         <div className={styles.headerActions}>
-          <button 
-            className={styles.primaryButton}
-            onClick={handleNewOrganization}
-          >
+          <button className={styles.primaryButton} onClick={handleNewOrganization}>
             <MdAdd />
             Nova Organização
           </button>
@@ -319,7 +325,10 @@ export const Organizations: React.FC<OrganizationsProps> = ({ onNavigate }) => {
           </button>
           <button 
             className={styles.iconButton}
-            onClick={loadOrganizations}
+            onClick={() => {
+              loadOrganizations();
+              loadStats();
+            }}
             title="Atualizar"
           >
             <MdRefresh />
@@ -334,7 +343,7 @@ export const Organizations: React.FC<OrganizationsProps> = ({ onNavigate }) => {
         </div>
       </div>
 
-      {/* Barra de busca e visualização */}
+      {/* Search Bar */}
       <div className={styles.searchBar}>
         <div className={styles.searchInput}>
           <MdSearch />
@@ -346,10 +355,7 @@ export const Organizations: React.FC<OrganizationsProps> = ({ onNavigate }) => {
             onKeyUp={(e) => e.key === 'Enter' && handleSearch()}
           />
           {filters.busca && (
-            <button 
-              className={styles.clearButton}
-              onClick={() => handleFilterChange('busca', '')}
-            >
+            <button className={styles.clearButton} onClick={() => handleFilterChange('busca', '')}>
               <MdClose />
             </button>
           )}
@@ -377,7 +383,7 @@ export const Organizations: React.FC<OrganizationsProps> = ({ onNavigate }) => {
         </div>
       </div>
 
-      {/* Painel de filtros */}
+      {/* Filters Panel */}
       {showFilters && (
         <div className={styles.filtersPanel}>
           <div className={styles.filterGroup}>
@@ -409,40 +415,31 @@ export const Organizations: React.FC<OrganizationsProps> = ({ onNavigate }) => {
             </select>
           </div>
 
-          {(filters.status || filters.plan) && (
-            <button 
-              className={styles.clearFiltersButton}
-              onClick={handleClearFilters}
-            >
+          {(filters.status || filters.plan || filters.busca) && (
+            <button className={styles.clearFiltersButton} onClick={handleClearFilters}>
               Limpar filtros
             </button>
           )}
         </div>
       )}
 
-      {/* Ações em massa */}
+      {/* Bulk Actions */}
       {selectedOrganizations.length > 0 && showBulkActions && (
         <div className={styles.bulkActions}>
           <span>{selectedOrganizations.length} organizações selecionadas</span>
           <div className={styles.bulkButtons}>
-            <button 
-              className={styles.bulkButton}
-              onClick={() => setShowBulkDeleteConfirm(true)}
-            >
+            <button className={styles.bulkButton} onClick={() => setShowBulkDeleteConfirm(true)}>
               <MdDelete />
               Excluir
             </button>
-            <button 
-              className={styles.bulkButton}
-              onClick={handleSelectAll}
-            >
+            <button className={styles.bulkButton} onClick={handleSelectAll}>
               Desmarcar todas
             </button>
           </div>
         </div>
       )}
 
-      {/* Visualização em Tabela */}
+      {/* Table View */}
       {viewMode === 'table' && (
         <div className={styles.tableContainer}>
           <table className={styles.table}>
@@ -507,49 +504,33 @@ export const Organizations: React.FC<OrganizationsProps> = ({ onNavigate }) => {
                     </td>
                     <td>
                       <div className={styles.actionButtons}>
-                        <button 
-                          className={styles.actionButton}
-                          onClick={() => handleViewOrganization(org.id)}
-                          title="Visualizar"
-                        >
+                        <button className={styles.actionButton} onClick={() => handleViewOrganization(org.id)} title="Visualizar">
                           <MdVisibility />
                         </button>
-                        <button 
-                          className={styles.actionButton}
-                          onClick={() => handleEditOrganization(org.id)}
-                          title="Editar"
-                        >
+                        <button className={styles.actionButton} onClick={() => handleEditOrganization(org.id)} title="Editar">
                           <MdEdit />
                         </button>
                         <div className={styles.actionDropdown}>
-                          <button 
-                            className={styles.actionButton}
-                            title="Mais ações"
-                          >
+                          <button className={styles.actionButton} title="Mais ações">
                             <MdMoreVert />
                           </button>
                           <div className={styles.dropdownMenu}>
                             {getNextStatusOptions(org.status).map(status => (
-                              <button
-                                key={status}
-                                onClick={() => {
-                                  setSelectedOrganization(org);
-                                  setNewStatus(status);
-                                  setShowStatusModal(true);
-                                }}
-                              >
+                              <button key={status} onClick={() => {
+                                setSelectedOrganization(org);
+                                setNewStatus(status);
+                                setShowStatusModal(true);
+                              }}>
                                 {status === 'ACTIVE' && <MdPlayArrow />}
                                 {status === 'SUSPENDED' && <MdBlock />}
                                 {status === 'CANCELLED' && <MdCancel />}
                                 Alterar para {getStatusConfig(status).text}
                               </button>
                             ))}
-                            <button
-                              onClick={() => {
-                                setSelectedOrganization(org);
-                                setShowPlanModal(true);
-                              }}
-                            >
+                            <button onClick={() => {
+                              setSelectedOrganization(org);
+                              setShowPlanModal(true);
+                            }}>
                               <MdAttachMoney />
                               Alterar Plano
                             </button>
@@ -563,20 +544,13 @@ export const Organizations: React.FC<OrganizationsProps> = ({ onNavigate }) => {
             </tbody>
           </table>
 
-          {/* Paginação */}
           {totalPages > 1 && (
             <div className={styles.pagination}>
-              <button
-                disabled={currentPage === 1}
-                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-              >
+              <button disabled={currentPage === 1} onClick={() => setCurrentPage(p => Math.max(1, p - 1))}>
                 Anterior
               </button>
               <span>Página {currentPage} de {totalPages}</span>
-              <button
-                disabled={currentPage === totalPages}
-                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-              >
+              <button disabled={currentPage === totalPages} onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}>
                 Próxima
               </button>
             </div>
@@ -584,7 +558,7 @@ export const Organizations: React.FC<OrganizationsProps> = ({ onNavigate }) => {
         </div>
       )}
 
-      {/* Visualização em Grid */}
+      {/* Grid View */}
       {viewMode === 'grid' && (
         <div className={styles.gridContainer}>
           {filteredOrganizations.map(org => {
@@ -594,63 +568,41 @@ export const Organizations: React.FC<OrganizationsProps> = ({ onNavigate }) => {
             return (
               <div key={org.id} className={`${styles.gridCard} ${selectedOrganizations.includes(org.id) ? styles.selectedCard : ''}`}>
                 <div className={styles.gridHeader}>
-                  <input
-                    type="checkbox"
-                    checked={selectedOrganizations.includes(org.id)}
-                    onChange={() => handleToggleSelect(org.id)}
-                  />
+                  <input type="checkbox" checked={selectedOrganizations.includes(org.id)} onChange={() => handleToggleSelect(org.id)} />
                   <span className={`${styles.statusBadge} ${statusConfig.badgeClass}`}>
                     {statusConfig.text}
                   </span>
                 </div>
-
                 <div className={styles.gridAvatar}>
                   <MdBusiness />
                 </div>
-
                 <h3 className={styles.gridTitle}>{org.name}</h3>
-                
                 <div className={styles.gridInfo}>
                   <span><MdBusiness /> {org.cnpj ? organizationService.formatCNPJ(org.cnpj) : 'CNPJ não informado'}</span>
                   <span><MdCalendarToday /> Cadastro: {organizationService.formatDate(org.createdAt)}</span>
                 </div>
-
                 <div className={styles.gridFooter}>
                   <span className={`${styles.planBadge} ${planConfig.badgeClass}`}>
                     {planConfig.label}
                   </span>
                 </div>
-
                 <div className={styles.gridActions}>
-                  <button 
-                    className={styles.gridActionButton}
-                    onClick={() => handleViewOrganization(org.id)}
-                    title="Visualizar"
-                  >
+                  <button className={styles.gridActionButton} onClick={() => handleViewOrganization(org.id)} title="Visualizar">
                     <MdVisibility />
                   </button>
-                  <button 
-                    className={styles.gridActionButton}
-                    onClick={() => handleEditOrganization(org.id)}
-                    title="Editar"
-                  >
+                  <button className={styles.gridActionButton} onClick={() => handleEditOrganization(org.id)} title="Editar">
                     <MdEdit />
                   </button>
                   {getNextStatusOptions(org.status).map(status => (
-                    <button
-                      key={status}
-                      className={`${styles.gridActionButton} ${
-                        status === 'ACTIVE' ? styles.successButton :
-                        status === 'SUSPENDED' ? styles.warningButton :
-                        styles.dangerButton
-                      }`}
-                      onClick={() => {
-                        setSelectedOrganization(org);
-                        setNewStatus(status);
-                        setShowStatusModal(true);
-                      }}
-                      title={`Alterar para ${getStatusConfig(status).text}`}
-                    >
+                    <button key={status} className={`${styles.gridActionButton} ${
+                      status === 'ACTIVE' ? styles.successButton :
+                      status === 'SUSPENDED' ? styles.warningButton :
+                      styles.dangerButton
+                    }`} onClick={() => {
+                      setSelectedOrganization(org);
+                      setNewStatus(status);
+                      setShowStatusModal(true);
+                    }} title={`Alterar para ${getStatusConfig(status).text}`}>
                       {status === 'ACTIVE' && <MdPlayArrow />}
                       {status === 'SUSPENDED' && <MdBlock />}
                       {status === 'CANCELLED' && <MdCancel />}
@@ -663,7 +615,7 @@ export const Organizations: React.FC<OrganizationsProps> = ({ onNavigate }) => {
         </div>
       )}
 
-      {/* Visualização em Cards */}
+      {/* Cards View */}
       {viewMode === 'cards' && (
         <div className={styles.cardsContainer}>
           {filteredOrganizations.map(org => {
@@ -686,14 +638,12 @@ export const Organizations: React.FC<OrganizationsProps> = ({ onNavigate }) => {
                     {statusConfig.text}
                   </span>
                 </div>
-
                 <div className={styles.cardBody}>
                   <div className={styles.cardRow}>
                     <MdBusiness />
                     <span>CNPJ: {org.cnpj ? organizationService.formatCNPJ(org.cnpj) : 'Não informado'}</span>
                   </div>
                 </div>
-
                 <div className={styles.cardFooter}>
                   <div className={styles.cardFooterLeft}>
                     <span className={`${styles.planBadge} ${planConfig.badgeClass}`}>
@@ -705,34 +655,23 @@ export const Organizations: React.FC<OrganizationsProps> = ({ onNavigate }) => {
                     </span>
                   </div>
                 </div>
-
                 <div className={styles.cardActions}>
-                  <button 
-                    className={styles.cardAction}
-                    onClick={() => handleViewOrganization(org.id)}
-                  >
+                  <button className={styles.cardAction} onClick={() => handleViewOrganization(org.id)}>
                     <MdVisibility /> Ver Detalhes
                   </button>
-                  <button 
-                    className={styles.cardAction}
-                    onClick={() => handleEditOrganization(org.id)}
-                  >
+                  <button className={styles.cardAction} onClick={() => handleEditOrganization(org.id)}>
                     <MdEdit /> Editar
                   </button>
                   {getNextStatusOptions(org.status).map(status => (
-                    <button
-                      key={status}
-                      className={`${styles.cardAction} ${
-                        status === 'ACTIVE' ? styles.successButton :
-                        status === 'SUSPENDED' ? styles.warningButton :
-                        styles.dangerButton
-                      }`}
-                      onClick={() => {
-                        setSelectedOrganization(org);
-                        setNewStatus(status);
-                        setShowStatusModal(true);
-                      }}
-                    >
+                    <button key={status} className={`${styles.cardAction} ${
+                      status === 'ACTIVE' ? styles.successButton :
+                      status === 'SUSPENDED' ? styles.warningButton :
+                      styles.dangerButton
+                    }`} onClick={() => {
+                      setSelectedOrganization(org);
+                      setNewStatus(status);
+                      setShowStatusModal(true);
+                    }}>
                       {status === 'ACTIVE' && <><MdPlayArrow /> Ativar</>}
                       {status === 'SUSPENDED' && <><MdBlock /> Suspender</>}
                       {status === 'CANCELLED' && <><MdCancel /> Cancelar</>}
@@ -756,17 +695,11 @@ export const Organizations: React.FC<OrganizationsProps> = ({ onNavigate }) => {
               : 'Comece cadastrando sua primeira organização.'}
           </p>
           {filters.busca || filters.status || filters.plan ? (
-            <button 
-              className={styles.secondaryButton}
-              onClick={handleClearFilters}
-            >
+            <button className={styles.secondaryButton} onClick={handleClearFilters}>
               Limpar filtros
             </button>
           ) : (
-            <button 
-              className={styles.primaryButton}
-              onClick={handleNewOrganization}
-            >
+            <button className={styles.primaryButton} onClick={handleNewOrganization}>
               <MdAdd />
               Nova Organização
             </button>
@@ -774,7 +707,15 @@ export const Organizations: React.FC<OrganizationsProps> = ({ onNavigate }) => {
         </div>
       )}
 
-      {/* Modal de confirmação de exclusão individual */}
+      {/* Create Organization Modal */}
+      {showCreateModal && (
+        <CreateOrganization
+          onSuccess={handleOrganizationCreated}
+          onCancel={() => setShowCreateModal(false)}
+        />
+      )}
+
+      {/* Confirmation Modal - Delete */}
       <ConfirmationModal
         isOpen={showDeleteConfirm}
         title="Confirmar Exclusão"
@@ -789,7 +730,7 @@ export const Organizations: React.FC<OrganizationsProps> = ({ onNavigate }) => {
         cancelText="Cancelar"
       />
 
-      {/* Modal de confirmação de exclusão em massa */}
+      {/* Confirmation Modal - Bulk Delete */}
       <ConfirmationModal
         isOpen={showBulkDeleteConfirm}
         title="Excluir Organizações"
@@ -804,42 +745,29 @@ export const Organizations: React.FC<OrganizationsProps> = ({ onNavigate }) => {
         cancelText="Cancelar"
       />
 
-      {/* Modal de alteração de status */}
+      {/* Status Change Modal */}
       {showStatusModal && selectedOrganization && newStatus && (
         <div className={styles.modalOverlay}>
           <div className={styles.modal}>
             <div className={styles.modalHeader}>
               <h2>Alterar Status da Organização</h2>
-              <button 
-                className={styles.closeButton}
-                onClick={() => {
-                  setShowStatusModal(false);
-                  setSelectedOrganization(null);
-                  setNewStatus(null);
-                  setStatusMotivo('');
-                }}
-              >
+              <button className={styles.closeButton} onClick={() => {
+                setShowStatusModal(false);
+                setSelectedOrganization(null);
+                setNewStatus(null);
+                setStatusMotivo('');
+              }}>
                 <MdClose />
               </button>
             </div>
-
             <div className={styles.modalBody}>
-              <p>
-                <strong>Organização:</strong> {selectedOrganization.name}
-              </p>
-              <p>
-                <strong>Status atual:</strong>{' '}
-                <span className={`${styles.statusBadge} ${getStatusConfig(selectedOrganization.status).badgeClass}`}>
-                  {getStatusConfig(selectedOrganization.status).text}
-                </span>
-              </p>
-              <p>
-                <strong>Novo status:</strong>{' '}
-                <span className={`${styles.statusBadge} ${getStatusConfig(newStatus).badgeClass}`}>
-                  {getStatusConfig(newStatus).text}
-                </span>
-              </p>
-
+              <p><strong>Organização:</strong> {selectedOrganization.name}</p>
+              <p><strong>Status atual:</strong> <span className={`${styles.statusBadge} ${getStatusConfig(selectedOrganization.status).badgeClass}`}>
+                {getStatusConfig(selectedOrganization.status).text}
+              </span></p>
+              <p><strong>Novo status:</strong> <span className={`${styles.statusBadge} ${getStatusConfig(newStatus).badgeClass}`}>
+                {getStatusConfig(newStatus).text}
+              </span></p>
               <div className={styles.formGroup}>
                 <label htmlFor="motivo">Motivo da alteração:</label>
                 <textarea
@@ -852,24 +780,16 @@ export const Organizations: React.FC<OrganizationsProps> = ({ onNavigate }) => {
                 />
               </div>
             </div>
-
             <div className={styles.modalFooter}>
-              <button 
-                className={styles.cancelButton}
-                onClick={() => {
-                  setShowStatusModal(false);
-                  setSelectedOrganization(null);
-                  setNewStatus(null);
-                  setStatusMotivo('');
-                }}
-              >
+              <button className={styles.cancelButton} onClick={() => {
+                setShowStatusModal(false);
+                setSelectedOrganization(null);
+                setNewStatus(null);
+                setStatusMotivo('');
+              }}>
                 Cancelar
               </button>
-              <button 
-                className={styles.saveButton}
-                onClick={handleUpdateStatus}
-                disabled={!statusMotivo.trim()}
-              >
+              <button className={styles.saveButton} onClick={handleUpdateStatus} disabled={!statusMotivo.trim()}>
                 Confirmar Alteração
               </button>
             </div>
@@ -877,51 +797,34 @@ export const Organizations: React.FC<OrganizationsProps> = ({ onNavigate }) => {
         </div>
       )}
 
-      {/* Modal de alteração de plano */}
+      {/* Plan Change Modal */}
       {showPlanModal && selectedOrganization && (
         <div className={styles.modalOverlay}>
           <div className={styles.modal}>
             <div className={styles.modalHeader}>
               <h2>Alterar Plano da Organização</h2>
-              <button 
-                className={styles.closeButton}
-                onClick={() => {
-                  setShowPlanModal(false);
-                  setSelectedOrganization(null);
-                  setNewPlan(null);
-                }}
-              >
+              <button className={styles.closeButton} onClick={() => {
+                setShowPlanModal(false);
+                setSelectedOrganization(null);
+                setNewPlan(null);
+              }}>
                 <MdClose />
               </button>
             </div>
-
             <div className={styles.modalBody}>
-              <p>
-                <strong>Organização:</strong> {selectedOrganization.name}
-              </p>
-              <p>
-                <strong>Plano atual:</strong>{' '}
-                <span className={`${styles.planBadge} ${getPlanConfig(selectedOrganization.planType).badgeClass}`}>
-                  {getPlanConfig(selectedOrganization.planType).label}
-                </span>
-              </p>
-
+              <p><strong>Organização:</strong> {selectedOrganization.name}</p>
+              <p><strong>Plano atual:</strong> <span className={`${styles.planBadge} ${getPlanConfig(selectedOrganization.planType).badgeClass}`}>
+                {getPlanConfig(selectedOrganization.planType).label}
+              </span></p>
               <div className={styles.formGroup}>
                 <label htmlFor="novoPlano">Novo plano:</label>
-                <select
-                  id="novoPlano"
-                  value={newPlan || ''}
-                  onChange={(e) => setNewPlan(e.target.value as PlanType)}
-                >
+                <select id="novoPlano" value={newPlan || ''} onChange={(e) => setNewPlan(e.target.value as PlanType)}>
                   <option value="">Selecione um plano</option>
                   {availablePlans.map(plan => (
-                    <option key={plan.value} value={plan.value}>
-                      {plan.label}
-                    </option>
+                    <option key={plan.value} value={plan.value}>{plan.label}</option>
                   ))}
                 </select>
               </div>
-
               {newPlan && (
                 <div className={styles.planFeatures}>
                   <h4>Recursos do {getPlanConfig(newPlan).label}:</h4>
@@ -933,23 +836,15 @@ export const Organizations: React.FC<OrganizationsProps> = ({ onNavigate }) => {
                 </div>
               )}
             </div>
-
             <div className={styles.modalFooter}>
-              <button 
-                className={styles.cancelButton}
-                onClick={() => {
-                  setShowPlanModal(false);
-                  setSelectedOrganization(null);
-                  setNewPlan(null);
-                }}
-              >
+              <button className={styles.cancelButton} onClick={() => {
+                setShowPlanModal(false);
+                setSelectedOrganization(null);
+                setNewPlan(null);
+              }}>
                 Cancelar
               </button>
-              <button 
-                className={styles.saveButton}
-                onClick={handleUpdatePlan}
-                disabled={!newPlan || newPlan === selectedOrganization.planType}
-              >
+              <button className={styles.saveButton} onClick={handleUpdatePlan} disabled={!newPlan || newPlan === selectedOrganization.planType}>
                 Confirmar Alteração
               </button>
             </div>
@@ -957,12 +852,8 @@ export const Organizations: React.FC<OrganizationsProps> = ({ onNavigate }) => {
         </div>
       )}
 
-      {/* Modal de erro */}
-      <ErrorModal
-        isOpen={!!error}
-        message={error || ''}
-        onClose={() => setError(null)}
-      />
+      {/* Error Modal */}
+      <ErrorModal isOpen={!!error} message={error || ''} onClose={() => setError(null)} />
     </div>
   );
 };

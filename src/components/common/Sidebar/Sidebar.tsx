@@ -12,6 +12,7 @@ import {
   MdDashboard,
   MdPeople,
   MdAttachMoney,
+  MdGroup, // Adicionar ícone para equipe
 } from "react-icons/md";
 import styles from "./Sidebar.module.css";
 import { FaBox } from "react-icons/fa";
@@ -52,6 +53,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
       label: "Clientes",
       icon: <MdPeople size={20} />,
       description: "Gerencie seus clientes",
+    },
+    {
+      id: "team", // Nova opção para equipe
+      label: "Equipe",
+      icon: <MdGroup size={20} />,
+      description: "Gerencie sua equipe de funcionários",
     },
     {
       id: "itens",

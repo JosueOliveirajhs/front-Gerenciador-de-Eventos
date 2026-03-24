@@ -1,7 +1,8 @@
+// src/context/AuthContext.tsx
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { User } from '../types/User';
 import { authService } from '../services/auth';
-import { api } from '../services/api'; // ✅ Importar diretamente
+import { api } from '../services/api';
 
 interface AuthContextType {
   user: User | null;
@@ -22,29 +23,41 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     if (token && savedUser) {
       try {
-        setUser(JSON.parse(savedUser));
+        const parsedUser = JSON.parse(savedUser);
+        console.log('✅ Usuário carregado do localStorage:', parsedUser);
+        setUser(parsedUser);
+        api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
       } catch (error) {
         console.error('Erro ao recuperar usuário:', error);
-        logout();
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
       }
     }
     setLoading(false);
   }, []);
 
   const login = (userData: User, token: string) => {
-    console.log('✅ AuthContext - Fazendo login:', userData);
-    setUser(userData);
-    localStorage.setItem('token', token);
-    localStorage.setItem('user', JSON.stringify(userData));
+    console.log('✅ AuthContext - Login:', userData);
     
-    // ✅ CORREÇÃO: Configurar header diretamente
+    // Garantir que o usuário tenha organizationId
+    const userWithOrg = {
+      ...userData,
+      organizationId: userData.organizationId || null
+    };
+    
+    setUser(userWithOrg);
+    localStorage.setItem('token', token);
+    localStorage.setItem('user', JSON.stringify(userWithOrg));
     api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+    
+    console.log('✅ Usuário salvo no localStorage:', userWithOrg);
   };
 
   const logout = () => {
-    console.log('🔒 AuthContext - Fazendo logout');
     setUser(null);
-    authService.logout();
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    delete api.defaults.headers.common['Authorization'];
   };
 
   return (
