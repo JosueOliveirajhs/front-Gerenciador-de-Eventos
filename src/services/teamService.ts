@@ -1,46 +1,61 @@
 // src/services/teamService.ts
 import { api } from './api';
-import { TeamMember, TeamMemberRequest, TeamStats, InviteMemberRequest, UserRole, UserStatus } from '../types/team';
+import { User } from '../types/developer';
 
-// Função para obter o usuário atual do localStorage
+export interface CreateMemberDTO {
+  name: string;
+  email: string;
+  cpf: string;
+  phone?: string;
+  role: string;
+  password?: string;
+}
+
+export interface UpdateMemberDTO {
+  name?: string;
+  email?: string;
+  phone?: string;
+  role?: string;
+  status?: 'ACTIVE' | 'INACTIVE';
+}
+
 const getCurrentUser = () => {
   const userStr = localStorage.getItem('user');
   if (!userStr) {
     throw new Error('Usuário não autenticado');
   }
   const user = JSON.parse(userStr);
-  console.log('👤 Usuário atual:', user.name, 'ID:', user.id, 'Org ID:', user.organizationId);
   
-  // Se não tiver organizationId, usar 1 (organização padrão)
   if (!user.organizationId) {
-    console.warn('⚠️ Usuário sem organizationId, corrigindo para 1...');
+    console.warn('⚠️ Usuário sem organizationId, definindo organizationId = 1');
     user.organizationId = 1;
     localStorage.setItem('user', JSON.stringify(user));
   }
+  
+  console.log('👤 Usuário atual:', {
+    id: user.id,
+    name: user.name,
+    role: user.role,
+    organizationId: user.organizationId
+  });
   
   return user;
 };
 
 export const teamService = {
-  /**
-   * Lista todos os membros da equipe
-   */
-  getTeamMembers: async (): Promise<TeamMember[]> => {
+  getTeamMembers: async (): Promise<User[]> => {
     try {
       console.log('👥 Buscando membros da equipe...');
-      const currentUser = getCurrentUser();
-      
       const response = await api.get('/api/users/clients');
-      console.log('📦 Resposta da API /users/clients:', response.data);
       
-      const members = response.data.map((user: any) => ({
+      const members = (response.data || []).map((user: any) => ({
         id: user.id,
         name: user.name,
         email: user.email,
         cpf: user.cpf,
         phone: user.phone || '',
-        role: user.role as UserRole,
-        status: user.status as UserStatus,
+        role: user.role,
+        status: user.status,
         userType: user.userType,
         organizationId: user.organizationId,
         createdAt: user.createdAt,
@@ -56,12 +71,8 @@ export const teamService = {
     }
   },
 
-  /**
-   * Busca um membro da equipe por ID
-   */
-  getTeamMemberById: async (id: number): Promise<TeamMember> => {
+  getTeamMemberById: async (id: number): Promise<User> => {
     try {
-      console.log(`🔍 Buscando membro da equipe ID: ${id}`);
       const response = await api.get(`/api/users/${id}`);
       return {
         id: response.data.id,
@@ -69,53 +80,46 @@ export const teamService = {
         email: response.data.email,
         cpf: response.data.cpf,
         phone: response.data.phone || '',
-        role: response.data.role as UserRole,
-        status: response.data.status as UserStatus,
+        role: response.data.role,
+        status: response.data.status,
         userType: response.data.userType,
         organizationId: response.data.organizationId,
         createdAt: response.data.createdAt,
         updatedAt: response.data.updatedAt,
         lastAccess: response.data.lastAccess
       };
-    } catch (error) {
-      console.error(`❌ Erro ao buscar membro ${id}:`, error);
+    } catch (error: any) {
+      if (error.response?.status === 404) {
+        throw new Error('Membro não encontrado');
+      }
       throw error;
     }
   },
 
-  /**
-   * Cria um novo membro na equipe
-   */
-  createTeamMember: async (data: TeamMemberRequest): Promise<TeamMember> => {
+  createTeamMember: async (data: CreateMemberDTO): Promise<User> => {
     try {
-      console.log('📝 Criando novo membro na equipe:', data);
-      
       const currentUser = getCurrentUser();
-      const organizationId = currentUser.organizationId || 1;
+      const organizationId = currentUser.organizationId;
       
-      console.log('👤 Usuário logado:', currentUser.name);
-      console.log('🏢 Organization ID:', organizationId);
-      console.log('📋 Role sendo enviada:', data.role);
-      
-      // Validar role
-      if (!data.role) {
-        throw new Error('Função (role) é obrigatória');
+      if (!organizationId) {
+        throw new Error('Usuário não está associado a uma organização');
       }
       
-      // Preparar os dados
+      console.log('🏢 Criando membro para organização ID:', organizationId);
+      
       const userData = {
         name: data.name,
         email: data.email,
         cpf: data.cpf.replace(/\D/g, ''),
-        phone: data.phone || '',
+        phone: data.phone ? data.phone.replace(/\D/g, '') : '',
         password: data.password,
-        role: data.role, // Garantir que role está presente
+        role: data.role || 'MANAGER',
         userType: 'CLIENT',
         status: 'ACTIVE',
         organizationId: organizationId
       };
       
-      console.log('📤 Enviando dados:', userData);
+      console.log('📤 Enviando dados:', { ...userData, password: '***' });
       
       const response = await api.post('/api/users/clients', userData);
       console.log('✅ Resposta do servidor:', response.data);
@@ -126,8 +130,8 @@ export const teamService = {
         email: response.data.email,
         cpf: response.data.cpf,
         phone: response.data.phone || '',
-        role: response.data.role as UserRole,
-        status: response.data.status as UserStatus,
+        role: response.data.role,
+        status: response.data.status,
         userType: response.data.userType,
         organizationId: response.data.organizationId,
         createdAt: response.data.createdAt,
@@ -136,135 +140,85 @@ export const teamService = {
       };
     } catch (error: any) {
       console.error('❌ Erro ao criar membro:', error);
-      if (error.response?.data) {
-        throw new Error(error.response.data);
+      
+      if (error.response?.status === 400) {
+        const message = error.response?.data;
+        if (typeof message === 'string') {
+          if (message.includes('CPF')) throw new Error('CPF já cadastrado');
+          if (message.includes('E-mail')) throw new Error('E-mail já cadastrado');
+          throw new Error(message);
+        }
+      }
+      
+      throw error;
+    }
+  },
+
+  updateTeamMember: async (id: number, data: UpdateMemberDTO): Promise<User> => {
+    try {
+      const userData: any = {};
+      if (data.name) userData.name = data.name;
+      if (data.email) userData.email = data.email;
+      if (data.phone) userData.phone = data.phone.replace(/\D/g, '');
+      if (data.role) userData.role = data.role;
+      if (data.status) userData.status = data.status;
+      
+      const response = await api.put(`/api/users/${id}`, userData);
+      
+      return {
+        id: response.data.id,
+        name: response.data.name,
+        email: response.data.email,
+        cpf: response.data.cpf,
+        phone: response.data.phone || '',
+        role: response.data.role,
+        status: response.data.status,
+        userType: response.data.userType,
+        organizationId: response.data.organizationId,
+        createdAt: response.data.createdAt,
+        updatedAt: response.data.updatedAt,
+        lastAccess: response.data.lastAccess
+      };
+    } catch (error: any) {
+      if (error.response?.status === 404) {
+        throw new Error('Membro não encontrado');
       }
       throw error;
     }
   },
 
-  /**
-   * Atualiza um membro da equipe
-   */
-  updateTeamMember: async (id: number, data: Partial<TeamMemberRequest>): Promise<TeamMember> => {
+  updateMemberStatus: async (id: number, status: string): Promise<User> => {
     try {
-      console.log(`✏️ Atualizando membro ${id}:`, data);
-      
-      const userData: any = {};
-      if (data.name) userData.name = data.name;
-      if (data.email) userData.email = data.email;
-      if (data.phone) userData.phone = data.phone;
-      if (data.role) userData.role = data.role;
-      
-      const response = await api.put(`/api/users/${id}`, userData);
-      console.log('✅ Membro atualizado:', response.data);
-      
-      return {
-        id: response.data.id,
-        name: response.data.name,
-        email: response.data.email,
-        cpf: response.data.cpf,
-        phone: response.data.phone || '',
-        role: response.data.role as UserRole,
-        status: response.data.status as UserStatus,
-        userType: response.data.userType,
-        organizationId: response.data.organizationId,
-        createdAt: response.data.createdAt,
-        updatedAt: response.data.updatedAt,
-        lastAccess: response.data.lastAccess
-      };
-    } catch (error) {
-      console.error(`❌ Erro ao atualizar membro ${id}:`, error);
-      throw error;
-    }
-  },
-
-  /**
-   * Altera status do membro
-   */
-  updateMemberStatus: async (id: number, status: string): Promise<TeamMember> => {
-    try {
-      console.log(`🔄 Alterando status do membro ${id} para ${status}`);
-      
       const response = await api.put(`/api/users/${id}`, { status });
-      console.log('✅ Status alterado com sucesso');
-      
       return {
         id: response.data.id,
         name: response.data.name,
         email: response.data.email,
         cpf: response.data.cpf,
         phone: response.data.phone || '',
-        role: response.data.role as UserRole,
-        status: response.data.status as UserStatus,
+        role: response.data.role,
+        status: response.data.status,
         userType: response.data.userType,
         organizationId: response.data.organizationId,
         createdAt: response.data.createdAt,
         updatedAt: response.data.updatedAt,
         lastAccess: response.data.lastAccess
       };
-    } catch (error) {
-      console.error(`❌ Erro ao alterar status do membro ${id}:`, error);
+    } catch (error: any) {
+      if (error.response?.status === 404) {
+        throw new Error('Membro não encontrado');
+      }
       throw error;
     }
   },
 
-  /**
-   * Remove um membro da equipe
-   */
   deleteTeamMember: async (id: number): Promise<void> => {
     try {
-      console.log(`🗑️ Removendo membro ${id}`);
       await api.delete(`/api/users/${id}`);
-      console.log(`✅ Membro ${id} removido`);
-    } catch (error) {
-      console.error(`❌ Erro ao remover membro ${id}:`, error);
-      throw error;
-    }
-  },
-
-  /**
-   * Busca estatísticas da equipe
-   */
-  getTeamStats: async (): Promise<TeamStats> => {
-    try {
-      console.log('📊 Buscando estatísticas da equipe...');
-      const members = await teamService.getTeamMembers();
-      
-      const totalMembers = members.length;
-      const activeMembers = members.filter(m => m.status === 'ACTIVE').length;
-      const inactiveMembers = members.filter(m => m.status !== 'ACTIVE').length;
-      
-      const byRole: any = {};
-      members.forEach(member => {
-        byRole[member.role] = (byRole[member.role] || 0) + 1;
-      });
-      
-      const stats = {
-        totalMembers,
-        activeMembers,
-        inactiveMembers,
-        byRole
-      };
-      
-      console.log('✅ Estatísticas calculadas:', stats);
-      return stats;
-    } catch (error) {
-      console.error('❌ Erro ao buscar estatísticas:', error);
-      throw error;
-    }
-  },
-
-  /**
-   * Convida um novo membro por email
-   */
-  inviteTeamMember: async (data: InviteMemberRequest): Promise<void> => {
-    try {
-      console.log('📧 Enviando convite para:', data.email);
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      console.log('✅ Convite enviado com sucesso');
-    } catch (error) {
-      console.error('❌ Erro ao enviar convite:', error);
+    } catch (error: any) {
+      if (error.response?.status === 404) {
+        throw new Error('Membro não encontrado');
+      }
       throw error;
     }
   },
@@ -272,7 +226,10 @@ export const teamService = {
   formatCPF: (cpf: string): string => {
     if (!cpf) return '';
     const cleaned = cpf.replace(/\D/g, '');
-    return cleaned.replace(/^(\d{3})(\d{3})(\d{3})(\d{2})$/, '$1.$2.$3-$4');
+    if (cleaned.length === 11) {
+      return cleaned.replace(/^(\d{3})(\d{3})(\d{3})(\d{2})$/, '$1.$2.$3-$4');
+    }
+    return cpf;
   },
 
   formatPhone: (phone: string): string => {
@@ -287,13 +244,42 @@ export const teamService = {
     return phone;
   },
 
+  validateCPF: (cpf: string): boolean => {
+    const cleaned = cpf.replace(/\D/g, '');
+    if (cleaned.length !== 11) return false;
+    if (/^(\d)\1{10}$/.test(cleaned)) return false;
+    
+    let sum = 0;
+    for (let i = 0; i < 9; i++) {
+      sum += parseInt(cleaned.charAt(i)) * (10 - i);
+    }
+    let rev = 11 - (sum % 11);
+    if (rev === 10 || rev === 11) rev = 0;
+    if (rev !== parseInt(cleaned.charAt(9))) return false;
+    
+    sum = 0;
+    for (let i = 0; i < 10; i++) {
+      sum += parseInt(cleaned.charAt(i)) * (11 - i);
+    }
+    rev = 11 - (sum % 11);
+    if (rev === 10 || rev === 11) rev = 0;
+    if (rev !== parseInt(cleaned.charAt(10))) return false;
+    
+    return true;
+  },
+
+  validateEmail: (email: string): boolean => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  },
+
   getRoleLabel: (role: string): string => {
     const labels: { [key: string]: string } = {
       'ADMIN': 'Administrador',
       'DIRECTOR': 'Diretor',
       'MANAGER': 'Gerente',
       'ANALYST': 'Analista',
-      'CLIENT': 'Cliente'
+      'DEVELOPER': 'Desenvolvedor'
     };
     return labels[role] || role;
   },
@@ -304,7 +290,7 @@ export const teamService = {
       'DIRECTOR': '#ea580c',
       'MANAGER': '#0284c7',
       'ANALYST': '#16a34a',
-      'CLIENT': '#6b7280'
+      'DEVELOPER': '#3b82f6'
     };
     return colors[role] || '#6b7280';
   }

@@ -37,6 +37,7 @@ export const CreateOrganization: React.FC<CreateOrganizationProps> = ({ onSucces
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [createdOrg, setCreatedOrg] = useState<{ name: string; adminEmail: string } | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<{ [key: string]: string }>({});
 
   const planOptions = [
     { 
@@ -69,10 +70,18 @@ export const CreateOrganization: React.FC<CreateOrganizationProps> = ({ onSucces
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
     setError(null);
+    // Limpar erro do campo específico
+    if (fieldErrors[name]) {
+      setFieldErrors(prev => ({ ...prev, [name]: '' }));
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Limpar erros anteriores
+    setError(null);
+    setFieldErrors({});
     
     // Validações
     if (!formData.name.trim()) {
@@ -147,14 +156,80 @@ export const CreateOrganization: React.FC<CreateOrganizationProps> = ({ onSucces
     } catch (err: any) {
       console.error('❌ Erro ao criar organização:', err);
       
-      if (err.response?.data?.message) {
-        setError(err.response.data.message);
-      } else if (err.response?.data?.errors) {
+      // Tratamento específico para CPF duplicado
+      const errorMessage = err.response?.data?.message || err.message || '';
+      
+      // Verificar se é erro de CPF duplicado
+      if (errorMessage.includes('CPF') && 
+          (errorMessage.includes('já cadastrado') || 
+           errorMessage.includes('Duplicate entry') ||
+           errorMessage.includes('UK_7kqluf7wl0oxs7n90fpya03ss'))) {
+        
+        // Marcar erro específico no campo CPF
+        setFieldErrors({
+          adminCpf: 'Este CPF já está cadastrado em outra organização. Por favor, utilize outro CPF.'
+        });
+        
+        setError('CPF já cadastrado! Este CPF pertence a outra organização.');
+        
+        // Rolar para o campo CPF
+        const cpfInput = document.getElementById('adminCpf');
+        if (cpfInput) {
+          cpfInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          cpfInput.focus();
+        }
+        
+      } 
+      // Verificar se é erro de CNPJ duplicado
+      else if (errorMessage.includes('CNPJ') && errorMessage.includes('já cadastrado')) {
+        setFieldErrors({
+          cnpj: 'Este CNPJ já está cadastrado em outra organização.'
+        });
+        setError('CNPJ já cadastrado!');
+        
+        const cnpjInput = document.getElementById('cnpj');
+        if (cnpjInput) {
+          cnpjInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          cnpjInput.focus();
+        }
+      }
+      // Verificar se é erro de e-mail duplicado
+      else if (errorMessage.includes('email') && errorMessage.includes('já cadastrado')) {
+        setFieldErrors({
+          adminEmail: 'Este e-mail já está cadastrado em outra organização.'
+        });
+        setError('E-mail já cadastrado!');
+        
+        const emailInput = document.getElementById('adminEmail');
+        if (emailInput) {
+          emailInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          emailInput.focus();
+        }
+      }
+      // Tratar outros erros de validação do backend
+      else if (err.response?.data?.errors) {
         const errors = err.response.data.errors;
-        const errorMessages = Object.values(errors).flat().join(', ');
+        const fieldErrorMap: { [key: string]: string } = {};
+        
+        Object.keys(errors).forEach(key => {
+          // Mapear nomes dos campos do backend para o frontend
+          let frontendField = key;
+          if (key === 'adminCpf') frontendField = 'adminCpf';
+          if (key === 'adminEmail') frontendField = 'adminEmail';
+          if (key === 'adminName') frontendField = 'adminName';
+          if (key === 'name') frontendField = 'name';
+          if (key === 'cnpj') frontendField = 'cnpj';
+          
+          fieldErrorMap[frontendField] = Array.isArray(errors[key]) 
+            ? errors[key].join(', ') 
+            : errors[key];
+        });
+        
+        setFieldErrors(fieldErrorMap);
+        
+        const errorMessages = Object.values(fieldErrorMap).join(', ');
         setError(errorMessages);
-      } else if (err.response?.data) {
-        setError(typeof err.response.data === 'string' ? err.response.data : 'Erro ao criar organização');
+        
       } else {
         setError('Erro ao criar organização. Verifique os dados e tente novamente.');
       }
@@ -183,11 +258,17 @@ export const CreateOrganization: React.FC<CreateOrganizationProps> = ({ onSucces
   const handleCNPJChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const formatted = formatCNPJ(e.target.value);
     setFormData(prev => ({ ...prev, cnpj: formatted }));
+    if (fieldErrors.cnpj) {
+      setFieldErrors(prev => ({ ...prev, cnpj: '' }));
+    }
   };
 
   const handleCPFChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const formatted = formatCPF(e.target.value);
     setFormData(prev => ({ ...prev, adminCpf: formatted }));
+    if (fieldErrors.adminCpf) {
+      setFieldErrors(prev => ({ ...prev, adminCpf: '' }));
+    }
   };
 
   const getSelectedPlan = () => {
@@ -256,7 +337,11 @@ export const CreateOrganization: React.FC<CreateOrganizationProps> = ({ onSucces
                 placeholder="Ex: Eventos Faceis Ltda"
                 required
                 disabled={loading}
+                className={fieldErrors.name ? styles.errorInput : ''}
               />
+              {fieldErrors.name && (
+                <span className={styles.fieldError}>{fieldErrors.name}</span>
+              )}
             </div>
 
             <div className={styles.formGroup}>
@@ -273,7 +358,11 @@ export const CreateOrganization: React.FC<CreateOrganizationProps> = ({ onSucces
                 placeholder="00.000.000/0000-00"
                 maxLength={18}
                 disabled={loading}
+                className={fieldErrors.cnpj ? styles.errorInput : ''}
               />
+              {fieldErrors.cnpj && (
+                <span className={styles.fieldError}>{fieldErrors.cnpj}</span>
+              )}
               <small>Opcional. Pode ser informado depois.</small>
             </div>
 
@@ -330,7 +419,11 @@ export const CreateOrganization: React.FC<CreateOrganizationProps> = ({ onSucces
                 placeholder="Nome do administrador"
                 required
                 disabled={loading}
+                className={fieldErrors.adminName ? styles.errorInput : ''}
               />
+              {fieldErrors.adminName && (
+                <span className={styles.fieldError}>{fieldErrors.adminName}</span>
+              )}
             </div>
 
             <div className={styles.formGroup}>
@@ -347,7 +440,11 @@ export const CreateOrganization: React.FC<CreateOrganizationProps> = ({ onSucces
                 placeholder="admin@empresa.com"
                 required
                 disabled={loading}
+                className={fieldErrors.adminEmail ? styles.errorInput : ''}
               />
+              {fieldErrors.adminEmail && (
+                <span className={styles.fieldError}>{fieldErrors.adminEmail}</span>
+              )}
               <small>Será usado para login e comunicação.</small>
             </div>
 
@@ -366,7 +463,11 @@ export const CreateOrganization: React.FC<CreateOrganizationProps> = ({ onSucces
                 maxLength={14}
                 required
                 disabled={loading}
+                className={fieldErrors.adminCpf ? styles.errorInput : ''}
               />
+              {fieldErrors.adminCpf && (
+                <span className={styles.fieldError}>{fieldErrors.adminCpf}</span>
+              )}
             </div>
 
             <div className={styles.formGroup}>
@@ -383,7 +484,11 @@ export const CreateOrganization: React.FC<CreateOrganizationProps> = ({ onSucces
                 placeholder="Mínimo 6 caracteres"
                 required
                 disabled={loading}
+                className={fieldErrors.adminPassword ? styles.errorInput : ''}
               />
+              {fieldErrors.adminPassword && (
+                <span className={styles.fieldError}>{fieldErrors.adminPassword}</span>
+              )}
               <small>Mínimo 6 caracteres. Recomendado usar letras, números e símbolos.</small>
             </div>
           </div>

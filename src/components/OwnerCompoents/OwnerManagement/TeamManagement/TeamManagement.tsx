@@ -1,247 +1,415 @@
-// src/components/OwnerCompoents/Team/TeamManagement.tsx
-import React, { useState, useEffect } from 'react';
-import {
-  MdAdd,
-  MdSearch,
+// src/components/DeveloperCompents/TeamManagement/TeamManagement.tsx
+import React, { useState, useEffect, useCallback } from 'react';
+import { 
+  FiSearch,  
+  FiFilter,
+  FiX,
+  FiUsers,
+  FiUserPlus,
+  FiEdit2,
+  FiTrash2,
+  FiPower,
+  FiUser
+} from 'react-icons/fi';
+import { 
+  MdPeople, 
+  MdPersonAdd,
   MdEdit,
   MdDelete,
-  MdBlock,
-  MdCheckCircle,
-  MdClose,
-  MdPerson,
-  MdEmail,
-  MdBadge,
-  MdPhone,
-  MdLock,
-  MdInfo,
-  MdRefresh,
-  MdSend
+  MdPowerSettingsNew
 } from 'react-icons/md';
-import { teamService } from '../../../../services/teamService';
-import { TeamMember, UserRole, UserStatus, TeamStats } from '../../../../types/team';
+import { teamService, CreateMemberDTO, UpdateMemberDTO } from '../../../../services/teamService';
+import { User } from '../../../../types/developer';
+import { LoadingSpinner } from '../../../common/Loading/LoadingSpinner';
+import { EmptyState } from '../../../common/EmptyState/EmptyState';
 import { ConfirmationModal } from '../../../common/Alerts/ConfirmationModal';
 import { ErrorModal } from '../../../common/Alerts/ErrorModal';
 import styles from './TeamManagement.module.css';
 
-export const TeamManagement: React.FC = () => {
-  const [members, setMembers] = useState<TeamMember[]>([]);
-  const [filteredMembers, setFilteredMembers] = useState<TeamMember[]>([]);
+interface TeamManagementProps {
+  organizationId: number;
+}
+
+interface Filters {
+  name: string;
+  email: string;
+  cpf: string;
+  role: string;
+  status: string;
+}
+
+export const TeamManagement: React.FC<TeamManagementProps> = ({ organizationId }) => {
+  // Estados principais
+  const [members, setMembers] = useState<User[]>([]);
+  const [filteredMembers, setFilteredMembers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [stats, setStats] = useState<TeamStats | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [showForm, setShowForm] = useState(false);
+  const [editingMember, setEditingMember] = useState<User | null>(null);
+  const [showFilters, setShowFilters] = useState(true);
   
-  const [searchTerm, setSearchTerm] = useState('');
-  const [roleFilter, setRoleFilter] = useState<UserRole | 'all'>('all');
-  const [statusFilter, setStatusFilter] = useState<UserStatus | 'all'>('all');
+  // Estados para o modal de exclusão
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [memberToDelete, setMemberToDelete] = useState<User | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [showInviteModal, setShowInviteModal] = useState(false);
-  const [selectedMember, setSelectedMember] = useState<TeamMember | null>(null);
+  // Estados para modal de ativação/desativação
+  const [showStatusModal, setShowStatusModal] = useState(false);
+  const [memberToToggle, setMemberToToggle] = useState<User | null>(null);
+  const [statusAction, setStatusAction] = useState<'activate' | 'deactivate'>('activate');
+  const [isToggling, setIsToggling] = useState(false);
   
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [showStatusConfirm, setShowStatusConfirm] = useState(false);
-  const [newStatus, setNewStatus] = useState<UserStatus | null>(null);
+  // Estados para modal de sucesso
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
+  const [successType, setSuccessType] = useState<'create' | 'update' | 'delete' | 'status'>('create');
   
-  const [formData, setFormData] = useState({
+  // Estados para modal de erro
+  const [showError, setShowError] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+  
+  // Estados para formulário
+  const [formData, setFormData] = useState<CreateMemberDTO>({
     name: '',
     email: '',
     cpf: '',
     phone: '',
-    password: '',
-    role: UserRole.ANALYST
+    role: 'MANAGER',
+    password: ''
   });
   
-  const [inviteData, setInviteData] = useState({
+  // Filtros
+  const [filters, setFilters] = useState<Filters>({
+    name: '',
     email: '',
-    role: UserRole.ANALYST,
-    message: ''
+    cpf: '',
+    role: '',
+    status: ''
   });
 
-  const roleOptions = [
-    { value: UserRole.ADMIN, label: 'Administrador', description: 'Acesso total ao sistema' },
-    { value: UserRole.DIRECTOR, label: 'Diretor', description: 'Acesso a relatórios e gestão' },
-    { value: UserRole.MANAGER, label: 'Gerente', description: 'Gerencia eventos e equipe' },
-    { value: UserRole.ANALYST, label: 'Analista', description: 'Operacional, cria e gerencia eventos' }
+  // Roles disponíveis
+  const roles = [
+    { value: 'ADMIN', label: 'Administrador' },
+    { value: 'DIRECTOR', label: 'Diretor' },
+    { value: 'MANAGER', label: 'Gerente' },
+    { value: 'ANALYST', label: 'Analista' }
   ];
 
-  useEffect(() => {
-    loadTeamData();
+  // Status disponíveis
+  const statusOptions = [
+    { value: '', label: 'Todos' },
+    { value: 'ACTIVE', label: 'Ativo' },
+    { value: 'INACTIVE', label: 'Inativo' }
+  ];
+
+  // Carregar membros
+  const loadMembers = useCallback(async () => {
+    try {
+      setLoading(true);
+      const data = await teamService.getTeamMembers();
+      setMembers(data);
+      setFilteredMembers(data);
+      console.log('✅ Membros carregados:', data.length);
+    } catch (error) {
+      console.error('Erro ao carregar membros:', error);
+      setErrorMessage('Erro ao carregar membros da equipe. Tente novamente.');
+      setShowError(true);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   useEffect(() => {
-    filterMembers();
-  }, [members, searchTerm, roleFilter, statusFilter]);
+    loadMembers();
+  }, [loadMembers]);
 
-  const loadTeamData = async () => {
-    try {
-      setLoading(true);
-      const [membersData, statsData] = await Promise.all([
-        teamService.getTeamMembers(),
-        teamService.getTeamStats()
-      ]);
-      setMembers(membersData);
-      setFilteredMembers(membersData);
-      setStats(statsData);
-    } catch (error) {
-      console.error('❌ Erro ao carregar dados da equipe:', error);
-      setError('Erro ao carregar membros da equipe');
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Aplicar filtros
+  useEffect(() => {
+    applyFilters();
+  }, [filters, members]);
 
-  const filterMembers = () => {
-    let filtered = [...members];
-    
-    if (searchTerm) {
-      const term = searchTerm.toLowerCase();
-      filtered = filtered.filter(m =>
-        m.name.toLowerCase().includes(term) ||
-        m.email.toLowerCase().includes(term) ||
-        m.cpf.includes(term)
+  const applyFilters = useCallback(() => {
+    let result = [...members];
+
+    if (filters.name) {
+      result = result.filter(member => 
+        member.name.toLowerCase().includes(filters.name.toLowerCase())
       );
     }
-    
-    if (roleFilter !== 'all') {
-      filtered = filtered.filter(m => m.role === roleFilter);
-    }
-    
-    if (statusFilter !== 'all') {
-      filtered = filtered.filter(m => m.status === statusFilter);
-    }
-    
-    setFilteredMembers(filtered);
-  };
 
+    if (filters.email) {
+      result = result.filter(member => 
+        member.email?.toLowerCase().includes(filters.email.toLowerCase())
+      );
+    }
+
+    if (filters.cpf) {
+      const cpfClean = filters.cpf.replace(/\D/g, '');
+      result = result.filter(member => 
+        member.cpf.includes(cpfClean)
+      );
+    }
+
+    if (filters.role) {
+      result = result.filter(member => member.role === filters.role);
+    }
+
+    if (filters.status) {
+      result = result.filter(member => member.status === filters.status);
+    }
+
+    setFilteredMembers(result);
+  }, [filters, members]);
+
+  // Handlers de filtro
+  const handleFilterChange = useCallback((field: keyof Filters, value: string) => {
+    setFilters(prev => ({ ...prev, [field]: value }));
+  }, []);
+
+  const handleClearFilters = useCallback(() => {
+    setFilters({
+      name: '',
+      email: '',
+      cpf: '',
+      role: '',
+      status: ''
+    });
+  }, []);
+
+  // Handlers de membro
   const handleCreateMember = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (!formData.name.trim()) {
+      setErrorMessage('Nome é obrigatório');
+      setShowError(true);
+      return;
+    }
+    
+    if (!formData.email.trim()) {
+      setErrorMessage('E-mail é obrigatório');
+      setShowError(true);
+      return;
+    }
+    
+    if (!teamService.validateEmail(formData.email)) {
+      setErrorMessage('E-mail inválido');
+      setShowError(true);
+      return;
+    }
+    
+    if (!formData.cpf.trim()) {
+      setErrorMessage('CPF é obrigatório');
+      setShowError(true);
+      return;
+    }
+    
+    if (!teamService.validateCPF(formData.cpf)) {
+      setErrorMessage('CPF inválido');
+      setShowError(true);
+      return;
+    }
+    
+    if (!formData.password || formData.password.length < 6) {
+      setErrorMessage('Senha deve ter no mínimo 6 caracteres');
+      setShowError(true);
+      return;
+    }
+    
     try {
-      setLoading(true);
-      setError(null);
-      
-      console.log('📝 Dados do formulário:', {
-        name: formData.name,
-        email: formData.email,
-        cpf: formData.cpf,
-        password: formData.password,
-        role: formData.role,
-        phone: formData.phone
-      });
-      
-      await teamService.createTeamMember({
-        name: formData.name,
-        email: formData.email,
-        cpf: formData.cpf.replace(/\D/g, ''),
-        password: formData.password,
-        role: formData.role,
-        phone: formData.phone
-      });
-      
-      await loadTeamData();
-      setShowCreateModal(false);
-      resetForm();
+      await teamService.createTeamMember(formData);
+      await loadMembers();
       setSuccessMessage('Membro criado com sucesso!');
-      setTimeout(() => setSuccessMessage(null), 3000);
-      
+      setSuccessType('create');
+      setShowSuccessModal(true);
+      setShowForm(false);
+      resetForm();
     } catch (error: any) {
-      console.error('❌ Erro ao criar membro:', error);
-      setError(error.message || 'Erro ao criar membro');
-    } finally {
-      setLoading(false);
+      console.error('Erro ao criar membro:', error);
+      
+      let message = 'Erro ao criar membro. Tente novamente.';
+      if (error.message) {
+        message = error.message;
+      } else if (error.response?.data?.message) {
+        message = error.response.data.message;
+      }
+      
+      setErrorMessage(message);
+      setShowError(true);
     }
   };
 
   const handleUpdateMember = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedMember) return;
+    
+    if (!editingMember || !editingMember.id) {
+      setErrorMessage('Membro não encontrado');
+      setShowError(true);
+      return;
+    }
+    
+    if (!formData.name.trim()) {
+      setErrorMessage('Nome é obrigatório');
+      setShowError(true);
+      return;
+    }
+    
+    if (!formData.email.trim()) {
+      setErrorMessage('E-mail é obrigatório');
+      setShowError(true);
+      return;
+    }
+    
+    if (!teamService.validateEmail(formData.email)) {
+      setErrorMessage('E-mail inválido');
+      setShowError(true);
+      return;
+    }
     
     try {
-      setLoading(true);
-      await teamService.updateTeamMember(selectedMember.id, {
+      const updateData: UpdateMemberDTO = {
         name: formData.name,
         email: formData.email,
         phone: formData.phone,
         role: formData.role
-      });
+      };
       
-      await loadTeamData();
-      setShowEditModal(false);
-      setSelectedMember(null);
-      resetForm();
+      await teamService.updateTeamMember(editingMember.id, updateData);
+      await loadMembers();
       setSuccessMessage('Membro atualizado com sucesso!');
-      setTimeout(() => setSuccessMessage(null), 3000);
-      
+      setSuccessType('update');
+      setShowSuccessModal(true);
+      setEditingMember(null);
+      setShowForm(false);
     } catch (error: any) {
-      console.error('❌ Erro ao atualizar membro:', error);
-      setError(error.message || 'Erro ao atualizar membro');
-    } finally {
-      setLoading(false);
+      console.error('Erro ao atualizar membro:', error);
+      
+      let message = 'Erro ao atualizar membro. Tente novamente.';
+      if (error.message) {
+        message = error.message;
+      } else if (error.response?.data?.message) {
+        message = error.response.data.message;
+      }
+      
+      setErrorMessage(message);
+      setShowError(true);
     }
   };
 
+  // Função para abrir modal de exclusão
+  const openDeleteModal = (member: User) => {
+    if (!member || !member.id) {
+      setErrorMessage('Membro inválido');
+      setShowError(true);
+      return;
+    }
+    
+    setMemberToDelete(member);
+    setShowDeleteModal(true);
+  };
+
+  // Função para excluir membro
   const handleDeleteMember = async () => {
-    if (!selectedMember) return;
-    
-    try {
-      setLoading(true);
-      await teamService.deleteTeamMember(selectedMember.id);
-      await loadTeamData();
-      setShowDeleteConfirm(false);
-      setSelectedMember(null);
-      setSuccessMessage('Membro removido com sucesso!');
-      setTimeout(() => setSuccessMessage(null), 3000);
-    } catch (error) {
-      console.error('❌ Erro ao remover membro:', error);
-      setError('Erro ao remover membro');
-    } finally {
-      setLoading(false);
+    if (!memberToDelete || !memberToDelete.id) {
+      setErrorMessage('Membro não encontrado');
+      setShowError(true);
+      return;
     }
-  };
-
-  const handleStatusChange = async () => {
-    if (!selectedMember || !newStatus) return;
+    
+    setIsDeleting(true);
     
     try {
-      setLoading(true);
-      await teamService.updateMemberStatus(selectedMember.id, newStatus);
-      await loadTeamData();
-      setShowStatusConfirm(false);
-      setSelectedMember(null);
-      setNewStatus(null);
-      setSuccessMessage(`Status alterado para ${newStatus === UserStatus.ACTIVE ? 'Ativo' : 'Inativo'}!`);
-      setTimeout(() => setSuccessMessage(null), 3000);
-    } catch (error) {
-      console.error('❌ Erro ao alterar status:', error);
-      setError('Erro ao alterar status do membro');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleInviteMember = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    try {
-      setLoading(true);
-      await teamService.inviteTeamMember({
-        email: inviteData.email,
-        role: inviteData.role,
-        message: inviteData.message
-      });
+      await teamService.deleteTeamMember(memberToDelete.id);
+      await loadMembers();
       
-      setShowInviteModal(false);
-      setInviteData({ email: '', role: UserRole.ANALYST, message: '' });
-      setSuccessMessage('Convite enviado com sucesso!');
-      setTimeout(() => setSuccessMessage(null), 3000);
+      setShowDeleteModal(false);
+      setSuccessMessage(`Membro ${memberToDelete.name} removido com sucesso!`);
+      setSuccessType('delete');
+      setShowSuccessModal(true);
       
     } catch (error: any) {
-      console.error('❌ Erro ao enviar convite:', error);
-      setError(error.message || 'Erro ao enviar convite');
+      console.error('Erro ao excluir membro:', error);
+      
+      let message = 'Erro ao excluir membro. Tente novamente.';
+      if (error.message) {
+        message = error.message;
+      }
+      
+      setErrorMessage(message);
+      setShowError(true);
     } finally {
-      setLoading(false);
+      setIsDeleting(false);
+    }
+  };
+
+  // Função para abrir modal de ativação/desativação
+  const openStatusModal = (member: User) => {
+    if (!member || !member.id) {
+      setErrorMessage('Membro inválido');
+      setShowError(true);
+      return;
+    }
+    
+    setMemberToToggle(member);
+    setStatusAction(member.status === 'ACTIVE' ? 'deactivate' : 'activate');
+    setShowStatusModal(true);
+  };
+
+  // Função para alterar status
+  const handleToggleStatus = async () => {
+    if (!memberToToggle || !memberToToggle.id) {
+      setErrorMessage('Membro não encontrado');
+      setShowError(true);
+      return;
+    }
+    
+    const newStatus = memberToToggle.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
+    
+    setIsToggling(true);
+    
+    try {
+      await teamService.updateMemberStatus(memberToToggle.id, newStatus);
+      await loadMembers();
+      
+      setShowStatusModal(false);
+      setSuccessMessage(`Membro ${newStatus === 'ACTIVE' ? 'ativado' : 'desativado'} com sucesso!`);
+      setSuccessType('status');
+      setShowSuccessModal(true);
+      
+    } catch (error: any) {
+      console.error('Erro ao alterar status:', error);
+      
+      let message = 'Erro ao alterar status do membro. Tente novamente.';
+      if (error.message) {
+        message = error.message;
+      }
+      
+      setErrorMessage(message);
+      setShowError(true);
+    } finally {
+      setIsToggling(false);
+    }
+  };
+
+  const handleEditMember = (member: User) => {
+    setEditingMember(member);
+    setFormData({
+      name: member.name,
+      email: member.email,
+      cpf: member.cpf,
+      phone: member.phone || '',
+      role: member.role,
+      password: ''
+    });
+    setShowForm(true);
+  };
+
+  const handleSuccessClose = () => {
+    setShowSuccessModal(false);
+    if (successType === 'delete') {
+      setMemberToDelete(null);
+    }
+    if (successType === 'status') {
+      setMemberToToggle(null);
     }
   };
 
@@ -251,28 +419,14 @@ export const TeamManagement: React.FC = () => {
       email: '',
       cpf: '',
       phone: '',
-      password: '',
-      role: UserRole.ANALYST
+      role: 'MANAGER',
+      password: ''
     });
   };
 
-  const openEditModal = (member: TeamMember) => {
-    setSelectedMember(member);
-    setFormData({
-      name: member.name,
-      email: member.email,
-      cpf: member.cpf,
-      phone: member.phone || '',
-      password: '',
-      role: member.role
-    });
-    setShowEditModal(true);
-  };
-
-  const openStatusModal = (member: TeamMember, status: UserStatus) => {
-    setSelectedMember(member);
-    setNewStatus(status);
-    setShowStatusConfirm(true);
+  const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
   const formatCPF = (value: string) => {
@@ -286,373 +440,288 @@ export const TeamManagement: React.FC = () => {
   const formatPhone = (value: string) => {
     const cleaned = value.replace(/\D/g, '');
     if (cleaned.length <= 2) return cleaned;
-    if (cleaned.length <= 7) return cleaned.replace(/^(\d{2})(\d)/, '($1) $2');
-    if (cleaned.length <= 11) return cleaned.replace(/^(\d{2})(\d{5})(\d)/, '($1) $2-$3');
+    if (cleaned.length <= 6) return cleaned.replace(/^(\d{2})(\d)/, '($1) $2');
+    if (cleaned.length <= 10) return cleaned.replace(/^(\d{2})(\d{4})(\d)/, '($1) $2-$3');
     return cleaned.replace(/^(\d{2})(\d{5})(\d{4})$/, '($1) $2-$3');
   };
 
-  const getStatusBadgeClass = (status: UserStatus) => {
-    switch (status) {
-      case UserStatus.ACTIVE:
-        return styles.statusActive;
-      case UserStatus.INACTIVE:
-        return styles.statusInactive;
-      case UserStatus.BLOCKED:
-        return styles.statusBlocked;
-      default:
-        return styles.statusInactive;
-    }
+  const handleCPFChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const formatted = formatCPF(e.target.value);
+    setFormData(prev => ({ ...prev, cpf: formatted }));
   };
 
-  const getStatusLabel = (status: UserStatus) => {
-    switch (status) {
-      case UserStatus.ACTIVE:
-        return 'Ativo';
-      case UserStatus.INACTIVE:
-        return 'Inativo';
-      case UserStatus.BLOCKED:
-        return 'Bloqueado';
-      default:
-        return status;
-    }
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const formatted = formatPhone(e.target.value);
+    setFormData(prev => ({ ...prev, phone: formatted }));
   };
 
-  if (loading && members.length === 0) {
-    return (
-      <div className={styles.loadingContainer}>
-        <div className={styles.spinner}></div>
-        <p>Carregando equipe...</p>
-      </div>
-    );
+  // Estatísticas
+  const activeCount = members.filter(m => m.status === 'ACTIVE').length;
+  const inactiveCount = members.filter(m => m.status !== 'ACTIVE').length;
+
+  if (loading) {
+    return <LoadingSpinner text="Carregando membros da equipe..." fullScreen />;
   }
 
-  return (
-    <div className={styles.teamManagement}>
-      {successMessage && (
-        <div className={styles.successMessage}>
-          <MdCheckCircle size={20} />
-          {successMessage}
-        </div>
-      )}
+  const hasActiveFilters = Object.values(filters).some(v => v.trim() !== '');
+  const showEmptyState = filteredMembers.length === 0;
 
+  return (
+    <div className={styles.container}>
+      {/* Header */}
       <div className={styles.header}>
         <div className={styles.headerLeft}>
           <h1 className={styles.title}>
-            <MdPerson />
-            Gerenciar Equipe
+            <MdPeople size={28} />
+            Gestão de Equipe
           </h1>
-          {stats && (
-            <div className={styles.statsBadges}>
-              <span className={styles.statBadge}>
-                Total: {stats.totalMembers}
-              </span>
-              <span className={`${styles.statBadge} ${styles.activeBadge}`}>
-                Ativos: {stats.activeMembers}
-              </span>
-              <span className={`${styles.statBadge} ${styles.inactiveBadge}`}>
-                Inativos: {stats.inactiveMembers}
-              </span>
-            </div>
+          {!showEmptyState && (
+            <span className={styles.clientCount}>
+              <FiUsers size={14} />
+              {filteredMembers.length} {filteredMembers.length === 1 ? 'membro' : 'membros'}
+            </span>
           )}
         </div>
-
+        
         <div className={styles.headerActions}>
-          <button className={styles.primaryButton} onClick={() => setShowCreateModal(true)}>
-            <MdAdd />
-            Novo Funcionário
+          <button 
+            onClick={() => setShowFilters(!showFilters)}
+            className={`${styles.filterToggle} ${showFilters ? styles.active : ''}`}
+            aria-label="Alternar filtros"
+          >
+            <FiFilter size={18} />
+            <span className={styles.filterToggleText}>
+              {showFilters ? 'Ocultar filtros' : 'Mostrar filtros'}
+            </span>
           </button>
-          <button className={styles.secondaryButton} onClick={() => setShowInviteModal(true)}>
-            <MdSend />
-            Convidar por E-mail
-          </button>
-          <button className={styles.iconButton} onClick={loadTeamData} title="Atualizar">
-            <MdRefresh />
+          
+          <button 
+            onClick={() => {
+              setEditingMember(null);
+              resetForm();
+              setShowForm(true);
+            }}
+            className={styles.primaryButton}
+          >
+            <FiUserPlus size={18} />
+            <span>Novo Membro</span>
           </button>
         </div>
       </div>
 
-      <div className={styles.filtersBar}>
-        <div className={styles.searchInput}>
-          <MdSearch />
-          <input
-            type="text"
-            placeholder="Buscar por nome, e-mail ou CPF..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-          {searchTerm && (
-            <button onClick={() => setSearchTerm('')} className={styles.clearButton}>
-              <MdClose />
-            </button>
-          )}
-        </div>
-
-        <select 
-          value={roleFilter} 
-          onChange={(e) => setRoleFilter(e.target.value as UserRole | 'all')}
-          className={styles.filterSelect}
-        >
-          <option value="all">Todas as funções</option>
-          {roleOptions.map(role => (
-            <option key={role.value} value={role.value}>{role.label}</option>
-          ))}
-        </select>
-
-        <select 
-          value={statusFilter} 
-          onChange={(e) => setStatusFilter(e.target.value as UserStatus | 'all')}
-          className={styles.filterSelect}
-        >
-          <option value="all">Todos os status</option>
-          <option value={UserStatus.ACTIVE}>Ativos</option>
-          <option value={UserStatus.INACTIVE}>Inativos</option>
-          <option value={UserStatus.BLOCKED}>Bloqueados</option>
-        </select>
-      </div>
-
-      <div className={styles.tableContainer}>
-        <table className={styles.table}>
-          <thead>
-            <tr>
-              <th>Funcionário</th>
-              <th>CPF</th>
-              <th>Função</th>
-              <th>Status</th>
-              <th>Último Acesso</th>
-              <th>Ações</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredMembers.map(member => (
-              <tr key={member.id}>
-                <td className={styles.memberCell}>
-                  <div className={styles.memberInfo}>
-                    <div className={styles.memberAvatar}>
-                      <MdPerson />
-                    </div>
-                    <div>
-                      <strong>{member.name}</strong>
-                      <small>{member.email}</small>
-                      {member.phone && <small>{teamService.formatPhone(member.phone)}</small>}
-                    </div>
-                  </div>
-                </td>
-                <td>{teamService.formatCPF(member.cpf)}</td>
-                <td>
-                  <span 
-                    className={styles.roleBadge}
-                    style={{ backgroundColor: teamService.getRoleColor(member.role) + '20', color: teamService.getRoleColor(member.role) }}
-                  >
-                    {teamService.getRoleLabel(member.role)}
-                  </span>
-                </td>
-                <td>
-                  <span className={`${styles.statusBadge} ${getStatusBadgeClass(member.status)}`}>
-                    {getStatusLabel(member.status)}
-                  </span>
-                </td>
-                <td>{member.lastAccess ? new Date(member.lastAccess).toLocaleDateString('pt-BR') : '-'}</td>
-                <td>
-                  <div className={styles.actionButtons}>
-                    <button className={styles.actionButton} onClick={() => openEditModal(member)} title="Editar">
-                      <MdEdit />
-                    </button>
-                    {member.status === UserStatus.ACTIVE ? (
-                      <button 
-                        className={`${styles.actionButton} ${styles.warningButton}`}
-                        onClick={() => openStatusModal(member, UserStatus.INACTIVE)}
-                        title="Desativar"
-                      >
-                        <MdBlock />
-                      </button>
-                    ) : (
-                      <button 
-                        className={`${styles.actionButton} ${styles.successButton}`}
-                        onClick={() => openStatusModal(member, UserStatus.ACTIVE)}
-                        title="Ativar"
-                      >
-                        <MdCheckCircle />
-                      </button>
-                    )}
-                    <button 
-                      className={`${styles.actionButton} ${styles.dangerButton}`}
-                      onClick={() => {
-                        setSelectedMember(member);
-                        setShowDeleteConfirm(true);
-                      }}
-                      title="Remover"
-                    >
-                      <MdDelete />
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-
-        {filteredMembers.length === 0 && (
-          <div className={styles.emptyState}>
-            <MdPerson size={48} />
-            <h3>Nenhum funcionário encontrado</h3>
-            <p>
-              {searchTerm || roleFilter !== 'all' || statusFilter !== 'all'
-                ? 'Tente ajustar os filtros para encontrar funcionários.'
-                : 'Comece cadastrando os funcionários da sua equipe.'}
-            </p>
-            <button className={styles.primaryButton} onClick={() => setShowCreateModal(true)}>
-              <MdAdd />
-              Novo Funcionário
-            </button>
+      {/* Cards de Estatísticas */}
+      <div className={styles.statsGrid}>
+        <div className={styles.statCard}>
+          <div className={styles.statIcon} style={{ background: '#00B4D8' }}>
+            <FiUsers size={24} />
           </div>
-        )}
+          <div className={styles.statInfo}>
+            <span className={styles.statValue}>{members.length}</span>
+            <span className={styles.statLabel}>Total</span>
+          </div>
+        </div>
+        <div className={styles.statCard}>
+          <div className={styles.statIcon} style={{ background: '#10b981' }}>
+            <FiPower size={24} />
+          </div>
+          <div className={styles.statInfo}>
+            <span className={styles.statValue}>{activeCount}</span>
+            <span className={styles.statLabel}>Ativos</span>
+          </div>
+        </div>
+        <div className={styles.statCard}>
+          <div className={styles.statIcon} style={{ background: '#ef4444' }}>
+            <FiX size={24} />
+          </div>
+          <div className={styles.statInfo}>
+            <span className={styles.statValue}>{inactiveCount}</span>
+            <span className={styles.statLabel}>Inativos</span>
+          </div>
+        </div>
       </div>
 
-      {/* Modal de Criação */}
-      {showCreateModal && (
-        <div className={styles.modalOverlay}>
-          <div className={styles.modal}>
+      {/* Filtros */}
+      {showFilters && (
+        <div className={styles.filtersPanel}>
+          <div className={styles.searchBox}>
+            <FiSearch className={styles.searchIcon} />
+            <input
+              type="text"
+              placeholder="Buscar por nome..."
+              value={filters.name}
+              onChange={(e) => handleFilterChange('name', e.target.value)}
+              className={styles.searchInput}
+            />
+          </div>
+          <div className={styles.searchBox}>
+            <FiSearch className={styles.searchIcon} />
+            <input
+              type="text"
+              placeholder="Buscar por e-mail..."
+              value={filters.email}
+              onChange={(e) => handleFilterChange('email', e.target.value)}
+              className={styles.searchInput}
+            />
+          </div>
+          <div className={styles.searchBox}>
+            <FiSearch className={styles.searchIcon} />
+            <input
+              type="text"
+              placeholder="Buscar por CPF..."
+              value={filters.cpf}
+              onChange={(e) => handleFilterChange('cpf', e.target.value)}
+              className={styles.searchInput}
+            />
+          </div>
+          <div className={styles.filterGroup}>
+            <select
+              value={filters.role}
+              onChange={(e) => handleFilterChange('role', e.target.value)}
+              className={styles.filterSelect}
+            >
+              <option value="">Todas as funções</option>
+              {roles.map(role => (
+                <option key={role.value} value={role.value}>{role.label}</option>
+              ))}
+            </select>
+            <select
+              value={filters.status}
+              onChange={(e) => handleFilterChange('status', e.target.value)}
+              className={styles.filterSelect}
+            >
+              {statusOptions.map(option => (
+                <option key={option.value} value={option.value}>{option.label}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+      )}
+
+      {/* Formulário de Criação/Edição */}
+      {showForm && (
+        <div className={styles.modalOverlay} onClick={() => {
+          setShowForm(false);
+          setEditingMember(null);
+          resetForm();
+        }}>
+          <div className={styles.modal} onClick={e => e.stopPropagation()}>
             <div className={styles.modalHeader}>
-              <h2><MdPerson /> Novo Funcionário</h2>
-              <button onClick={() => setShowCreateModal(false)} className={styles.closeButton}>
-                <MdClose />
+              <h3>
+                <FiUserPlus size={20} />
+                {editingMember ? 'Editar Membro' : 'Novo Membro'}
+              </h3>
+              <button className={styles.closeButton} onClick={() => {
+                setShowForm(false);
+                setEditingMember(null);
+                resetForm();
+              }}>
+                <FiX size={20} />
               </button>
             </div>
-            <form onSubmit={handleCreateMember} className={styles.form}>
-              <div className={styles.formGroup}>
-                <label><MdPerson /> Nome Completo *</label>
-                <input 
-                  type="text" 
-                  value={formData.name} 
-                  onChange={(e) => setFormData({...formData, name: e.target.value})} 
-                  required 
-                />
-              </div>
-              <div className={styles.formRow}>
+
+            <form onSubmit={editingMember ? handleUpdateMember : handleCreateMember} className={styles.modalForm}>
+              <div className={styles.modalBody}>
                 <div className={styles.formGroup}>
-                  <label><MdEmail /> E-mail *</label>
-                  <input 
-                    type="email" 
-                    value={formData.email} 
-                    onChange={(e) => setFormData({...formData, email: e.target.value})} 
-                    required 
-                  />
-                </div>
-                <div className={styles.formGroup}>
-                  <label><MdPhone /> Telefone</label>
-                  <input 
-                    type="text" 
-                    value={formData.phone} 
-                    onChange={(e) => setFormData({...formData, phone: formatPhone(e.target.value)})} 
-                  />
-                </div>
-              </div>
-              <div className={styles.formRow}>
-                <div className={styles.formGroup}>
-                  <label><MdBadge /> CPF *</label>
-                  <input 
-                    type="text" 
-                    value={formData.cpf} 
-                    onChange={(e) => setFormData({...formData, cpf: formatCPF(e.target.value)})} 
-                    maxLength={14} 
-                    required 
-                  />
-                </div>
-                <div className={styles.formGroup}>
-                  <label><MdPerson /> Função *</label>
-                  <select 
-                    value={formData.role} 
-                    onChange={(e) => setFormData({...formData, role: e.target.value as UserRole})} 
+                  <label>Nome Completo *</label>
+                  <input
+                    type="text"
+                    name="name"
+                    value={formData.name}
+                    onChange={handleFormChange}
+                    placeholder="Digite o nome completo"
                     required
-                  >
-                    {roleOptions.map(role => (
-                      <option key={role.value} value={role.value}>{role.label}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-              <div className={styles.formGroup}>
-                <label><MdLock /> Senha *</label>
-                <input 
-                  type="password" 
-                  value={formData.password} 
-                  onChange={(e) => setFormData({...formData, password: e.target.value})} 
-                  placeholder="Mínimo 6 caracteres" 
-                  required 
-                  minLength={6} 
-                />
-                <small>A senha deverá ser alterada no primeiro acesso.</small>
-              </div>
-              <div className={styles.modalFooter}>
-                <button type="button" onClick={() => setShowCreateModal(false)} className={styles.cancelButton}>
-                  Cancelar
-                </button>
-                <button type="submit" disabled={loading} className={styles.saveButton}>
-                  {loading ? 'Criando...' : 'Criar Funcionário'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Modal de Edição */}
-      {showEditModal && selectedMember && (
-        <div className={styles.modalOverlay}>
-          <div className={styles.modal}>
-            <div className={styles.modalHeader}>
-              <h2><MdEdit /> Editar Funcionário</h2>
-              <button onClick={() => setShowEditModal(false)} className={styles.closeButton}>
-                <MdClose />
-              </button>
-            </div>
-            <form onSubmit={handleUpdateMember} className={styles.form}>
-              <div className={styles.formGroup}>
-                <label><MdPerson /> Nome Completo *</label>
-                <input 
-                  type="text" 
-                  value={formData.name} 
-                  onChange={(e) => setFormData({...formData, name: e.target.value})} 
-                  required 
-                />
-              </div>
-              <div className={styles.formRow}>
-                <div className={styles.formGroup}>
-                  <label><MdEmail /> E-mail *</label>
-                  <input 
-                    type="email" 
-                    value={formData.email} 
-                    onChange={(e) => setFormData({...formData, email: e.target.value})} 
-                    required 
                   />
                 </div>
+
                 <div className={styles.formGroup}>
-                  <label><MdPhone /> Telefone</label>
-                  <input 
-                    type="text" 
-                    value={formData.phone} 
-                    onChange={(e) => setFormData({...formData, phone: formatPhone(e.target.value)})} 
+                  <label>E-mail *</label>
+                  <input
+                    type="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleFormChange}
+                    placeholder="email@empresa.com"
+                    required
                   />
                 </div>
+
+                <div className={styles.formRow}>
+                  <div className={styles.formGroup}>
+                    <label>CPF *</label>
+                    <input
+                      type="text"
+                      name="cpf"
+                      value={formData.cpf}
+                      onChange={handleCPFChange}
+                      placeholder="000.000.000-00"
+                      maxLength={14}
+                      disabled={!!editingMember}
+                      required={!editingMember}
+                    />
+                    {editingMember && (
+                      <small className={styles.formHint}>CPF não pode ser alterado</small>
+                    )}
+                  </div>
+
+                  <div className={styles.formGroup}>
+                    <label>Telefone</label>
+                    <input
+                      type="text"
+                      name="phone"
+                      value={formData.phone}
+                      onChange={handlePhoneChange}
+                      placeholder="(00) 00000-0000"
+                      maxLength={15}
+                    />
+                  </div>
+                </div>
+
+                <div className={styles.formRow}>
+                  <div className={styles.formGroup}>
+                    <label>Função *</label>
+                    <select
+                      name="role"
+                      value={formData.role}
+                      onChange={handleFormChange}
+                      required
+                    >
+                      {roles.map(role => (
+                        <option key={role.value} value={role.value}>{role.label}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {!editingMember && (
+                    <div className={styles.formGroup}>
+                      <label>Senha *</label>
+                      <input
+                        type="password"
+                        name="password"
+                        value={formData.password}
+                        onChange={handleFormChange}
+                        placeholder="Mínimo 6 caracteres"
+                        required
+                      />
+                      <small className={styles.formHint}>Mínimo 6 caracteres</small>
+                    </div>
+                  )}
+                </div>
               </div>
-              <div className={styles.formGroup}>
-                <label><MdPerson /> Função *</label>
-                <select 
-                  value={formData.role} 
-                  onChange={(e) => setFormData({...formData, role: e.target.value as UserRole})} 
-                  required
-                >
-                  {roleOptions.map(role => (
-                    <option key={role.value} value={role.value}>{role.label}</option>
-                  ))}
-                </select>
-              </div>
+
               <div className={styles.modalFooter}>
-                <button type="button" onClick={() => setShowEditModal(false)} className={styles.cancelButton}>
+                <button 
+                  type="button" 
+                  className={styles.cancelButton}
+                  onClick={() => {
+                    setShowForm(false);
+                    setEditingMember(null);
+                    resetForm();
+                  }}
+                >
                   Cancelar
                 </button>
-                <button type="submit" disabled={loading} className={styles.saveButton}>
-                  {loading ? 'Salvando...' : 'Salvar Alterações'}
+                <button type="submit" className={styles.saveButton}>
+                  {editingMember ? 'Salvar Alterações' : 'Criar Membro'}
                 </button>
               </div>
             </form>
@@ -660,84 +729,211 @@ export const TeamManagement: React.FC = () => {
         </div>
       )}
 
-      {/* Modal de Convite */}
-      {showInviteModal && (
-        <div className={styles.modalOverlay}>
-          <div className={styles.modal}>
+      {/* Modal de Exclusão */}
+      {showDeleteModal && memberToDelete && (
+        <div className={styles.modalOverlay} onClick={() => setShowDeleteModal(false)}>
+          <div className={styles.modal} onClick={e => e.stopPropagation()}>
             <div className={styles.modalHeader}>
-              <h2><MdSend /> Convidar por E-mail</h2>
-              <button onClick={() => setShowInviteModal(false)} className={styles.closeButton}>
-                <MdClose />
+              <h3 style={{ color: '#ef4444' }}>
+                <FiTrash2 size={20} />
+                Confirmar Exclusão
+              </h3>
+              <button className={styles.closeButton} onClick={() => setShowDeleteModal(false)}>
+                <FiX size={20} />
               </button>
             </div>
-            <form onSubmit={handleInviteMember} className={styles.form}>
-              <div className={styles.formGroup}>
-                <label><MdEmail /> E-mail *</label>
-                <input 
-                  type="email" 
-                  value={inviteData.email} 
-                  onChange={(e) => setInviteData({...inviteData, email: e.target.value})} 
-                  required 
-                />
-              </div>
-              <div className={styles.formGroup}>
-                <label><MdPerson /> Função *</label>
-                <select 
-                  value={inviteData.role} 
-                  onChange={(e) => setInviteData({...inviteData, role: e.target.value as UserRole})} 
-                  required
-                >
-                  {roleOptions.map(role => (
-                    <option key={role.value} value={role.value}>{role.label}</option>
-                  ))}
-                </select>
-              </div>
-              <div className={styles.formGroup}>
-                <label><MdInfo /> Mensagem (opcional)</label>
-                <textarea 
-                  value={inviteData.message} 
-                  onChange={(e) => setInviteData({...inviteData, message: e.target.value})} 
-                  rows={4} 
-                  placeholder="Escreva uma mensagem personalizada para o convite..."
-                />
-              </div>
-              <div className={styles.modalFooter}>
-                <button type="button" onClick={() => setShowInviteModal(false)} className={styles.cancelButton}>
-                  Cancelar
-                </button>
-                <button type="submit" disabled={loading} className={styles.saveButton}>
-                  {loading ? 'Enviando...' : 'Enviar Convite'}
-                </button>
-              </div>
-            </form>
+            <div className={styles.modalBody}>
+              <p>Tem certeza que deseja excluir o membro <strong>{memberToDelete.name}</strong>?</p>
+              <p style={{ color: '#ef4444', marginTop: '8px' }}>Esta ação não poderá ser desfeita.</p>
+            </div>
+            <div className={styles.modalFooter}>
+              <button 
+                className={styles.cancelButton}
+                onClick={() => setShowDeleteModal(false)}
+                disabled={isDeleting}
+              >
+                Cancelar
+              </button>
+              <button 
+                className={`${styles.saveButton} ${styles.dangerButton}`}
+                onClick={handleDeleteMember}
+                disabled={isDeleting}
+                style={{ background: '#ef4444' }}
+              >
+                {isDeleting ? 'Excluindo...' : 'Sim, Excluir'}
+              </button>
+            </div>
           </div>
         </div>
       )}
 
-      {/* Modais de Confirmação */}
+      {/* Modal de Ativação/Desativação */}
+      {showStatusModal && memberToToggle && (
+        <div className={styles.modalOverlay} onClick={() => setShowStatusModal(false)}>
+          <div className={styles.modal} onClick={e => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <h3 style={{ color: statusAction === 'activate' ? '#10b981' : '#f59e0b' }}>
+                <FiPower size={20} />
+                {statusAction === 'activate' ? 'Ativar Membro' : 'Desativar Membro'}
+              </h3>
+              <button className={styles.closeButton} onClick={() => setShowStatusModal(false)}>
+                <FiX size={20} />
+              </button>
+            </div>
+            <div className={styles.modalBody}>
+              <p>
+                Tem certeza que deseja {statusAction === 'activate' ? 'ativar' : 'desativar'} o membro 
+                <strong> {memberToToggle.name}</strong>?
+              </p>
+              {statusAction === 'deactivate' && (
+                <p style={{ color: '#f59e0b', marginTop: '8px' }}>
+                  O membro não poderá acessar o sistema enquanto estiver desativado.
+                </p>
+              )}
+            </div>
+            <div className={styles.modalFooter}>
+              <button 
+                className={styles.cancelButton}
+                onClick={() => setShowStatusModal(false)}
+                disabled={isToggling}
+              >
+                Cancelar
+              </button>
+              <button 
+                className={styles.saveButton}
+                onClick={handleToggleStatus}
+                disabled={isToggling}
+                style={{ background: statusAction === 'activate' ? '#10b981' : '#f59e0b' }}
+              >
+                {isToggling ? 'Processando...' : (statusAction === 'activate' ? 'Sim, Ativar' : 'Sim, Desativar')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Sucesso */}
       <ConfirmationModal
-        isOpen={showDeleteConfirm}
-        title="Remover Funcionário"
-        message={`Tem certeza que deseja remover ${selectedMember?.name} da equipe?`}
-        type="danger"
-        onConfirm={handleDeleteMember}
-        onCancel={() => { setShowDeleteConfirm(false); setSelectedMember(null); }}
-        confirmText="Remover"
-        cancelText="Cancelar"
+        isOpen={showSuccessModal}
+        title="Sucesso!"
+        message={successMessage}
+        type="success"
+        onConfirm={handleSuccessClose}
+        onCancel={handleSuccessClose}
+        confirmText="OK"
       />
 
-      <ConfirmationModal
-        isOpen={showStatusConfirm}
-        title={newStatus === UserStatus.ACTIVE ? "Ativar Funcionário" : "Desativar Funcionário"}
-        message={newStatus === UserStatus.ACTIVE ? `Ativar ${selectedMember?.name}?` : `Desativar ${selectedMember?.name}?`}
-        type={newStatus === UserStatus.ACTIVE ? "success" : "warning"}
-        onConfirm={handleStatusChange}
-        onCancel={() => { setShowStatusConfirm(false); setSelectedMember(null); setNewStatus(null); }}
-        confirmText={newStatus === UserStatus.ACTIVE ? "Ativar" : "Desativar"}
-        cancelText="Cancelar"
+      {/* Modal de Erro */}
+      <ErrorModal
+        isOpen={showError}
+        message={errorMessage}
+        onClose={() => setShowError(false)}
       />
 
-      <ErrorModal isOpen={!!error} message={error || ''} onClose={() => setError(null)} />
+      {/* Tabela ou Empty State */}
+      {showEmptyState ? (
+        <div className={styles.emptyStateWrapper}>
+          <EmptyState
+            icon={hasActiveFilters ? <FiSearch size={48} /> : <MdPeople size={48} />}
+            title={hasActiveFilters 
+              ? 'Nenhum membro encontrado' 
+              : 'Nenhum membro cadastrado'
+            }
+            description={hasActiveFilters
+              ? 'Tente ajustar os filtros de busca para encontrar membros.'
+              : 'Comece cadastrando o primeiro membro da sua equipe.'
+            }
+            action={hasActiveFilters ? {
+              label: 'Limpar Filtros',
+              onClick: handleClearFilters,
+              icon: <FiX />
+            } : {
+              label: 'Cadastrar Primeiro Membro',
+              onClick: () => {
+                setEditingMember(null);
+                resetForm();
+                setShowForm(true);
+              },
+              icon: <FiUserPlus />
+            }}
+          />
+        </div>
+      ) : (
+        <div className={styles.tableContainer}>
+          <table className={styles.table}>
+            <thead>
+              <tr>
+                <th>Nome</th>
+                <th>E-mail</th>
+                <th>CPF</th>
+                <th>Telefone</th>
+                <th>Função</th>
+                <th>Status</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredMembers.map(member => (
+                <tr key={member.id}>
+                  <td>
+                    <div className={styles.memberName}>
+                      <div className={styles.memberAvatar}>
+                        <FiUser size={18} />
+                      </div>
+                      <span>{member.name}</span>
+                    </div>
+                  </td>
+                  <td>{member.email}</td>
+                  <td>{teamService.formatCPF(member.cpf)}</td>
+                  <td>{teamService.formatPhone(member.phone) || '-'}</td>
+                  <td>
+                    <span 
+                      className={styles.roleBadge}
+                      style={{ backgroundColor: teamService.getRoleColor(member.role) }}
+                    >
+                      {teamService.getRoleLabel(member.role)}
+                    </span>
+                  </td>
+                  <td>
+                    <span className={`${styles.statusBadge} ${
+                      member.status === 'ACTIVE' ? styles.statusActive : styles.statusInactive
+                    }`}>
+                      {member.status === 'ACTIVE' ? 'Ativo' : 'Inativo'}
+                    </span>
+                  </td>
+                  <td>
+                    <div className={styles.actionButtons}>
+                      <button 
+                        className={styles.actionButton}
+                        onClick={() => handleEditMember(member)}
+                        title="Editar"
+                      >
+                        <FiEdit2 size={16} />
+                      </button>
+                      <button 
+                        className={`${styles.actionButton} ${
+                          member.status === 'ACTIVE' ? styles.warningButton : styles.successButton
+                        }`}
+                        onClick={() => openStatusModal(member)}
+                        title={member.status === 'ACTIVE' ? 'Desativar' : 'Ativar'}
+                      >
+                        <FiPower size={16} />
+                      </button>
+                      <button 
+                        className={`${styles.actionButton} ${styles.dangerButton}`}
+                        onClick={() => openDeleteModal(member)}
+                        title="Remover"
+                      >
+                        <FiTrash2 size={16} />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 };
