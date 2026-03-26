@@ -1,3 +1,4 @@
+// src/pages/Settings/SettingsPage.tsx
 import React, { useState, useEffect } from 'react';
 import { 
   FiSave, 
@@ -18,8 +19,8 @@ import {
   FiCheckCircle,
   FiX,
   FiPhone,
-  FiInfo, // ✅ Adicionado FiInfo que estava faltando
-  FiSettings // ✅ Adicionado FiSettings que estava faltando
+  FiInfo,
+  FiSettings
 } from 'react-icons/fi';
 import { 
   MdBusiness, 
@@ -32,146 +33,82 @@ import {
 } from 'react-icons/md';
 import { ConfirmationModal } from '../../common/Alerts/ConfirmationModal';
 import { ErrorModal } from '../../common/Alerts/ErrorModal';
+import { settingsService, SystemSettings } from '../../../services/settings';
 import styles from './SettingsPage.module.css';
-
-// Interface para as configurações do sistema
-interface SystemSettings {
-  company: {
-    name: string;
-    document: string;
-    phone: string;
-    email: string;
-    address: string;
-    city: string;
-    state: string;
-    zipCode: string;
-    logo?: string;
-  };
-  theme: {
-    mode: 'light' | 'dark' | 'system';
-    primaryColor: string;
-    accentColor: string;
-  };
-  notifications: {
-    emailEnabled: boolean;
-    smsEnabled: boolean;
-    newEventAlert: boolean;
-    eventReminder: boolean;
-    paymentReceived: boolean;
-    lowStockAlert: boolean;
-    reminderDays: number;
-  };
-  financial: {
-    currency: 'BRL' | 'USD' | 'EUR';
-    defaultPaymentTerms: number;
-    requireDeposit: boolean;
-    depositPercentage: number;
-    autoGenerateInvoices: boolean;
-  };
-  security: {
-    twoFactorAuth: boolean;
-    sessionTimeout: number;
-    passwordExpiryDays: number;
-    maxLoginAttempts: number;
-  };
-  integrations: {
-    googleCalendar: boolean;
-    outlookCalendar: boolean;
-    whatsApp: boolean;
-    emailMarketing: boolean;
-  };
-}
-
-// Dados mocados
-const MOCK_SETTINGS: SystemSettings = {
-  company: {
-    name: "Eventos Fáceis LTDA",
-    document: "12.345.678/0001-90",
-    phone: "(11) 99999-9999",
-    email: "contato@eventosfaceis.com.br",
-    address: "Av. Paulista, 1000",
-    city: "São Paulo",
-    state: "SP",
-    zipCode: "01310-100"
-  },
-  theme: {
-    mode: 'system',
-    primaryColor: '#3b82f6',
-    accentColor: '#10b981'
-  },
-  notifications: {
-    emailEnabled: true,
-    smsEnabled: false,
-    newEventAlert: true,
-    eventReminder: true,
-    paymentReceived: true,
-    lowStockAlert: true,
-    reminderDays: 3
-  },
-  financial: {
-    currency: 'BRL',
-    defaultPaymentTerms: 30,
-    requireDeposit: true,
-    depositPercentage: 30,
-    autoGenerateInvoices: true
-  },
-  security: {
-    twoFactorAuth: false,
-    sessionTimeout: 60,
-    passwordExpiryDays: 90,
-    maxLoginAttempts: 5
-  },
-  integrations: {
-    googleCalendar: false,
-    outlookCalendar: false,
-    whatsApp: true,
-    emailMarketing: false
-  }
-};
 
 type TabType = 'empresa' | 'aparencia' | 'notificacoes' | 'financeiro' | 'seguranca' | 'integracoes';
 
 export const SettingsPage: React.FC = () => {
-  const [settings, setSettings] = useState<SystemSettings>(MOCK_SETTINGS);
+  const [settings, setSettings] = useState<SystemSettings | null>(null);
   const [activeTab, setActiveTab] = useState<TabType>('empresa');
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   const [showErrorModal, setShowErrorModal] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
-  const handleSave = async () => {
-    setLoading(true);
+  // Carregar configurações
+  useEffect(() => {
+    loadSettings();
+  }, []);
+
+  const loadSettings = async () => {
     try {
-      // Simular salvamento
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      setHasChanges(false);
-      setSuccessMessage('Configurações salvas com sucesso!');
-      setShowSuccessModal(true);
+      setLoading(true);
+      const data = await settingsService.getSettings();
+      setSettings(data);
     } catch (error) {
-      setErrorMessage('Erro ao salvar configurações. Tente novamente.');
+      console.error('Erro ao carregar configurações:', error);
+      setErrorMessage('Erro ao carregar configurações. Tente novamente.');
       setShowErrorModal(true);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleReset = () => {
-    setSettings(MOCK_SETTINGS);
-    setHasChanges(false);
-    setSuccessMessage('Configurações restauradas com sucesso!');
-    setShowSuccessModal(true);
+  const handleSave = async () => {
+    if (!settings) return;
+    
+    setSaving(true);
+    try {
+      await settingsService.updateSettings(settings);
+      setHasChanges(false);
+      setSuccessMessage('Configurações salvas com sucesso!');
+      setShowSuccessModal(true);
+    } catch (error: any) {
+      console.error('Erro ao salvar configurações:', error);
+      setErrorMessage(error.message || 'Erro ao salvar configurações. Tente novamente.');
+      setShowErrorModal(true);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleReset = async () => {
+    try {
+      const defaultSettings = await settingsService.resetToDefault();
+      setSettings(defaultSettings);
+      setHasChanges(false);
+      setSuccessMessage('Configurações restauradas com sucesso!');
+      setShowSuccessModal(true);
+    } catch (error: any) {
+      console.error('Erro ao restaurar configurações:', error);
+      setErrorMessage(error.message || 'Erro ao restaurar configurações.');
+      setShowErrorModal(true);
+    }
   };
 
   const updateSettings = <K extends keyof SystemSettings>(
     section: K,
     values: Partial<SystemSettings[K]>
   ) => {
+    if (!settings) return;
     setSettings(prev => ({
-      ...prev,
+      ...prev!,
       [section]: {
-        ...prev[section],
+        ...prev![section],
         ...values
       }
     }));
@@ -186,6 +123,27 @@ export const SettingsPage: React.FC = () => {
     { id: 'seguranca', label: 'Segurança', icon: <MdSecurity size={18} /> },
     { id: 'integracoes', label: 'Integrações', icon: <FiGlobe size={18} /> }
   ];
+
+  if (loading) {
+    return (
+      <div className={styles.loadingContainer}>
+        <div className={styles.spinner}></div>
+        <p>Carregando configurações...</p>
+      </div>
+    );
+  }
+
+  if (!settings) {
+    return (
+      <div className={styles.errorContainer}>
+        <MdWarning size={48} />
+        <h3>Erro ao carregar configurações</h3>
+        <button onClick={loadSettings} className={styles.retryButton}>
+          Tentar novamente
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className={styles.settingsPage}>
@@ -210,16 +168,16 @@ export const SettingsPage: React.FC = () => {
           <button
             className={styles.secondaryButton}
             onClick={handleReset}
-            disabled={loading}
+            disabled={saving}
           >
             Restaurar Padrão
           </button>
           <button
             className={styles.primaryButton}
             onClick={handleSave}
-            disabled={loading || !hasChanges}
+            disabled={saving || !hasChanges}
           >
-            {loading ? (
+            {saving ? (
               <>
                 <span className={styles.buttonSpinner}></span>
                 Salvando...
@@ -339,10 +297,33 @@ export const SettingsPage: React.FC = () => {
                     value={settings.company.state}
                     onChange={(e) => updateSettings('company', { state: e.target.value })}
                   >
-                    <option value="SP">São Paulo</option>
-                    <option value="RJ">Rio de Janeiro</option>
-                    <option value="MG">Minas Gerais</option>
+                    <option value="AC">Acre</option>
+                    <option value="AL">Alagoas</option>
+                    <option value="AP">Amapá</option>
+                    <option value="AM">Amazonas</option>
+                    <option value="BA">Bahia</option>
+                    <option value="CE">Ceará</option>
+                    <option value="DF">Distrito Federal</option>
                     <option value="ES">Espírito Santo</option>
+                    <option value="GO">Goiás</option>
+                    <option value="MA">Maranhão</option>
+                    <option value="MT">Mato Grosso</option>
+                    <option value="MS">Mato Grosso do Sul</option>
+                    <option value="MG">Minas Gerais</option>
+                    <option value="PA">Pará</option>
+                    <option value="PB">Paraíba</option>
+                    <option value="PR">Paraná</option>
+                    <option value="PE">Pernambuco</option>
+                    <option value="PI">Piauí</option>
+                    <option value="RJ">Rio de Janeiro</option>
+                    <option value="RN">Rio Grande do Norte</option>
+                    <option value="RS">Rio Grande do Sul</option>
+                    <option value="RO">Rondônia</option>
+                    <option value="RR">Roraima</option>
+                    <option value="SC">Santa Catarina</option>
+                    <option value="SP">São Paulo</option>
+                    <option value="SE">Sergipe</option>
+                    <option value="TO">Tocantins</option>
                   </select>
                 </div>
 
@@ -364,7 +345,9 @@ export const SettingsPage: React.FC = () => {
                 <div>
                   <strong>Logo da empresa</strong>
                   <p>Recomendamos uma imagem quadrada de pelo menos 200x200 pixels.</p>
-                  <button className={styles.uploadButton}>
+                  <button className={styles.uploadButton} onClick={() => {
+                    // Implementar upload de logo
+                  }}>
                     Upload de Logo
                   </button>
                 </div>

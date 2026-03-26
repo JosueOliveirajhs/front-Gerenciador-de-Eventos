@@ -1,4 +1,135 @@
 /* ========== HEADER PRINCIPAL ========== */
+/* Adicione ao Header.module.css */
+
+.searchContainer {
+  position: relative;
+  width: 100%;
+  max-width: 400px;
+}
+
+.searchIcon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #94a3b8;
+}
+
+.searchInput {
+  width: 100%;
+  padding: 10px 12px 10px 40px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  font-size: 14px;
+  background: #f8fafc;
+  transition: all 0.2s;
+}
+
+.searchInput:focus {
+  outline: none;
+  border-color: #00B4D8;
+  background: white;
+  box-shadow: 0 0 0 3px rgba(0, 180, 216, 0.1);
+}
+
+.searchClearBtn {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  border-radius: 4px;
+}
+
+.searchClearBtn:hover {
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.searchResults {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  right: 0;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e2e8f0;
+  z-index: 1000;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.searchResultsHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  border-bottom: 1px solid #e2e8f0;
+  font-size: 13px;
+  color: #64748b;
+}
+
+.searchResultsHeader button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #94a3b8;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+}
+
+.searchResultsHeader button:hover {
+  background: #f1f5f9;
+}
+
+.searchResultsList {
+  padding: 8px 0;
+}
+
+.searchResultItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.searchResultItem:hover {
+  background: #f8fafc;
+}
+
+.searchResultItem svg {
+  color: #00B4D8;
+  flex-shrink: 0;
+}
+
+.searchResultItem div {
+  flex: 1;
+}
+
+.searchResultItem strong {
+  display: block;
+  font-size: 14px;
+  color: #0f172a;
+}
+
+.searchResultItem p {
+  font-size: 12px;
+  color: #64748b;
+  margin: 0;
+}
 .header {
   background: white;
   border-bottom: 1px solid #e2e8f0;

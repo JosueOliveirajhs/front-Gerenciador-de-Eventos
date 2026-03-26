@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+// src/pages/Profile/ProfilePage.tsx
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../../context/AuthContext';
 import { 
   FiUser, 
@@ -15,6 +16,8 @@ import {
 import { MdVerified, MdWarning } from 'react-icons/md';
 import { ConfirmationModal } from '../../common/Alerts/ConfirmationModal';
 import { ErrorModal } from '../../common/Alerts/ErrorModal';
+import { userService } from '../../../services/users';
+import { authService } from '../../../services/auth';
 import styles from './ProfilePage.module.css';
 
 interface UserProfile {
@@ -28,7 +31,7 @@ interface UserProfile {
   city: string;
   state: string;
   zipCode: string;
-  role: 'OWNER' | 'ADMIN' | 'CLIENT';
+  role: 'OWNER' | 'ADMIN' | 'CLIENT' | 'MANAGER' | 'DIRECTOR' | 'ANALYST';
   department?: string;
   position?: string;
   startDate: string;
@@ -42,47 +45,11 @@ interface UserProfile {
   }[];
 }
 
-// Dados mocados
-const MOCK_PROFILE: UserProfile = {
-  id: 1,
-  name: "João Silva",
-  email: "joao.silva@eventosfaceis.com.br",
-  phone: "(11) 98765-4321",
-  cpf: "123.456.789-00",
-  birthDate: "1985-05-15",
-  address: "Av. Paulista, 1000",
-  city: "São Paulo",
-  state: "SP",
-  zipCode: "01310-100",
-  role: "OWNER",
-  department: "Diretoria",
-  position: "Diretor Executivo",
-  startDate: "2020-01-10",
-  twoFactorEnabled: false,
-  lastLogin: "2026-02-15T14:30:00",
-  loginHistory: [
-    {
-      date: "2026-02-15T14:30:00",
-      ip: "191.52.34.21",
-      device: "Chrome / Windows"
-    },
-    {
-      date: "2026-02-14T09:15:00",
-      ip: "191.52.34.21",
-      device: "Chrome / Windows"
-    },
-    {
-      date: "2026-02-13T18:45:00",
-      ip: "191.52.34.21",
-      device: "Chrome / Windows"
-    }
-  ]
-};
-
 export const ProfilePage: React.FC = () => {
-  const { user, logout } = useAuth();
-  const [profile, setProfile] = useState<UserProfile>(MOCK_PROFILE);
-  const [loading, setLoading] = useState(false);
+  const { user, logout, updateUser } = useAuth();
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
@@ -97,19 +64,63 @@ export const ProfilePage: React.FC = () => {
     newPassword: '',
     confirmPassword: ''
   });
+  const [changingPassword, setChangingPassword] = useState(false);
 
-  const handleSave = async () => {
-    setLoading(true);
+  // Carregar perfil do usuário
+  useEffect(() => {
+    loadProfile();
+  }, []);
+
+  const loadProfile = async () => {
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      setHasChanges(false);
-      setSuccessMessage('Perfil atualizado com sucesso!');
-      setShowSuccessModal(true);
+      setLoading(true);
+      const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+      const profileData = await userService.getProfile(currentUser.id);
+      setProfile(profileData);
     } catch (error) {
-      setErrorMessage('Erro ao atualizar perfil. Tente novamente.');
+      console.error('Erro ao carregar perfil:', error);
+      setErrorMessage('Erro ao carregar dados do perfil. Tente novamente.');
       setShowErrorModal(true);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSave = async () => {
+    if (!profile) return;
+    
+    setSaving(true);
+    try {
+      const updateData = {
+        name: profile.name,
+        email: profile.email,
+        phone: profile.phone,
+        birthDate: profile.birthDate,
+        address: profile.address,
+        city: profile.city,
+        state: profile.state,
+        zipCode: profile.zipCode,
+        position: profile.position,
+        department: profile.department
+      };
+      
+      const updatedProfile = await userService.updateProfile(profile.id, updateData);
+      setProfile(updatedProfile);
+      setHasChanges(false);
+      
+      // Atualizar usuário no contexto
+      if (updateUser) {
+        updateUser({ name: updatedProfile.name, email: updatedProfile.email });
+      }
+      
+      setSuccessMessage('Perfil atualizado com sucesso!');
+      setShowSuccessModal(true);
+    } catch (error: any) {
+      console.error('Erro ao atualizar perfil:', error);
+      setErrorMessage(error.message || 'Erro ao atualizar perfil. Tente novamente.');
+      setShowErrorModal(true);
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -126,41 +137,47 @@ export const ProfilePage: React.FC = () => {
       return;
     }
 
-    setLoading(true);
+    setChangingPassword(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await authService.changePassword({
+        currentPassword: passwordData.currentPassword,
+        newPassword: passwordData.newPassword
+      });
+      
       setShowPasswordModal(false);
       setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
       setSuccessMessage('Senha alterada com sucesso!');
       setShowSuccessModal(true);
-    } catch (error) {
-      setErrorMessage('Erro ao alterar senha. Tente novamente.');
+    } catch (error: any) {
+      console.error('Erro ao alterar senha:', error);
+      setErrorMessage(error.message || 'Erro ao alterar senha. Verifique sua senha atual.');
       setShowErrorModal(true);
     } finally {
-      setLoading(false);
+      setChangingPassword(false);
     }
   };
 
   const handleToggleTwoFactor = async () => {
+    if (!profile) return;
+    
     setShowTwoFactorModal(false);
-    setLoading(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      setProfile(prev => ({ ...prev, twoFactorEnabled: !prev.twoFactorEnabled }));
+      const updated = await userService.toggleTwoFactor(profile.id, !profile.twoFactorEnabled);
+      setProfile(prev => prev ? { ...prev, twoFactorEnabled: updated.twoFactorEnabled } : null);
       setSuccessMessage(profile.twoFactorEnabled 
         ? 'Autenticação de dois fatores desativada' 
         : 'Autenticação de dois fatores ativada'
       );
       setShowSuccessModal(true);
-    } catch (error) {
-      setErrorMessage('Erro ao alterar configuração de segurança');
+    } catch (error: any) {
+      console.error('Erro ao alterar 2FA:', error);
+      setErrorMessage(error.message || 'Erro ao alterar configuração de segurança');
       setShowErrorModal(true);
-    } finally {
-      setLoading(false);
     }
   };
 
   const formatDate = (dateString: string) => {
+    if (!dateString) return '';
     return new Date(dateString).toLocaleDateString('pt-BR', {
       day: '2-digit',
       month: '2-digit',
@@ -169,6 +186,39 @@ export const ProfilePage: React.FC = () => {
       minute: '2-digit'
     });
   };
+
+  const getRoleLabel = (role: string) => {
+    const roles: Record<string, string> = {
+      OWNER: 'Proprietário',
+      ADMIN: 'Administrador',
+      MANAGER: 'Gerente',
+      DIRECTOR: 'Diretor',
+      ANALYST: 'Analista',
+      CLIENT: 'Cliente'
+    };
+    return roles[role] || role;
+  };
+
+  if (loading) {
+    return (
+      <div className={styles.loadingContainer}>
+        <div className={styles.spinner}></div>
+        <p>Carregando perfil...</p>
+      </div>
+    );
+  }
+
+  if (!profile) {
+    return (
+      <div className={styles.errorContainer}>
+        <MdWarning size={48} />
+        <h3>Erro ao carregar perfil</h3>
+        <button onClick={loadProfile} className={styles.retryButton}>
+          Tentar novamente
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className={styles.profilePage}>
@@ -188,9 +238,9 @@ export const ProfilePage: React.FC = () => {
           <button
             className={styles.primaryButton}
             onClick={handleSave}
-            disabled={loading || !hasChanges}
+            disabled={saving || !hasChanges}
           >
-            {loading ? (
+            {saving ? (
               <>
                 <span className={styles.buttonSpinner}></span>
                 Salvando...
@@ -223,11 +273,7 @@ export const ProfilePage: React.FC = () => {
                 </button>
               </div>
               <h2 className={styles.profileName}>{profile.name}</h2>
-              <p className={styles.profileRole}>
-                {profile.role === 'OWNER' && 'Proprietário'}
-                {profile.role === 'ADMIN' && 'Administrador'}
-                {profile.role === 'CLIENT' && 'Cliente'}
-              </p>
+              <p className={styles.profileRole}>{getRoleLabel(profile.role)}</p>
               <span className={styles.profileStatus}>
                 <MdVerified size={14} color="#10b981" />
                 Conta verificada
@@ -247,32 +293,36 @@ export const ProfilePage: React.FC = () => {
                 <FiPhone size={16} />
                 <div>
                   <small>Telefone</small>
-                  <p>{profile.phone}</p>
+                  <p>{profile.phone || 'Não informado'}</p>
                 </div>
               </div>
 
-              <div className={styles.infoItem}>
-                <FiCalendar size={16} />
-                <div>
-                  <small>Data de Nascimento</small>
-                  <p>{new Date(profile.birthDate).toLocaleDateString('pt-BR')}</p>
+              {profile.birthDate && (
+                <div className={styles.infoItem}>
+                  <FiCalendar size={16} />
+                  <div>
+                    <small>Data de Nascimento</small>
+                    <p>{new Date(profile.birthDate).toLocaleDateString('pt-BR')}</p>
+                  </div>
                 </div>
-              </div>
+              )}
 
-              <div className={styles.infoItem}>
-                <FiMapPin size={16} />
-                <div>
-                  <small>Endereço</small>
-                  <p>{profile.address}, {profile.city} - {profile.state}</p>
+              {profile.address && (
+                <div className={styles.infoItem}>
+                  <FiMapPin size={16} />
+                  <div>
+                    <small>Endereço</small>
+                    <p>{profile.address}, {profile.city} - {profile.state}</p>
+                  </div>
                 </div>
-              </div>
+              )}
 
               {profile.position && (
                 <div className={styles.infoItem}>
                   <FiBriefcase size={16} />
                   <div>
                     <small>Cargo</small>
-                    <p>{profile.position} - {profile.department}</p>
+                    <p>{profile.position} {profile.department && `- ${profile.department}`}</p>
                   </div>
                 </div>
               )}
@@ -344,11 +394,12 @@ export const ProfilePage: React.FC = () => {
                 <input
                   type="text"
                   className={styles.formInput}
-                  value={profile.phone}
+                  value={profile.phone || ''}
                   onChange={(e) => {
                     setProfile({ ...profile, phone: e.target.value });
                     setHasChanges(true);
                   }}
+                  placeholder="(00) 00000-0000"
                 />
               </div>
 
@@ -367,7 +418,7 @@ export const ProfilePage: React.FC = () => {
                 <input
                   type="date"
                   className={styles.formInput}
-                  value={profile.birthDate}
+                  value={profile.birthDate || ''}
                   onChange={(e) => {
                     setProfile({ ...profile, birthDate: e.target.value });
                     setHasChanges(true);
@@ -384,11 +435,12 @@ export const ProfilePage: React.FC = () => {
                 <input
                   type="text"
                   className={styles.formInput}
-                  value={profile.address}
+                  value={profile.address || ''}
                   onChange={(e) => {
                     setProfile({ ...profile, address: e.target.value });
                     setHasChanges(true);
                   }}
+                  placeholder="Rua, Av., Número"
                 />
               </div>
 
@@ -397,7 +449,7 @@ export const ProfilePage: React.FC = () => {
                 <input
                   type="text"
                   className={styles.formInput}
-                  value={profile.city}
+                  value={profile.city || ''}
                   onChange={(e) => {
                     setProfile({ ...profile, city: e.target.value });
                     setHasChanges(true);
@@ -409,16 +461,40 @@ export const ProfilePage: React.FC = () => {
                 <label className={styles.formLabel}>Estado</label>
                 <select
                   className={styles.formInput}
-                  value={profile.state}
+                  value={profile.state || ''}
                   onChange={(e) => {
                     setProfile({ ...profile, state: e.target.value });
                     setHasChanges(true);
                   }}
                 >
-                  <option value="SP">São Paulo</option>
-                  <option value="RJ">Rio de Janeiro</option>
-                  <option value="MG">Minas Gerais</option>
+                  <option value="">Selecione</option>
+                  <option value="AC">Acre</option>
+                  <option value="AL">Alagoas</option>
+                  <option value="AP">Amapá</option>
+                  <option value="AM">Amazonas</option>
+                  <option value="BA">Bahia</option>
+                  <option value="CE">Ceará</option>
+                  <option value="DF">Distrito Federal</option>
                   <option value="ES">Espírito Santo</option>
+                  <option value="GO">Goiás</option>
+                  <option value="MA">Maranhão</option>
+                  <option value="MT">Mato Grosso</option>
+                  <option value="MS">Mato Grosso do Sul</option>
+                  <option value="MG">Minas Gerais</option>
+                  <option value="PA">Pará</option>
+                  <option value="PB">Paraíba</option>
+                  <option value="PR">Paraná</option>
+                  <option value="PE">Pernambuco</option>
+                  <option value="PI">Piauí</option>
+                  <option value="RJ">Rio de Janeiro</option>
+                  <option value="RN">Rio Grande do Norte</option>
+                  <option value="RS">Rio Grande do Sul</option>
+                  <option value="RO">Rondônia</option>
+                  <option value="RR">Roraima</option>
+                  <option value="SC">Santa Catarina</option>
+                  <option value="SP">São Paulo</option>
+                  <option value="SE">Sergipe</option>
+                  <option value="TO">Tocantins</option>
                 </select>
               </div>
 
@@ -427,39 +503,75 @@ export const ProfilePage: React.FC = () => {
                 <input
                   type="text"
                   className={styles.formInput}
-                  value={profile.zipCode}
+                  value={profile.zipCode || ''}
                   onChange={(e) => {
                     setProfile({ ...profile, zipCode: e.target.value });
                     setHasChanges(true);
                   }}
+                  placeholder="00000-000"
                 />
               </div>
             </div>
+
+            {profile.position && (
+              <>
+                <h3 className={styles.formSubtitle}>Informações Profissionais</h3>
+                <div className={styles.formGrid}>
+                  <div className={styles.formGroup}>
+                    <label className={styles.formLabel}>Cargo</label>
+                    <input
+                      type="text"
+                      className={styles.formInput}
+                      value={profile.position || ''}
+                      onChange={(e) => {
+                        setProfile({ ...profile, position: e.target.value });
+                        setHasChanges(true);
+                      }}
+                    />
+                  </div>
+
+                  <div className={styles.formGroup}>
+                    <label className={styles.formLabel}>Departamento</label>
+                    <input
+                      type="text"
+                      className={styles.formInput}
+                      value={profile.department || ''}
+                      onChange={(e) => {
+                        setProfile({ ...profile, department: e.target.value });
+                        setHasChanges(true);
+                      }}
+                    />
+                  </div>
+                </div>
+              </>
+            )}
           </div>
 
           {/* Histórico de Login */}
-          <div className={styles.historyCard}>
-            <h3>Últimos Acessos</h3>
-            
-            <div className={styles.loginHistory}>
-              {profile.loginHistory.map((login, index) => (
-                <div key={index} className={styles.loginItem}>
-                  <div className={styles.loginDate}>
-                    {formatDate(login.date)}
+          {profile.loginHistory && profile.loginHistory.length > 0 && (
+            <div className={styles.historyCard}>
+              <h3>Últimos Acessos</h3>
+              
+              <div className={styles.loginHistory}>
+                {profile.loginHistory.map((login, index) => (
+                  <div key={index} className={styles.loginItem}>
+                    <div className={styles.loginDate}>
+                      {formatDate(login.date)}
+                    </div>
+                    <div className={styles.loginDetails}>
+                      <span>IP: {login.ip}</span>
+                      <span>{login.device}</span>
+                    </div>
                   </div>
-                  <div className={styles.loginDetails}>
-                    <span>IP: {login.ip}</span>
-                    <span>{login.device}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
 
-            <div className={styles.lastLogin}>
-              <FiCalendar size={14} />
-              Último acesso: {formatDate(profile.lastLogin)}
+              <div className={styles.lastLogin}>
+                <FiCalendar size={14} />
+                Último acesso: {formatDate(profile.lastLogin)}
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
 
@@ -516,15 +628,16 @@ export const ProfilePage: React.FC = () => {
                 <button
                   className={styles.secondaryButton}
                   onClick={() => setShowPasswordModal(false)}
+                  disabled={changingPassword}
                 >
                   Cancelar
                 </button>
                 <button
                   className={styles.primaryButton}
                   onClick={handleChangePassword}
-                  disabled={loading}
+                  disabled={changingPassword}
                 >
-                  {loading ? 'Alterando...' : 'Alterar Senha'}
+                  {changingPassword ? 'Alterando...' : 'Alterar Senha'}
                 </button>
               </div>
             </div>

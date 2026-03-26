@@ -1,14 +1,17 @@
 // src/components/admin/events/EventCalendar.tsx
-
 import React from 'react';
 import Calendar from 'react-calendar';
 import { Event } from '../../../types/Event';
 import { 
   FiCalendar, 
   FiClock, 
-  FiUser 
+  FiUser,
+  FiAlertCircle,
+  FiCheckCircle,
+  FiXCircle,
+  FiFileText
 } from 'react-icons/fi';
-import { MdEvent, MdAttachMoney } from 'react-icons/md';
+import { MdEvent, MdAttachMoney, MdEmojiEvents, MdCheck, MdCancel, MdEdit } from 'react-icons/md';
 import styles from './EventCalendar.module.css';
 import 'react-calendar/dist/Calendar.css';
 
@@ -39,14 +42,14 @@ export const EventCalendar: React.FC<EventCalendarProps> = ({
     return colors[status] || '#6b7280';
   };
 
-  const getStatusIcon = (status: string): string => {
-    const icons: Record<string, string> = {
-      QUOTE: '📝',
-      CONFIRMED: '✅',
-      COMPLETED: '🎉',
-      CANCELLED: '❌'
+  const getStatusIcon = (status: string): React.ReactNode => {
+    const icons: Record<string, React.ReactNode> = {
+      QUOTE: <FiFileText size={14} />,
+      CONFIRMED: <FiCheckCircle size={14} />,
+      COMPLETED: <MdEmojiEvents size={14} />,
+      CANCELLED: <FiXCircle size={14} />
     };
-    return icons[status] || '📅';
+    return icons[status] || <FiAlertCircle size={14} />;
   };
 
   const tileClassName = ({ date, view }: { date: Date; view: string }) => {

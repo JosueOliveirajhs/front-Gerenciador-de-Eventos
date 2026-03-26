@@ -11,6 +11,11 @@ export interface ResetPasswordData {
   password: string;
 }
 
+export interface ChangePasswordData {
+  currentPassword: string;
+  newPassword: string;
+}
+
 export const authService = {
     login: async (credentials: LoginCredentials): Promise<AuthResponse> => {
         try {
@@ -60,7 +65,6 @@ export const authService = {
         }
     },
 
-    // ✅ ENDPOINT CORRETO: /auth/forgot-password
     requestPasswordReset: async (email: string): Promise<{ message: string }> => {
         try {
             console.log('📧 Solicitando redefinição de senha para email:', email);
@@ -85,7 +89,6 @@ export const authService = {
         }
     },
 
-    // ✅ ENDPOINT CORRETO: /auth/reset-password?token=...
     resetPassword: async (token: string, newPassword: string): Promise<{ message: string }> => {
         try {
             console.log('🔄 Redefinindo senha com token:', token);
@@ -105,6 +108,33 @@ export const authService = {
             }
             
             throw error;
+        }
+    },
+
+    /**
+     * Altera a senha do usuário logado
+     */
+    changePassword: async (data: ChangePasswordData): Promise<{ message: string }> => {
+        try {
+            console.log('🔑 Alterando senha do usuário');
+            console.log('📍 URL: /auth/change-password (POST)');
+            
+            const response = await api.post('/auth/change-password', data);
+            
+            console.log('✅ Resposta:', response.data);
+            return response.data;
+        } catch (error: any) {
+            console.error('❌ Erro ao alterar senha:', error);
+            
+            if (error.response?.status === 401) {
+                throw new Error('Senha atual incorreta');
+            }
+            
+            if (error.response?.data?.message) {
+                throw new Error(error.response.data.message);
+            }
+            
+            throw new Error('Erro ao alterar senha. Tente novamente.');
         }
     },
 

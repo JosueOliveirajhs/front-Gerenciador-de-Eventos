@@ -1,5 +1,5 @@
 // src/pages/Owner/Owner.tsx
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Header } from "../../components/common/Header/Header";
 import { Sidebar } from "../../components/common/Sidebar/Sidebar";
 
@@ -13,11 +13,26 @@ import { EventManagement } from "../../components/OwnerCompoents/events/EventMan
 import FinancialReports from "../../components/OwnerCompoents/OwnerManagement/FinalcialReports/FinancialReports";
 import { ClientManagement } from "../../components/OwnerCompoents/OwnerManagement/ClientManagement/ClientManagement";
 import ItemsManagement from "../../components/OwnerCompoents/OwnerManagement/ItemsManagement/ItemsManagement";
-import { TeamManagement } from "../../components/OwnerCompoents/OwnerManagement/TeamManagement/TeamManagement"; // Importar o TeamManagement
+import { TeamManagement } from "../../components/OwnerCompoents/OwnerManagement/TeamManagement/TeamManagement";
 
 export const Owner: React.FC = () => {
   const [activeView, setActiveView] = useState("dashboard");
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+
+  // Carregar estado da sidebar do localStorage
+  useEffect(() => {
+    const savedState = localStorage.getItem('sidebarCollapsed');
+    if (savedState !== null) {
+      setIsSidebarCollapsed(savedState === 'true');
+    }
+  }, []);
+
+  // Salvar estado da sidebar no localStorage
+  const handleSidebarCollapse = (collapsed: boolean) => {
+    setIsSidebarCollapsed(collapsed);
+    localStorage.setItem('sidebarCollapsed', String(collapsed));
+  };
 
   const handleMenuToggle = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
@@ -42,7 +57,7 @@ export const Owner: React.FC = () => {
         return <ClientManagement />;
       case "itens":
         return <ItemsManagement />;
-      case "team": // Nova opção para gerenciar equipe
+      case "team":
         return <TeamManagement />;
       case "configuracoes":
         return <SettingsPage />;
@@ -75,9 +90,11 @@ export const Owner: React.FC = () => {
         onViewChange={setActiveView}
         isMobileOpen={isMobileMenuOpen}
         onMobileToggle={handleMenuToggle}
+        onCollapseChange={handleSidebarCollapse}
+        isCollapsed={isSidebarCollapsed}
       />
 
-      <div className={styles.mainContent}>
+      <div className={`${styles.mainContent} ${isSidebarCollapsed ? styles.mainContentCollapsed : ''}`}>
         <Header 
           onMenuToggle={handleMenuToggle} 
           onViewChange={handleViewChange}
@@ -108,7 +125,7 @@ const getPageTitle = (view: string): string => {
     financial: "Relatórios Financeiros",
     reports: "Relatórios Detalhados",
     checklist: "Checklists de Eventos",
-    team: "Gerenciar Equipe", // Título para a página de equipe
+    team: "Gerenciar Equipe",
     configuracoes: "Configurações do Sistema",
     perfil: "Meu Perfil",
     notificacoes: "Notificações",
@@ -127,7 +144,7 @@ const renderPageActions = (view: string) => {
     case "checklist":
       return "";
     case "team":
-      return ""; // Pode adicionar botões específicos para equipe se necessário
+      return "";
     default:
       return null;
   }

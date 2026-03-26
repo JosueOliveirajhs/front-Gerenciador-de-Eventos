@@ -1,357 +1,492 @@
-// src/components/developer/LogViewer.tsx
-
+// src/components/DeveloperCompents/LogViewer/LogViewer.tsx
 import React, { useState, useEffect } from 'react';
-import {
-  MdSearch,
-  MdFilterList,
-  MdRefresh,
-  MdDownload,
-  MdDelete,
-  MdWarning,
-  MdError,
-  MdInfo,
-  MdBugReport,
-  MdSchedule,
-  MdPerson,
-  MdComputer,
-  MdClear,
-  MdCheckCircle,
-  MdClose,
-  MdExpandMore,
-  MdExpandLess
-} from 'react-icons/md';
-import { FaServer, FaDatabase, FaShieldAlt } from 'react-icons/fa';
+import { 
+  FiSearch, 
+  FiFilter, 
+  FiDownload, 
+  FiRefreshCw,
+  FiX,
+  FiInfo,
+  FiAlertCircle,
+  FiAlertTriangle,
+  FiCheckCircle
+} from 'react-icons/fi';
+import { MdError, MdWarning, MdInfo } from 'react-icons/md';
+import { logService, LogEntry, LogLevel } from '../../../services/logs';
+import { LoadingSpinner } from '../../common/Loading/LoadingSpinner';
+import { EmptyState } from '../../common/EmptyState/EmptyState';
+import { ErrorModal } from '../../common/Alerts/ErrorModal';
 import styles from './LogViewer.module.css';
 
-interface LogEntry {
-  id: number;
-  timestamp: string;
-  level: 'info' | 'warning' | 'error' | 'debug' | 'critical';
-  service: string;
-  message: string;
-  details?: string;
-  userId?: number;
-  ip?: string;
-  userAgent?: string;
-  metadata?: Record<string, any>;
+interface LogFilters {
+  level: LogLevel | 'all';
+  search: string;
+  startDate: string;
+  endDate: string;
+  source: string;
 }
 
-interface LogViewerProps {
-  logs: LogEntry[];
-  onRefresh: () => void;
-  onExport: () => void;
-  onClear: () => void;
-  loading?: boolean;
-}
-
-export const LogViewer: React.FC<LogViewerProps> = ({
-  logs,
-  onRefresh,
-  onExport,
-  onClear,
-  loading = false
-}) => {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedLevel, setSelectedLevel] = useState<string>('all');
-  const [selectedService, setSelectedService] = useState<string>('all');
-  const [expandedLogs, setExpandedLogs] = useState<Set<number>>(new Set());
+export const LogViewer: React.FC = () => {
+  const [logs, setLogs] = useState<LogEntry[]>([]);
+  const [filteredLogs, setFilteredLogs] = useState<LogEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [showFilters, setShowFilters] = useState(false);
-  const [filteredLogs, setFilteredLogs] = useState<LogEntry[]>(logs);
+  const [filters, setFilters] = useState<LogFilters>({
+    level: 'all',
+    search: '',
+    startDate: '',
+    endDate: '',
+    source: ''
+  });
+  const [selectedLog, setSelectedLog] = useState<LogEntry | null>(null);
+  const [showDetails, setShowDetails] = useState(false);
+  const [autoRefresh, setAutoRefresh] = useState(false);
+  const [refreshInterval, setRefreshInterval] = useState<NodeJS.Timeout | null>(null);
+
+  // Carregar logs
+  const loadLogs = async () => {
+    try {
+      setLoading(true);
+      const data = await logService.getAllLogs();
+      setLogs(data);
+      setFilteredLogs(data);
+    } catch (err) {
+      console.error('Erro ao carregar logs:', err);
+      setError('Erro ao carregar logs. Tente novamente.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    filterLogs();
-  }, [logs, searchTerm, selectedLevel, selectedService]);
+    loadLogs();
+    
+    return () => {
+      if (refreshInterval) {
+        clearInterval(refreshInterval);
+      }
+    };
+  }, []);
 
-  const filterLogs = () => {
+  // Auto-refresh
+  useEffect(() => {
+    if (autoRefresh) {
+      const interval = setInterval(loadLogs, 30000);
+      setRefreshInterval(interval);
+      return () => clearInterval(interval);
+    } else if (refreshInterval) {
+      clearInterval(refreshInterval);
+      setRefreshInterval(null);
+    }
+  }, [autoRefresh]);
+
+  // Aplicar filtros
+  useEffect(() => {
     let filtered = [...logs];
 
-    // Filtro por busca
-    if (searchTerm) {
-      const term = searchTerm.toLowerCase();
-      filtered = filtered.filter(log =>
-        log.message.toLowerCase().includes(term) ||
-        log.service.toLowerCase().includes(term) ||
-        log.details?.toLowerCase().includes(term)
+    if (filters.level !== 'all') {
+      filtered = filtered.filter(log => log.level === filters.level);
+    }
+
+    if (filters.search) {
+      const searchLower = filters.search.toLowerCase();
+      filtered = filtered.filter(log => 
+        log.message.toLowerCase().includes(searchLower) ||
+        log.source?.toLowerCase().includes(searchLower) ||
+        log.user?.toLowerCase().includes(searchLower)
       );
     }
 
-    // Filtro por nível
-    if (selectedLevel !== 'all') {
-      filtered = filtered.filter(log => log.level === selectedLevel);
+    if (filters.startDate) {
+      filtered = filtered.filter(log => log.timestamp >= filters.startDate);
     }
 
-    // Filtro por serviço
-    if (selectedService !== 'all') {
-      filtered = filtered.filter(log => log.service === selectedService);
+    if (filters.endDate) {
+      filtered = filtered.filter(log => log.timestamp <= filters.endDate);
+    }
+
+    if (filters.source) {
+      filtered = filtered.filter(log => 
+        log.source?.toLowerCase().includes(filters.source.toLowerCase())
+      );
     }
 
     setFilteredLogs(filtered);
+  }, [logs, filters]);
+
+  const getLevelCount = (level: LogLevel): number => {
+    return logs.filter(log => log.level === level).length;
   };
 
-  const toggleLogExpansion = (logId: number) => {
-    const newExpanded = new Set(expandedLogs);
-    if (newExpanded.has(logId)) {
-      newExpanded.delete(logId);
-    } else {
-      newExpanded.add(logId);
-    }
-    setExpandedLogs(newExpanded);
-  };
-
-  const getLevelIcon = (level: string) => {
-    switch (level) {
-      case 'info':
-        return <MdInfo className={styles.levelInfo} />;
-      case 'warning':
-        return <MdWarning className={styles.levelWarning} />;
+  const getLevelIcon = (level: LogLevel) => {
+    switch(level) {
       case 'error':
-        return <MdError className={styles.levelError} />;
-      case 'critical':
-        return <MdError className={styles.levelCritical} />;
+        return <MdError size={16} className={styles.iconError} />;
+      case 'warn':
+        return <FiAlertTriangle size={16} className={styles.iconWarn} />;
+      case 'info':
+        return <FiInfo size={16} className={styles.iconInfo} />;
       case 'debug':
-        return <MdBugReport className={styles.levelDebug} />;
+        return <FiCheckCircle size={16} className={styles.iconDebug} />;
       default:
-        return null;
+        return <FiInfo size={16} />;
     }
   };
 
-  const getLevelText = (level: string) => {
-    switch (level) {
-      case 'info': return 'Info';
-      case 'warning': return 'Aviso';
-      case 'error': return 'Erro';
-      case 'critical': return 'Crítico';
-      case 'debug': return 'Debug';
-      default: return level;
+  const getLevelClass = (level: LogLevel) => {
+    switch(level) {
+      case 'error': return styles.levelError;
+      case 'warn': return styles.levelWarn;
+      case 'info': return styles.levelInfo;
+      case 'debug': return styles.levelDebug;
+      default: return '';
     }
   };
 
   const formatTimestamp = (timestamp: string) => {
+    if (!timestamp) return 'Data desconhecida';
     const date = new Date(timestamp);
-    const now = new Date();
-    const diff = now.getTime() - date.getTime();
-    const minutes = Math.floor(diff / 60000);
-    const hours = Math.floor(minutes / 60);
-    const days = Math.floor(hours / 24);
-
-    if (days > 0) return `${days}d atrás - ${date.toLocaleTimeString()}`;
-    if (hours > 0) return `${hours}h atrás - ${date.toLocaleTimeString()}`;
-    if (minutes > 0) return `${minutes}min atrás - ${date.toLocaleTimeString()}`;
-    return 'agora mesmo';
+    return date.toLocaleString('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
+    });
   };
 
-  const getUniqueServices = () => {
-    const services = new Set(logs.map(log => log.service));
-    return ['all', ...Array.from(services)];
+  const handleFilterChange = (field: keyof LogFilters, value: string) => {
+    setFilters(prev => ({ ...prev, [field]: value }));
   };
 
-  const getLevelCount = (level: string) => {
-    return logs.filter(log => log.level === level).length;
+  const clearFilters = () => {
+    setFilters({
+      level: 'all',
+      search: '',
+      startDate: '',
+      endDate: '',
+      source: ''
+    });
   };
+
+  const handleExport = async () => {
+    try {
+      const data = await logService.exportLogs(filteredLogs);
+      const blob = new Blob([data], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `logs_${new Date().toISOString()}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Erro ao exportar logs:', err);
+      setError('Erro ao exportar logs.');
+    }
+  };
+
+  const handleViewDetails = (log: LogEntry) => {
+    setSelectedLog(log);
+    setShowDetails(true);
+  };
+
+  if (loading) {
+    return <LoadingSpinner text="Carregando logs do sistema..." fullScreen />;
+  }
+
+  const hasActiveFilters = filters.level !== 'all' || 
+    filters.search !== '' || 
+    filters.startDate !== '' || 
+    filters.endDate !== '' || 
+    filters.source !== '';
+
+  const errorCount = getLevelCount('error');
+  const warnCount = getLevelCount('warn');
+  const infoCount = getLevelCount('info');
+  const debugCount = getLevelCount('debug');
 
   return (
     <div className={styles.logViewer}>
       {/* Header */}
       <div className={styles.header}>
-        <h3>
-          <MdBugReport />
-          Logs do Sistema
-        </h3>
+        <div className={styles.headerLeft}>
+          <h2 className={styles.title}>Logs do Sistema</h2>
+          <div className={styles.stats}>
+            <span className={styles.statItem}>
+              <MdError size={14} />
+              {errorCount} erros
+            </span>
+            <span className={styles.statItem}>
+              <FiAlertTriangle size={14} />
+              {warnCount} alertas
+            </span>
+            <span className={styles.statItem}>
+              <FiInfo size={14} />
+              {infoCount} info
+            </span>
+            <span className={styles.statItem}>
+              <FiCheckCircle size={14} />
+              {debugCount} debug
+            </span>
+          </div>
+        </div>
         <div className={styles.headerActions}>
-          <button onClick={onRefresh} className={styles.iconButton} disabled={loading}>
-            <MdRefresh className={loading ? styles.spinning : ''} />
+          <button
+            className={`${styles.filterButton} ${showFilters ? styles.active : ''}`}
+            onClick={() => setShowFilters(!showFilters)}
+            title="Filtros"
+          >
+            <FiFilter size={18} />
           </button>
-          <button onClick={onExport} className={styles.iconButton}>
-            <MdDownload />
+          <button
+            className={`${styles.autoRefreshButton} ${autoRefresh ? styles.active : ''}`}
+            onClick={() => setAutoRefresh(!autoRefresh)}
+            title={autoRefresh ? 'Desativar auto-atualização' : 'Ativar auto-atualização'}
+          >
+            <FiRefreshCw size={18} />
+            <span>Auto</span>
           </button>
-          <button onClick={onClear} className={`${styles.iconButton} ${styles.dangerButton}`}>
-            <MdDelete />
+          <button
+            className={styles.exportButton}
+            onClick={handleExport}
+            title="Exportar logs"
+          >
+            <FiDownload size={18} />
+            Exportar
+          </button>
+          <button
+            className={styles.refreshButton}
+            onClick={loadLogs}
+            title="Atualizar"
+          >
+            <FiRefreshCw size={18} />
           </button>
         </div>
-      </div>
-
-      {/* Stats Cards */}
-      <div className={styles.statsGrid}>
-        <div className={styles.statCard}>
-          <MdInfo className={styles.statIconInfo} />
-          <div className={styles.statContent}>
-            <span className={styles.statLabel}>Info</span>
-            <span className={styles.statValue}>{getLevelCount('info')}</span>
-          </div>
-        </div>
-        <div className={styles.statCard}>
-          <MdWarning className={styles.statIconWarning} />
-          <div className={styles.statContent}>
-            <span className={styles.statLabel}>Warnings</span>
-            <span className={styles.statValue}>{getLevelCount('warning')}</span>
-          </div>
-        </div>
-        <div className={styles.statCard}>
-          <MdError className={styles.statIconError} />
-          <div className={styles.statContent}>
-            <span className={styles.statLabel}>Errors</span>
-            <span className={styles.statValue}>{getLevelCount('error') + getLevelCount('critical')}</span>
-          </div>
-        </div>
-        <div className={styles.statCard}>
-          <MdBugReport className={styles.statIconDebug} />
-          <div className={styles.statContent}>
-            <span className={styles.statLabel}>Debug</span>
-            <span className={styles.statValue}>{getLevelCount('debug')}</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Search and Filters */}
-      <div className={styles.searchSection}>
-        <div className={styles.searchBar}>
-          <MdSearch />
-          <input
-            type="text"
-            placeholder="Buscar em logs..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-          {searchTerm && (
-            <button
-              className={styles.clearSearch}
-              onClick={() => setSearchTerm('')}
-            >
-              <MdClear />
-            </button>
-          )}
-        </div>
-
-        <button
-          className={`${styles.filterButton} ${showFilters ? styles.active : ''}`}
-          onClick={() => setShowFilters(!showFilters)}
-        >
-          <MdFilterList />
-          Filtros
-        </button>
       </div>
 
       {/* Filters Panel */}
       {showFilters && (
         <div className={styles.filtersPanel}>
-          <div className={styles.filterGroup}>
-            <label>Nível:</label>
-            <select
-              value={selectedLevel}
-              onChange={(e) => setSelectedLevel(e.target.value)}
-            >
-              <option value="all">Todos</option>
-              <option value="info">Info</option>
-              <option value="warning">Warning</option>
-              <option value="error">Error</option>
-              <option value="critical">Critical</option>
-              <option value="debug">Debug</option>
-            </select>
-          </div>
+          <div className={styles.filterRow}>
+            <div className={styles.filterGroup}>
+              <label>Nível</label>
+              <select
+                value={filters.level}
+                onChange={(e) => handleFilterChange('level', e.target.value as LogLevel | 'all')}
+                className={styles.filterSelect}
+              >
+                <option value="all">Todos</option>
+                <option value="error">Erro</option>
+                <option value="warn">Alerta</option>
+                <option value="info">Informação</option>
+                <option value="debug">Debug</option>
+              </select>
+            </div>
 
-          <div className={styles.filterGroup}>
-            <label>Serviço:</label>
-            <select
-              value={selectedService}
-              onChange={(e) => setSelectedService(e.target.value)}
-            >
-              {getUniqueServices().map(service => (
-                <option key={service} value={service}>
-                  {service === 'all' ? 'Todos' : service}
-                </option>
-              ))}
-            </select>
+            <div className={styles.filterGroup}>
+              <label>Buscar</label>
+              <div className={styles.searchInputWrapper}>
+                <FiSearch className={styles.searchIcon} />
+                <input
+                  type="text"
+                  placeholder="Mensagem, fonte, usuário..."
+                  value={filters.search}
+                  onChange={(e) => handleFilterChange('search', e.target.value)}
+                  className={styles.searchInput}
+                />
+                {filters.search && (
+                  <button
+                    className={styles.clearButton}
+                    onClick={() => handleFilterChange('search', '')}
+                  >
+                    <FiX size={14} />
+                  </button>
+                )}
+              </div>
+            </div>
+
+            <div className={styles.filterGroup}>
+              <label>Data Início</label>
+              <input
+                type="datetime-local"
+                value={filters.startDate}
+                onChange={(e) => handleFilterChange('startDate', e.target.value)}
+                className={styles.dateInput}
+              />
+            </div>
+
+            <div className={styles.filterGroup}>
+              <label>Data Fim</label>
+              <input
+                type="datetime-local"
+                value={filters.endDate}
+                onChange={(e) => handleFilterChange('endDate', e.target.value)}
+                className={styles.dateInput}
+              />
+            </div>
+
+            <div className={styles.filterGroup}>
+              <label>Fonte</label>
+              <input
+                type="text"
+                placeholder="Fonte do log..."
+                value={filters.source}
+                onChange={(e) => handleFilterChange('source', e.target.value)}
+                className={styles.filterInput}
+              />
+            </div>
+
+            {hasActiveFilters && (
+              <button className={styles.clearFiltersButton} onClick={clearFilters}>
+                <FiX size={14} />
+                Limpar filtros
+              </button>
+            )}
           </div>
         </div>
       )}
 
-      {/* Logs List */}
-      <div className={styles.logsList}>
-        {filteredLogs.length === 0 ? (
-          <div className={styles.emptyState}>
-            <MdSearch size={48} />
-            <h4>Nenhum log encontrado</h4>
-            <p>Tente ajustar seus filtros ou buscar por outros termos.</p>
-          </div>
-        ) : (
-          filteredLogs.map(log => (
-            <div
-              key={log.id}
-              className={`${styles.logItem} ${styles[`level_${log.level}`]}`}
-              onClick={() => toggleLogExpansion(log.id)}
-            >
-              <div className={styles.logHeader}>
-                <div className={styles.logLevel}>
-                  {getLevelIcon(log.level)}
-                  <span className={`${styles.levelBadge} ${styles[`level_${log.level}`]}`}>
-                    {getLevelText(log.level)}
-                  </span>
-                </div>
-                <div className={styles.logService}>
-                  <FaServer />
-                  {log.service}
-                </div>
-                <div className={styles.logTimestamp}>
-                  <MdSchedule />
-                  {formatTimestamp(log.timestamp)}
-                </div>
-                <div className={styles.logExpand}>
-                  {expandedLogs.has(log.id) ? <MdExpandLess /> : <MdExpandMore />}
-                </div>
+      {/* Logs Table */}
+      {filteredLogs.length === 0 ? (
+        <EmptyState
+          icon={hasActiveFilters ? <FiSearch size={48} /> : <FiInfo size={48} />}
+          title={hasActiveFilters ? 'Nenhum log encontrado' : 'Nenhum log registrado'}
+          description={hasActiveFilters
+            ? 'Tente ajustar os filtros para encontrar os logs.'
+            : 'Os logs do sistema aparecerão aqui quando ocorrerem eventos.'
+          }
+          action={hasActiveFilters ? {
+            label: 'Limpar filtros',
+            onClick: clearFilters,
+            icon: <FiX />
+          } : undefined}
+        />
+      ) : (
+        <div className={styles.tableContainer}>
+          <table className={styles.table}>
+            <thead>
+              <tr>
+                <th className={styles.colLevel}>Nível</th>
+                <th className={styles.colTimestamp}>Data/Hora</th>
+                <th className={styles.colMessage}>Mensagem</th>
+                <th className={styles.colSource}>Fonte</th>
+                <th className={styles.colUser}>Usuário</th>
+                <th className={styles.colActions}>Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredLogs.map((log) => (
+                <tr key={log.id} className={getLevelClass(log.level)}>
+                  <td className={styles.levelCell}>
+                    {getLevelIcon(log.level)}
+                    <span>{log.level.toUpperCase()}</span>
+                  </td>
+                  <td className={styles.timestampCell}>
+                    {formatTimestamp(log.timestamp)}
+                  </td>
+                  <td className={styles.messageCell}>
+                    <div className={styles.messagePreview}>
+                      {log.message.length > 100 
+                        ? `${log.message.substring(0, 100)}...` 
+                        : log.message}
+                    </div>
+                  </td>
+                  <td className={styles.sourceCell}>
+                    {log.source || '-'}
+                  </td>
+                  <td className={styles.userCell}>
+                    {log.user || '-'}
+                  </td>
+                  <td className={styles.actionsCell}>
+                    <button
+                      className={styles.viewButton}
+                      onClick={() => handleViewDetails(log)}
+                      title="Ver detalhes"
+                    >
+                      <FiInfo size={16} />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* Log Details Modal */}
+      {showDetails && selectedLog && (
+        <div className={styles.modalOverlay} onClick={() => setShowDetails(false)}>
+          <div className={styles.modal} onClick={e => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <h3>
+                {getLevelIcon(selectedLog.level)}
+                Detalhes do Log
+              </h3>
+              <button className={styles.closeButton} onClick={() => setShowDetails(false)}>
+                <FiX size={20} />
+              </button>
+            </div>
+            <div className={styles.modalBody}>
+              <div className={styles.detailRow}>
+                <strong>Nível:</strong>
+                <span className={getLevelClass(selectedLog.level)}>
+                  {selectedLog.level.toUpperCase()}
+                </span>
               </div>
-
-              <div className={styles.logMessage}>
-                {log.message}
+              <div className={styles.detailRow}>
+                <strong>Data/Hora:</strong>
+                <span>{formatTimestamp(selectedLog.timestamp)}</span>
               </div>
-
-              {expandedLogs.has(log.id) && (
-                <div className={styles.logDetails}>
-                  {log.details && (
-                    <div className={styles.detailSection}>
-                      <strong>Detalhes:</strong>
-                      <pre>{log.details}</pre>
-                    </div>
-                  )}
-
-                  <div className={styles.detailGrid}>
-                    {log.userId && (
-                      <div className={styles.detailItem}>
-                        <MdPerson />
-                        <span>User ID: {log.userId}</span>
-                      </div>
-                    )}
-                    {log.ip && (
-                      <div className={styles.detailItem}>
-                        <MdComputer />
-                        <span>IP: {log.ip}</span>
-                      </div>
-                    )}
-                  </div>
-
-                  {log.userAgent && (
-                    <div className={styles.detailSection}>
-                      <strong>User Agent:</strong>
-                      <span>{log.userAgent}</span>
-                    </div>
-                  )}
-
-                  {log.metadata && (
-                    <div className={styles.detailSection}>
-                      <strong>Metadados:</strong>
-                      <pre>{JSON.stringify(log.metadata, null, 2)}</pre>
-                    </div>
-                  )}
+              <div className={styles.detailRow}>
+                <strong>Mensagem:</strong>
+                <pre className={styles.messageFull}>{selectedLog.message}</pre>
+              </div>
+              {selectedLog.source && (
+                <div className={styles.detailRow}>
+                  <strong>Fonte:</strong>
+                  <span>{selectedLog.source}</span>
+                </div>
+              )}
+              {selectedLog.user && (
+                <div className={styles.detailRow}>
+                  <strong>Usuário:</strong>
+                  <span>{selectedLog.user}</span>
+                </div>
+              )}
+              {selectedLog.stackTrace && (
+                <div className={styles.detailRow}>
+                  <strong>Stack Trace:</strong>
+                  <pre className={styles.stackTrace}>{selectedLog.stackTrace}</pre>
+                </div>
+              )}
+              {selectedLog.metadata && (
+                <div className={styles.detailRow}>
+                  <strong>Metadados:</strong>
+                  <pre className={styles.metadata}>
+                    {JSON.stringify(selectedLog.metadata, null, 2)}
+                  </pre>
                 </div>
               )}
             </div>
-          ))
-        )}
-      </div>
+            <div className={styles.modalFooter}>
+              <button className={styles.closeModalButton} onClick={() => setShowDetails(false)}>
+                Fechar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
-      {/* Footer com contagem */}
-      <div className={styles.footer}>
-        <span>Mostrando {filteredLogs.length} de {logs.length} logs</span>
-      </div>
+      {/* Error Modal */}
+      <ErrorModal
+        isOpen={!!error}
+        message={error || ''}
+        onClose={() => setError(null)}
+      />
     </div>
   );
 };
+
+export default LogViewer;

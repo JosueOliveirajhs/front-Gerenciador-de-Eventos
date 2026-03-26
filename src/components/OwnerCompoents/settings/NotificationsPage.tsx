@@ -1,3 +1,4 @@
+// src/pages/Notifications/NotificationsPage.tsx
 import React, { useState, useEffect } from 'react';
 import { 
   FiBell, FiCalendar, FiDollarSign, FiPackage, 
@@ -7,6 +8,7 @@ import { MdEvent, MdPayment, MdInfo } from 'react-icons/md';
 import { ConfirmationModal } from '../../common/Alerts/ConfirmationModal';
 import { ErrorModal } from '../../common/Alerts/ErrorModal';
 import { notificationService, Notification, NotificationPreferences } from '../../../services/notification';
+import { userService } from '../../../services/users';
 import { LoadingSpinner } from '../../common/Loading/LoadingSpinner';
 import styles from './NotificationsPage.module.css';
 
@@ -18,25 +20,26 @@ const DEFAULT_PREFERENCES: NotificationPreferences = {
   quietHours: { enabled: false, start: '22:00', end: '08:00' }
 };
 
-// Mock de Usuários para o Gerenciador (Substitua por uma chamada à API no futuro)
-const MOCK_USERS = [
-  { id: 1, name: 'Todos os Usuários' },
-  { id: 2, name: 'João Silva (Cliente)' },
-  { id: 3, name: 'Maria Oliveira (Cliente)' },
-  { id: 4, name: 'Carlos Santos (Equipe)' },
-  { id: 5, name: 'Empresa X (Parceiro)' },
-];
-
 type NotificationFilter = 'all' | 'unread' | 'event' | 'payment' | 'stock' | 'reminder' | 'system';
+
+interface User {
+  id: number;
+  name: string;
+  email: string;
+  role: string;
+  userType: string;
+}
 
 export const NotificationsPage: React.FC = () => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [preferences, setPreferences] = useState<NotificationPreferences>(DEFAULT_PREFERENCES);
   const [filter, setFilter] = useState<NotificationFilter>('all');
+  const [users, setUsers] = useState<User[]>([]);
+  const [loadingUsers, setLoadingUsers] = useState(false);
   
   // Painéis
   const [showPreferences, setShowPreferences] = useState(false);
-  const [showManager, setShowManager] = useState(false); // Novo Estado para o Gerenciador
+  const [showManager, setShowManager] = useState(false);
   
   // Estados de Carregamento
   const [loading, setLoading] = useState(true);
@@ -59,8 +62,11 @@ export const NotificationsPage: React.FC = () => {
   const [errorMessage, setErrorMessage] = useState('');
   const [showClearConfirm, setShowClearConfirm] = useState(false);
 
+  // Carregar dados iniciais
   useEffect(() => {
     loadNotifications();
+    loadUsers();
+    loadPreferences();
   }, []);
 
   const loadNotifications = async () => {
@@ -69,10 +75,52 @@ export const NotificationsPage: React.FC = () => {
       const data = await notificationService.getAllNotifications();
       setNotifications(data || []);
     } catch (error) {
+      console.error('Erro ao carregar notificações:', error);
       setErrorMessage('Não foi possível carregar as notificações do servidor.');
       setShowErrorModal(true);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadUsers = async () => {
+    try {
+      setLoadingUsers(true);
+      // Buscar todos os clientes e usuários do sistema
+      const clients = await userService.getAllClients();
+      
+      // Adicionar opção "Todos os Usuários"
+      const allUsers: User[] = [
+        { id: 0, name: 'Todos os Usuários', email: '', role: '', userType: '' },
+        ...clients.map(client => ({
+          id: client.id,
+          name: client.name,
+          email: client.email,
+          role: client.role,
+          userType: client.userType
+        }))
+      ];
+      
+      setUsers(allUsers);
+    } catch (error) {
+      console.error('Erro ao carregar usuários:', error);
+      // Em caso de erro, usar lista vazia
+      setUsers([{ id: 0, name: 'Todos os Usuários', email: '', role: '', userType: '' }]);
+    } finally {
+      setLoadingUsers(false);
+    }
+  };
+
+  const loadPreferences = async () => {
+    try {
+      const prefs = await notificationService.getPreferences();
+      if (prefs) {
+        setPreferences(prefs);
+      }
+    } catch (error) {
+      console.error('Erro ao carregar preferências:', error);
+      // Usar preferências padrão
+      setPreferences(DEFAULT_PREFERENCES);
     }
   };
 
@@ -88,11 +136,13 @@ export const NotificationsPage: React.FC = () => {
 
   const handleMarkAsRead = async (id: number) => {
     try {
+      // Atualizar localmente primeiro para UI responsiva
       setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
       await notificationService.markAsRead(id);
     } catch (error) {
+      // Reverter em caso de erro
       setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: false } : n));
-      setErrorMessage('Erro ao comunicar com o servidor.');
+      setErrorMessage('Erro ao marcar notificação como lida.');
       setShowErrorModal(true);
     }
   };
@@ -105,6 +155,7 @@ export const NotificationsPage: React.FC = () => {
       setSuccessMessage('Todas as notificações foram marcadas como lidas');
       setShowSuccessModal(true);
     } catch (error) {
+      console.error('Erro ao marcar todas como lidas:', error);
       setErrorMessage('Erro ao atualizar notificações.');
       setShowErrorModal(true);
     } finally {
@@ -120,6 +171,7 @@ export const NotificationsPage: React.FC = () => {
       setSuccessMessage('Todas as notificações foram removidas');
       setShowSuccessModal(true);
     } catch (error) {
+      console.error('Erro ao limpar notificações:', error);
       setErrorMessage('Erro ao limpar notificações.');
       setShowErrorModal(true);
     } finally {
@@ -137,6 +189,7 @@ export const NotificationsPage: React.FC = () => {
       setSuccessMessage('Preferências salvas com sucesso!');
       setShowSuccessModal(true);
     } catch (error) {
+      console.error('Erro ao salvar preferências:', error);
       setErrorMessage('Erro ao salvar preferências.');
       setShowErrorModal(true);
     } finally {
@@ -148,14 +201,34 @@ export const NotificationsPage: React.FC = () => {
   const handleToggleUserSelection = (userId: number) => {
     setNewNotification(prev => {
       const isSelected = prev.selectedUsers.includes(userId);
-      // Se for "Todos os usuários" (ID 1), limpa os outros e marca/desmarca
-      if (userId === 1) {
-        return { ...prev, selectedUsers: isSelected ? [] : [1] };
+      
+      // Se for "Todos os usuários" (ID 0)
+      if (userId === 0) {
+        // Se já estava selecionado, desmarca todos
+        if (isSelected) {
+          return { ...prev, selectedUsers: [] };
+        }
+        // Se não estava, seleciona todos (exceto o próprio "Todos")
+        const allUserIds = users.filter(u => u.id !== 0).map(u => u.id);
+        return { ...prev, selectedUsers: allUserIds };
       }
-      // Se selecionar um usuário específico, desmarca "Todos"
-      const newSelected = isSelected 
+      
+      // Se selecionar um usuário específico, desmarca "Todos" se estiver selecionado
+      let newSelected = isSelected 
         ? prev.selectedUsers.filter(id => id !== userId)
-        : [...prev.selectedUsers.filter(id => id !== 1), userId];
+        : [...prev.selectedUsers, userId];
+      
+      // Se o usuário selecionou todos os usuários individualmente, marcar "Todos"
+      const allUserIds = users.filter(u => u.id !== 0).map(u => u.id);
+      const hasAllUsers = allUserIds.every(id => newSelected.includes(id));
+      
+      if (hasAllUsers && newSelected.length === allUserIds.length) {
+        newSelected = [0]; // Marca "Todos" como selecionado
+      } else {
+        // Remove "Todos" se estiver presente
+        newSelected = newSelected.filter(id => id !== 0);
+      }
+      
       return { ...prev, selectedUsers: newSelected };
     });
   };
@@ -166,6 +239,7 @@ export const NotificationsPage: React.FC = () => {
       setShowErrorModal(true);
       return;
     }
+    
     if (newNotification.selectedUsers.length === 0) {
       setErrorMessage('Selecione pelo menos um destinatário.');
       setShowErrorModal(true);
@@ -175,34 +249,40 @@ export const NotificationsPage: React.FC = () => {
     try {
       setActionLoading(true);
       
-      // MOCK DE ENVIO: Futuramente crie um endpoint POST /api/notifications e chame aqui
-      // await notificationService.createNotification(newNotification);
-      await new Promise(resolve => setTimeout(resolve, 800)); // Simulando delay da API
+      // Verificar se é para todos os usuários
+      const isForAll = newNotification.selectedUsers.includes(0);
+      const recipientIds = isForAll 
+        ? users.filter(u => u.id !== 0).map(u => u.id)
+        : newNotification.selectedUsers;
       
-      // Adiciona na tela localmente para feedback visual
-      const createdNotification: Notification = {
-        id: Date.now(),
-        type: newNotification.type,
+      // Chamar API para criar notificação
+      await notificationService.createNotification({
         title: newNotification.title,
         message: newNotification.message,
-        timestamp: new Date().toISOString(),
-        read: false,
+        type: newNotification.type,
         priority: newNotification.priority,
-      };
-
-      setNotifications([createdNotification, ...notifications]);
+        recipientIds: recipientIds
+      });
+      
+      // Recarregar notificações para mostrar a nova
+      await loadNotifications();
       
       setSuccessMessage('Notificação enviada com sucesso!');
       setShowSuccessModal(true);
       setShowManager(false);
       
-      // Limpa formulário
+      // Limpar formulário
       setNewNotification({
-        title: '', message: '', type: 'system', priority: 'medium', selectedUsers: []
+        title: '',
+        message: '',
+        type: 'system',
+        priority: 'medium',
+        selectedUsers: []
       });
 
     } catch (error) {
-      setErrorMessage('Erro ao enviar notificação.');
+      console.error('Erro ao enviar notificação:', error);
+      setErrorMessage('Erro ao enviar notificação. Tente novamente.');
       setShowErrorModal(true);
     } finally {
       setActionLoading(false);
@@ -327,7 +407,7 @@ export const NotificationsPage: React.FC = () => {
         </div>
       </div>
 
-      {/* PAINEL: GERENCIADOR DE NOTIFICAÇÕES (Conforme esboço) */}
+      {/* PAINEL: GERENCIADOR DE NOTIFICAÇÕES */}
       {showManager && (
         <div className={styles.managerPanel}>
           <h3 className={styles.panelTitle}>Gerenciador de Notificações</h3>
@@ -336,7 +416,7 @@ export const NotificationsPage: React.FC = () => {
             {/* Esquerda: Formulário */}
             <div className={styles.managerForm}>
               <div className={styles.formGroup}>
-                <label className={styles.formLabel}>Título</label>
+                <label className={styles.formLabel}>Título *</label>
                 <input 
                   type="text" 
                   className={styles.formInput} 
@@ -347,10 +427,11 @@ export const NotificationsPage: React.FC = () => {
               </div>
 
               <div className={styles.formGroup}>
-                <label className={styles.formLabel}>Descrição</label>
+                <label className={styles.formLabel}>Descrição *</label>
                 <textarea 
                   className={`${styles.formInput} ${styles.formTextarea}`} 
                   placeholder="Detalhes da notificação..."
+                  rows={4}
                   value={newNotification.message}
                   onChange={e => setNewNotification({...newNotification, message: e.target.value})}
                 />
@@ -383,38 +464,64 @@ export const NotificationsPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Direita: Lista de Usuários */}
+            {/* Direita: Lista de Usuários - Integrada com API */}
             <div className={styles.managerUsers}>
               <h4 className={styles.managerUsersTitle}>
-                <FiUsers size={16} /> Lista de Usuários
+                <FiUsers size={16} /> 
+                Destinatários *
+                {loadingUsers && <span className={styles.loadingUsers}>Carregando...</span>}
               </h4>
               <div className={styles.usersListContainer}>
-                {MOCK_USERS.map(user => (
+                {users.map(user => (
                   <label key={user.id} className={styles.checkboxLabel}>
                     <input 
                       type="checkbox" 
                       checked={newNotification.selectedUsers.includes(user.id)}
                       onChange={() => handleToggleUserSelection(user.id)}
+                      disabled={loadingUsers}
                     />
-                    <span className={user.id === 1 ? styles.userAll : ''}>{user.name}</span>
+                    <span className={user.id === 0 ? styles.userAll : ''}>
+                      {user.name}
+                      {user.id !== 0 && user.email && (
+                        <small className={styles.userEmail}> ({user.email})</small>
+                      )}
+                    </span>
                   </label>
                 ))}
               </div>
+              {newNotification.selectedUsers.includes(0) && (
+                <div className={styles.infoMessage}>
+                  <MdInfo size={14} />
+                  <small>Enviando para todos os usuários do sistema</small>
+                </div>
+              )}
             </div>
           </div>
 
           <div className={styles.panelActions}>
-            <button className={styles.secondaryButton} onClick={() => setShowManager(false)}>
+            <button 
+              className={styles.secondaryButton} 
+              onClick={() => setShowManager(false)}
+              disabled={actionLoading}
+            >
               Cancelar
             </button>
-            <button className={styles.primaryButton} onClick={handleCreateNotification} disabled={actionLoading}>
-              {actionLoading ? (<><span className={styles.buttonSpinner}></span> Enviando...</>) : (<><FiSend size={18} /> Enviar Notificação</>)}
+            <button 
+              className={styles.primaryButton} 
+              onClick={handleCreateNotification} 
+              disabled={actionLoading}
+            >
+              {actionLoading ? (
+                <><span className={styles.buttonSpinner}></span> Enviando...</>
+              ) : (
+                <><FiSend size={18} /> Enviar Notificação</>
+              )}
             </button>
           </div>
         </div>
       )}
 
-      {/* PAINEL: PREFERÊNCIAS (Original) */}
+      {/* PAINEL: PREFERÊNCIAS */}
       {showPreferences && (
         <div className={styles.preferencesPanel}>
           <h3 className={styles.panelTitle}>Preferências de Notificação</h3>
@@ -559,9 +666,32 @@ export const NotificationsPage: React.FC = () => {
         )}
       </div>
 
-      <ConfirmationModal isOpen={showSuccessModal} title="Sucesso!" message={successMessage} type="success" onConfirm={() => setShowSuccessModal(false)} onCancel={() => setShowSuccessModal(false)} confirmText="OK" />
-      <ErrorModal isOpen={showErrorModal} message={errorMessage} onClose={() => setShowErrorModal(false)} />
-      <ConfirmationModal isOpen={showClearConfirm} title="Limpar Todas as Notificações" message="Tem certeza que deseja remover todas as notificações? Esta ação não pode ser desfeita." type="warning" onConfirm={confirmClearAll} onCancel={() => setShowClearConfirm(false)} confirmText="Limpar" />
+      {/* Modais */}
+      <ConfirmationModal 
+        isOpen={showSuccessModal} 
+        title="Sucesso!" 
+        message={successMessage} 
+        type="success" 
+        onConfirm={() => setShowSuccessModal(false)} 
+        onCancel={() => setShowSuccessModal(false)} 
+        confirmText="OK" 
+      />
+      
+      <ErrorModal 
+        isOpen={showErrorModal} 
+        message={errorMessage} 
+        onClose={() => setShowErrorModal(false)} 
+      />
+      
+      <ConfirmationModal 
+        isOpen={showClearConfirm} 
+        title="Limpar Todas as Notificações" 
+        message="Tem certeza que deseja remover todas as notificações? Esta ação não pode ser desfeita." 
+        type="warning" 
+        onConfirm={confirmClearAll} 
+        onCancel={() => setShowClearConfirm(false)} 
+        confirmText="Limpar" 
+      />
     </div>
   );
 };

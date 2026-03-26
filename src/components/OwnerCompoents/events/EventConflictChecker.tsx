@@ -1,8 +1,17 @@
 // src/components/admin/events/EventConflictChecker.tsx
-
 import React, { useState, useEffect } from 'react';
 import { Event } from '../../../types/Event';
 import { eventService } from '../../../services/events';
+import { 
+  FiAlertTriangle, 
+  FiCheckCircle, 
+  FiClock, 
+  FiUser,
+  FiLoader,
+  FiCalendar,
+  FiAlertCircle
+} from 'react-icons/fi';
+import { MdEvent, MdWarning, MdError, MdSchedule } from 'react-icons/md';
 import styles from './EventConflictChecker.module.css';
 
 interface Conflict {
@@ -98,11 +107,50 @@ export const EventConflictChecker: React.FC<EventConflictCheckerProps> = ({
         return time.substring(0, 5);
     };
 
+    const getConflictIcon = (type: string): React.ReactNode => {
+        switch(type) {
+            case 'time':
+                return <FiClock size={18} />;
+            case 'date':
+                return <FiCalendar size={18} />;
+            case 'resource':
+                return <MdEvent size={18} />;
+            default:
+                return <FiAlertTriangle size={18} />;
+        }
+    };
+
+    const getConflictColor = (type: string): string => {
+        switch(type) {
+            case 'time':
+                return '#f59e0b';
+            case 'date':
+                return '#ef4444';
+            case 'resource':
+                return '#8b5cf6';
+            default:
+                return '#f59e0b';
+        }
+    };
+
+    const getEventStatusIcon = (status: string): React.ReactNode => {
+        switch(status?.toLowerCase()) {
+            case 'confirmed':
+                return <FiCheckCircle size={12} />;
+            case 'completed':
+                return <FiCheckCircle size={12} />;
+            case 'cancelled':
+                return <FiAlertCircle size={12} />;
+            default:
+                return <FiClock size={12} />;
+        }
+    };
+
     return (
         <div className={styles.container}>
             {loading && (
                 <div className={styles.loading}>
-                    <span className={styles.spinner}></span>
+                    <FiLoader className={styles.spinner} size={18} />
                     Verificando disponibilidade...
                 </div>
             )}
@@ -112,7 +160,12 @@ export const EventConflictChecker: React.FC<EventConflictCheckerProps> = ({
                     {conflicts.map((conflict, index) => (
                         <div key={index} className={`${styles.conflict} ${styles[conflict.type]}`}>
                             <div className={styles.conflictHeader}>
-                                <span className={styles.conflictIcon}>⚠️</span>
+                                <span 
+                                    className={styles.conflictIcon}
+                                    style={{ color: getConflictColor(conflict.type) }}
+                                >
+                                    {getConflictIcon(conflict.type)}
+                                </span>
                                 <span className={styles.conflictMessage}>{conflict.message}</span>
                             </div>
                             
@@ -120,16 +173,22 @@ export const EventConflictChecker: React.FC<EventConflictCheckerProps> = ({
                                 {conflict.events.map(event => (
                                     <div key={event.id} className={styles.conflictEvent}>
                                         <div className={styles.conflictEventInfo}>
-                                            <strong>{event.title}</strong>
+                                            <strong>
+                                                <MdEvent size={14} />
+                                                {event.title}
+                                            </strong>
                                             <span className={styles.conflictEventTime}>
+                                                <FiClock size={12} />
                                                 {formatTime(event.startTime)} - {formatTime(event.endTime)}
                                             </span>
                                             <span className={styles.conflictEventClient}>
+                                                <FiUser size={12} />
                                                 {event.client?.name}
                                             </span>
                                         </div>
-                                        <span className={`${styles.conflictEventStatus} ${styles[event.status.toLowerCase()]}`}>
-                                            {event.status}
+                                        <span className={`${styles.conflictEventStatus} ${styles[event.status?.toLowerCase() || 'quote']}`}>
+                                            {getEventStatusIcon(event.status)}
+                                            {event.status || 'QUOTE'}
                                         </span>
                                     </div>
                                 ))}
@@ -141,7 +200,7 @@ export const EventConflictChecker: React.FC<EventConflictCheckerProps> = ({
 
             {!loading && conflicts.length === 0 && date && (
                 <div className={styles.noConflicts}>
-                    <span className={styles.successIcon}>✅</span>
+                    <FiCheckCircle size={18} className={styles.successIcon} />
                     <span>Horário disponível!</span>
                 </div>
             )}
