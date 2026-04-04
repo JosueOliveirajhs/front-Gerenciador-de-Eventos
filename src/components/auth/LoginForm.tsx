@@ -1,13 +1,12 @@
 import React, { useState } from 'react';
 import { authService } from '../../services/auth';
 import { useAuth } from '../../context/AuthContext';
+import { Link } from 'react-router-dom';
 import styles from './LoginForm.module.css';
 
 export const LoginForm: React.FC = () => {
-  const [loginData, setLoginData] = useState<LoginData>({
-    cpf: '',
-    password: ''
-  });
+  const [cpf, setCpf] = useState('');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   
@@ -19,16 +18,20 @@ export const LoginForm: React.FC = () => {
     setError('');
 
     try {
-      const loginDataToSend = {
-        cpf: loginData.cpf.replace(/\D/g, ''),
-        password: loginData.password
-      };
+      const cpfClean = cpf.replace(/\D/g, '');
+      console.log('🔑 Tentando login com CPF:', cpfClean);
       
-      const response = await authService.login(loginDataToSend);
+      const response = await authService.login({
+        cpf: cpfClean,
+        password
+      });
+      
+      console.log('✅ Login bem-sucedido, chamando login do contexto');
       login(response.user, response.token);
       
     } catch (error: any) {
-      setError(error.response?.data?.message || 'CPF ou senha inválidos. Tente novamente.');
+      console.error('❌ Erro no login:', error);
+      setError(error.response?.data?.message || 'CPF ou senha inválidos');
     } finally {
       setLoading(false);
     }
@@ -40,11 +43,6 @@ export const LoginForm: React.FC = () => {
       return numbers.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
     }
     return numbers.slice(0, 11).replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
-  };
-
-  const handleCPFChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const formattedCPF = formatCPF(e.target.value);
-    setLoginData({ ...loginData, cpf: formattedCPF });
   };
 
   return (
@@ -63,11 +61,12 @@ export const LoginForm: React.FC = () => {
           id="cpf"
           type="text"
           placeholder="000.000.000-00"
-          value={loginData.cpf}
-          onChange={handleCPFChange}
+          value={cpf}
+          onChange={(e) => setCpf(formatCPF(e.target.value))}
           className={styles.formInput}
           required
           disabled={loading}
+          maxLength={14}
         />
       </div>
 
@@ -79,12 +78,18 @@ export const LoginForm: React.FC = () => {
           id="password"
           type="password"
           placeholder="Digite sua senha"
-          value={loginData.password}
-          onChange={(e) => setLoginData({...loginData, password: e.target.value})}
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
           className={styles.formInput}
           required
           disabled={loading}
         />
+      </div>
+
+      <div className={styles.forgotPassword}>
+        <Link to="/esqueci-senha" className={styles.forgotPasswordLink}>
+          Esqueceu sua senha?
+        </Link>
       </div>
 
       <button 

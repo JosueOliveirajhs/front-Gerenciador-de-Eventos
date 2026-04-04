@@ -1,7 +1,7 @@
 // src/services/boletos.ts
 
 import { api } from './api';
-import { Boleto, GenerateBoletoData, ApiResponse } from '../components/admin/clients/types';
+import { Boleto, GenerateBoletoData, ApiResponse } from '../components/developer/pages/developer/clients/types';
 
 export const boletoService = {
     /**
@@ -36,17 +36,21 @@ export const boletoService = {
     /**
      * Baixar PDF do boleto
      */
-    downloadBoletoPDF: async (boletoId: number): Promise<Blob> => {
-        try {
-            const response = await api.get(`/api/boletos/${boletoId}/pdf`, {
-                responseType: 'blob',
-            });
-            return response.data;
-        } catch (error) {
-            console.error('Erro ao baixar PDF:', error);
-            throw error;
-        }
-    },
+downloadBoletoPDF: async (id: number): Promise<Blob> => {
+    try {
+        const response = await api.get(`/api/boletos/${id}/pdf`, {
+            responseType: 'blob', // Crítico para arquivos binários
+            headers: {
+                'Accept': 'application/pdf'
+            }
+        });
+
+        return (response as any).data ? (response as any).data : response;
+    } catch (error) {
+        console.error('Erro ao baixar PDF:', error);
+        throw error;
+    }
+},
 
     /**
      * Enviar boleto por e-mail

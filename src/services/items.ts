@@ -1,281 +1,293 @@
-import {api} from './api';
-import { Item } from '../types/Item';
+// src/services/items.ts
+import { api } from './api';
 
-export const itemService = {
-  // Buscar todos os itens
-  getAllItems: async (): Promise<Item[]> => {
-    try {
-      const response = await api.get('/items');
-      return response.data;
-    } catch (error) {
-      console.error('Erro ao buscar itens:', error);
-      // Fallback para dados mockados em caso de erro
-      return getMockItems();
-    }
-  },
-
-  // Buscar item por ID
-  getItemById: async (id: number): Promise<Item> => {
-    try {
-      const response = await api.get(`/items/${id}`);
-      return response.data;
-    } catch (error) {
-      console.error(`Erro ao buscar item ${id}:`, error);
-      throw error;
-    }
-  },
-
-  // Criar novo item
-  createItem: async (itemData: Omit<Item, 'id'>): Promise<Item> => {
-    try {
-      const response = await api.post('/items', itemData);
-      return response.data;
-    } catch (error) {
-      console.error('Erro ao criar item:', error);
-      throw error;
-    }
-  },
-
-  // Atualizar item
-  updateItem: async (id: number, itemData: Partial<Item>): Promise<Item> => {
-    try {
-      const response = await api.put(`/items/${id}`, itemData);
-      return response.data;
-    } catch (error) {
-      console.error(`Erro ao atualizar item ${id}:`, error);
-      throw error;
-    }
-  },
-
-  // Deletar item
-  deleteItem: async (id: number): Promise<void> => {
-    try {
-      await api.delete(`/items/${id}`);
-    } catch (error) {
-      console.error(`Erro ao deletar item ${id}:`, error);
-      throw error;
-    }
-  },
-
-  // Buscar itens por categoria
-  getItemsByCategory: async (category: string): Promise<Item[]> => {
-    try {
-      const response = await api.get(`/items/category/${category}`);
-      return response.data;
-    } catch (error) {
-      console.error(`Erro ao buscar itens da categoria ${category}:`, error);
-      throw error;
-    }
-  },
-
-  // Verificar disponibilidade de item para uma data
-  checkAvailability: async (itemId: number, date: string, quantity: number): Promise<boolean> => {
-    try {
-      const response = await api.get(`/items/${itemId}/availability`, {
-        params: { date, quantity }
-      });
-      return response.data.available;
-    } catch (error) {
-      console.error(`Erro ao verificar disponibilidade do item ${itemId}:`, error);
-      // Fallback: verificar localmente
-      const item = await itemService.getItemById(itemId).catch(() => null);
-      if (!item) return false;
-      
-      // Simular verificação de disponibilidade
-      const reserved = await itemService.getReservedQuantity(itemId, date);
-      return (item.quantityTotal - reserved) >= quantity;
-    }
-  },
-
-  // Buscar quantidade reservada de um item para uma data
-  getReservedQuantity: async (itemId: number, date: string): Promise<number> => {
-    try {
-      const response = await api.get(`/items/${itemId}/reservations`, {
-        params: { date }
-      });
-      return response.data.totalReserved;
-    } catch (error) {
-      console.error(`Erro ao buscar reservas do item ${itemId}:`, error);
-      // Fallback: retornar 0
-      return 0;
-    }
-  },
-
-  // Reservar item para um evento
-  reserveItem: async (itemId: number, eventId: number, quantity: number): Promise<void> => {
-    try {
-      await api.post('/reservations', {
-        itemId,
-        eventId,
-        quantity,
-        status: 'RESERVED'
-      });
-    } catch (error) {
-      console.error('Erro ao reservar item:', error);
-      throw error;
-    }
-  },
-
-  // Atualizar status de reserva
-  updateReservationStatus: async (reservationId: number, status: 'RESERVED' | 'CONFIRMED' | 'RETURNED'): Promise<void> => {
-    try {
-      await api.patch(`/reservations/${reservationId}`, { status });
-    } catch (error) {
-      console.error(`Erro ao atualizar reserva ${reservationId}:`, error);
-      throw error;
-    }
-  },
-
-  // Buscar itens mais utilizados
-  getTopItems: async (period?: { startDate: string; endDate: string }): Promise<any[]> => {
-    try {
-      const response = await api.get('/items/top-usage', { params: period });
-      return response.data;
-    } catch (error) {
-      console.error('Erro ao buscar itens mais utilizados:', error);
-      // Fallback: dados mockados
-      return [
-        { id: 1, name: 'Cadeira Tiffany', usageCount: 45, revenue: 4500 },
-        { id: 2, name: 'Mesa de Madeira', usageCount: 32, revenue: 6400 },
-        { id: 3, name: 'Toalha de Mesa', usageCount: 28, revenue: 1400 },
-      ];
-    }
-  },
-
-  // Buscar relatório de estoque
-  getStockReport: async (): Promise<any> => {
-    try {
-      const response = await api.get('/reports/stock');
-      return response.data;
-    } catch (error) {
-      console.error('Erro ao buscar relatório de estoque:', error);
-      throw error;
-    }
-  }
-};
-
-// Dados mockados para fallback/desenvolvimento
-const getMockItems = (): Item[] => {
-  return [
-    {
-      id: 1,
-      name: "Cadeira Tiffany Dourada",
-      category: "FURNITURE",
-      quantityTotal: 100,
-      quantityAvailable: 85,
-      description: "Cadeira de ferro com pintura eletrostática dourada",
-      minStock: 10,
-      unitPrice: 45.00
-    },
-    {
-      id: 2,
-      name: "Toalha de Mesa Branca",
-      category: "DECORATION",
-      quantityTotal: 50,
-      quantityAvailable: 32,
-      description: "Tecido Oxford 2x1.5m",
-      minStock: 5,
-      unitPrice: 25.00
-    },
-    {
-      id: 3,
-      name: "Prato Raso Porcelana",
-      category: "UTENSIL",
-      quantityTotal: 200,
-      quantityAvailable: 200,
-      description: "Branco 25cm",
-      minStock: 20,
-      unitPrice: 8.00
-    },
-    {
-      id: 4,
-      name: "Mesa Redonda",
-      category: "FURNITURE",
-      quantityTotal: 30,
-      quantityAvailable: 30,
-      description: "1.80m diâmetro com tampo de MDF",
-      minStock: 3,
-      unitPrice: 120.00
-    },
-    {
-      id: 5,
-      name: "Sofá 3 Lugares",
-      category: "FURNITURE",
-      quantityTotal: 15,
-      quantityAvailable: 15,
-      description: "Couro sintético preto",
-      minStock: 2,
-      unitPrice: 280.00
-    },
-    {
-      id: 6,
-      name: "Taça de Vidro",
-      category: "UTENSIL",
-      quantityTotal: 300,
-      quantityAvailable: 250,
-      description: "300ml cristal",
-      minStock: 30,
-      unitPrice: 3.50
-    },
-    {
-      id: 7,
-      name: "Arranjo de Flores",
-      category: "DECORATION",
-      quantityTotal: 25,
-      quantityAvailable: 25,
-      description: "Arranjo artificial 40cm",
-      minStock: 3,
-      unitPrice: 65.00
-    },
-    {
-      id: 8,
-      name: "Tapete Vermelho",
-      category: "DECORATION",
-      quantityTotal: 10,
-      quantityAvailable: 8,
-      description: "3x5m",
-      minStock: 1,
-      unitPrice: 150.00
-    }
-  ];
-};
-
-// Serviço para gerenciar reservas localmente (fallback)
-class LocalReservationService {
-  private storageKey = 'local_item_reservations';
-
-  getReservations(): any[] {
-    const stored = localStorage.getItem(this.storageKey);
-    return stored ? JSON.parse(stored) : [];
-  }
-
-  saveReservation(reservation: any): void {
-    const reservations = this.getReservations();
-    reservations.push({
-      ...reservation,
-      id: Date.now(),
-      createdAt: new Date().toISOString()
-    });
-    localStorage.setItem(this.storageKey, JSON.stringify(reservations));
-  }
-
-  getReservedQuantity(itemId: number, date: string): number {
-    const reservations = this.getReservations();
-    return reservations
-      .filter(r => r.itemId === itemId && r.eventDate === date && r.status !== 'RETURNED')
-      .reduce((sum, r) => sum + r.quantity, 0);
-  }
-
-  updateStatus(reservationId: number, status: string): void {
-    const reservations = this.getReservations();
-    const updated = reservations.map(r => 
-      r.id === reservationId ? { ...r, status } : r
-    );
-    localStorage.setItem(this.storageKey, JSON.stringify(updated));
-  }
+export interface Item {
+  id: number;
+  name: string;
+  description?: string;
+  category: 'DECORATION' | 'FURNITURE' | 'UTENSIL' | 'OTHER';
+  quantityTotal: number;
+  quantityAvailable: number;
+  minStock: number;
+  unitPrice: number;
+  reservations?: number;
+  status?: string;
 }
 
-export const localReservationService = new LocalReservationService();
+export interface CreateItemDTO {
+  name: string;
+  description?: string;
+  category: 'DECORATION' | 'FURNITURE' | 'UTENSIL' | 'OTHER';
+  quantityTotal: number;
+  minStock: number;
+  unitPrice: number;
+}
 
-// Tipo Item (se não existir, criar em src/types/Item.ts)
+// Mapeamento de categorias do frontend para backend (valores exatos do enum Java)
+const categoryToBackend: Record<string, Item.categorias> = {
+  'DECORATION': 'Decoracao',
+  'FURNITURE': 'Mobiliario',
+  'UTENSIL': 'Utensilios',
+  'OTHER': 'Outros'
+};
+
+// Mapeamento de categorias do backend para frontend
+const categoryToFrontend: Record<string, "DECORATION" | "FURNITURE" | "UTENSIL" | "OTHER"> = {
+  'Decoracao': 'DECORATION',
+  'Mobiliario': 'FURNITURE',
+  'Utensilios': 'UTENSIL',
+  'Outros': 'OTHER'
+};
+
+export const itemService = {
+  /**
+   * Busca todos os itens
+   */
+  getAllItems: async (): Promise<Item[]> => {
+    try {
+      console.log('📦 Buscando todos os itens...');
+      const response = await api.get('/api/itens');
+      console.log('✅ Itens carregados:', response.data.length);
+      
+      return response.data.map((item: any) => ({
+        id: item.id,
+        name: item.nome || '',
+        description: item.descricao,
+        category: categoryToFrontend[item.categoria] || 'OTHER',
+        quantityTotal: item.total || 0,
+        quantityAvailable: item.disponivel || 0,
+        minStock: item.estoqueMinimo || 0,
+        unitPrice: item.preco || 0,
+        reservations: item.quantidadeReservas || 0,
+        status: item.status
+      }));
+    } catch (error: any) {
+      console.error('❌ Erro ao buscar itens:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Busca item por ID
+   */
+  getItemById: async (id: number): Promise<Item> => {
+    try {
+      console.log(`📦 Buscando item ${id}...`);
+      const response = await api.get(`/api/itens/${id}`);
+      
+      return {
+        id: response.data.id,
+        name: response.data.nome || '',
+        description: response.data.descricao,
+        category: categoryToFrontend[response.data.categoria] || 'OTHER',
+        quantityTotal: response.data.total || 0,
+        quantityAvailable: response.data.disponivel || 0,
+        minStock: response.data.estoqueMinimo || 0,
+        unitPrice: response.data.preco || 0,
+        reservations: response.data.quantidadeReservas || 0,
+        status: response.data.status
+      };
+    } catch (error: any) {
+      console.error(`❌ Erro ao buscar item ${id}:`, error);
+      throw error;
+    }
+  },
+
+  /**
+   * Cria um novo item
+   */
+  createItem: async (itemData: CreateItemDTO): Promise<Item> => {
+    try {
+      // Log detalhado do que está chegando
+      console.log('📥 Dados recebidos no createItem:', JSON.stringify(itemData, null, 2));
+
+      // Validar dados obrigatórios
+      if (!itemData.name?.trim()) {
+        throw new Error('Nome do item é obrigatório');
+      }
+
+      if (!itemData.category) {
+        throw new Error('Categoria é obrigatória');
+      }
+
+      // Converter valores para número e garantir que são números (não strings)
+      const total = Number(itemData.quantityTotal);
+      const estoqueMinimo = Number(itemData.minStock);
+      const preco = Number(itemData.unitPrice);
+
+      // Validar se as conversões foram bem-sucedidas
+      if (isNaN(total)) {
+        throw new Error('Quantidade total deve ser um número válido');
+      }
+      if (isNaN(estoqueMinimo)) {
+        throw new Error('Estoque mínimo deve ser um número válido');
+      }
+      if (isNaN(preco)) {
+        throw new Error('Preço deve ser um número válido');
+      }
+
+      // Obter o valor da categoria no formato que o backend espera (enum)
+      const categoriaBackend = categoryToBackend[itemData.category];
+      
+      if (!categoriaBackend) {
+        throw new Error(`Categoria inválida: ${itemData.category}`);
+      }
+
+      // Payload EXATO que o backend espera baseado no DTO
+      const payload = {
+        nome: itemData.name.trim(),
+        descricao: itemData.description?.trim() || null,
+        categoria: categoriaBackend, // Enviar como string, o Spring converte para enum automaticamente
+        total: total, // number, não string
+        estoqueMinimo: estoqueMinimo, // number, não string
+        preco: preco // number, não string
+      };
+
+      console.log('📤 Enviando payload para o backend:', JSON.stringify(payload, null, 2));
+      console.log('📤 Tipos dos dados:', {
+        nome: typeof payload.nome,
+        descricao: typeof payload.descricao,
+        categoria: typeof payload.categoria,
+        total: typeof payload.total,
+        estoqueMinimo: typeof payload.estoqueMinimo,
+        preco: typeof payload.preco
+      });
+      
+      const response = await api.post('/api/itens', payload);
+      
+      console.log('✅ Resposta do backend:', response.data);
+      
+      // Mapear resposta para o formato do frontend
+      return {
+        id: response.data.id,
+        name: response.data.nome,
+        description: response.data.descricao,
+        category: categoryToFrontend[response.data.categoria] || 'OTHER',
+        quantityTotal: response.data.total,
+        quantityAvailable: response.data.disponivel,
+        minStock: response.data.estoqueMinimo,
+        unitPrice: response.data.preco,
+        reservations: response.data.quantidadeReservas,
+        status: response.data.status
+      };
+      
+    } catch (error: any) {
+      console.error('❌ Erro detalhado ao criar item:');
+      
+      if (error.response) {
+        console.error('Status:', error.response.status);
+        console.error('Dados da resposta de erro:', error.response.data);
+        console.error('Headers:', error.response.headers);
+
+        let errorMessage = 'Erro ao criar item';
+        let errorDetails = '';
+        
+        if (error.response.data) {
+          if (typeof error.response.data === 'string') {
+            errorMessage = error.response.data;
+          } else if (error.response.data.message) {
+            errorMessage = error.response.data.message;
+            errorDetails = error.response.data.details || '';
+          } else if (error.response.data.error) {
+            errorMessage = error.response.data.error;
+          }
+        }
+
+        throw new Error(`${errorMessage}${errorDetails ? ' - ' + errorDetails : ''} (Status: ${error.response.status})`);
+      } else if (error.request) {
+        console.error('Sem resposta do servidor:', error.request);
+        throw new Error('Servidor não respondeu. Verifique sua conexão.');
+      } else {
+        console.error('Erro na configuração:', error.message);
+        throw error;
+      }
+    }
+  },
+
+  /**
+   * Atualiza um item existente
+   */
+  updateItem: async (id: number, itemData: Partial<CreateItemDTO>): Promise<Item> => {
+    try {
+      // Buscar item atual para obter valores não alterados
+      const currentResponse = await api.get(`/api/itens/${id}`);
+      const currentItem = currentResponse.data;
+      
+      // Preparar payload com dados atualizados
+      const payload: any = {
+        nome: itemData.name?.trim() || currentItem.nome,
+        descricao: itemData.description?.trim() || currentItem.descricao,
+        categoria: itemData.category ? categoryToBackend[itemData.category] : currentItem.categoria,
+        total: itemData.quantityTotal !== undefined ? Number(itemData.quantityTotal) : currentItem.total,
+        estoqueMinimo: itemData.minStock !== undefined ? Number(itemData.minStock) : currentItem.estoqueMinimo,
+        preco: itemData.unitPrice !== undefined ? Number(itemData.unitPrice) : currentItem.preco
+      };
+
+      console.log(`📤 Atualizando item ${id}:`, payload);
+      
+      const response = await api.put(`/api/itens/${id}`, payload);
+      
+      console.log(`✅ Item ${id} atualizado com sucesso`);
+      
+      return {
+        id: response.data.id,
+        name: response.data.nome,
+        description: response.data.descricao,
+        category: categoryToFrontend[response.data.categoria] || 'OTHER',
+        quantityTotal: response.data.total,
+        quantityAvailable: response.data.disponivel,
+        minStock: response.data.estoqueMinimo,
+        unitPrice: response.data.preco,
+        reservations: response.data.quantidadeReservas,
+        status: response.data.status
+      };
+      
+    } catch (error: any) {
+      console.error(`❌ Erro ao atualizar item ${id}:`, error);
+      
+      if (error.response) {
+        let errorMessage = 'Erro ao atualizar item';
+        if (error.response.data?.message) {
+          errorMessage = error.response.data.message;
+        } else if (error.response.data?.error) {
+          errorMessage = error.response.data.error;
+        }
+        throw new Error(`${errorMessage} (Status: ${error.response.status})`);
+      }
+      
+      throw error;
+    }
+  },
+
+  /**
+   * Deleta um item
+   */
+  deleteItem: async (id: number): Promise<void> => {
+    try {
+      console.log(`🗑️ Deletando item ${id}...`);
+      await api.delete(`/api/itens/${id}`);
+      console.log(`✅ Item ${id} deletado com sucesso`);
+    } catch (error: any) {
+      console.error(`❌ Erro ao deletar item ${id}:`, error);
+      
+      if (error.response) {
+        let errorMessage = 'Erro ao deletar item';
+        if (error.response.data?.message) {
+          errorMessage = error.response.data.message;
+        } else if (error.response.data?.error) {
+          errorMessage = error.response.data.error;
+        }
+        throw new Error(`${errorMessage} (Status: ${error.response.status})`);
+      }
+      
+      throw error;
+    }
+  }
+};
+
+// Para usar o enum do backend no TypeScript
+export namespace Item {
+  export type categorias = 'Mobiliario' | 'Decoracao' | 'Utensilios' | 'Outros';
+}
+
 export type { Item };

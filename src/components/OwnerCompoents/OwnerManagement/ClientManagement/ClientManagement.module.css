@@ -1,0 +1,208 @@
+/* src/components/admin/clients/ClientManagement.module.css */
+
+.container {
+    padding: 32px;
+    max-width: 1600px;
+    margin: 0 auto;
+    min-height: 100vh;
+    background: #f8fafc;
+}
+
+/* Header */
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 28px;
+    background: white;
+    padding: 24px 32px;
+    border-radius: 20px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+    border: 1px solid #f1f5f9;
+}
+
+.headerLeft {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.title {
+    font-size: 32px;
+    font-weight: 700;
+    color: #0f172a;
+    margin: 0;
+    letter-spacing: -0.5px;
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.clientCount {
+    background: #00B4D8;
+    color: white;
+    padding: 6px 14px;
+    border-radius: 30px;
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+}
+
+.headerActions {
+    display: flex;
+    gap: 12px;
+}
+
+.filterToggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 20px;
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    color: #475569;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.filterToggle:hover {
+    background: #f8fafc;
+    border-color: #4f46e5;
+    color: #4f46e5;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.filterToggle.active {
+    background: #00B4D8;
+    border-color: #ffffff;
+    color: white;
+}
+
+.filterToggleIcon {
+    font-size: 16px;
+}
+
+.primaryButton {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 24px;
+    background: #00B4D8;
+    border: none;
+    border-radius: 12px;
+    color: white;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+}
+
+.primaryButton:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(79, 70, 229, 0.4);
+}
+
+.buttonIcon {
+    font-size: 18px;
+    font-weight: 400;
+}
+
+.emptyStateWrapper {
+    margin-top: 40px;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+    .container {
+        padding: 24px;
+    }
+
+    .header {
+        padding: 20px 24px;
+    }
+
+    .title {
+        font-size: 28px;
+    }
+}
+
+@media (max-width: 768px) {
+    .container {
+        padding: 16px;
+    }
+
+    .header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 16px;
+        padding: 20px;
+    }
+
+    .headerLeft {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .headerActions {
+        width: 100%;
+        flex-direction: column;
+    }
+
+    .filterToggle,
+    .primaryButton {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .filterToggleText {
+        display: inline;
+    }
+
+    .title {
+        font-size: 24px;
+    }
+}
+
+@media (max-width: 480px) {
+    .container {
+        padding: 12px;
+    }
+
+    .header {
+        padding: 16px;
+    }
+
+    .title {
+        font-size: 22px;
+    }
+
+    .clientCount {
+        font-size: 12px;
+        padding: 4px 10px;
+    }
+
+    .filterToggle span:not(.filterToggleIcon) {
+        display: none;
+    }
+
+    .filterToggle {
+        padding: 12px;
+    }
+
+    .primaryButton {
+        padding: 12px;
+    }
+
+    .buttonIcon {
+        margin-right: 0;
+    }
+
+    .primaryButton span:last-child {
+        display: none;
+    }
+}
