@@ -366,7 +366,236 @@
   text-align: right;
   min-width: 120px;
 }
+/* Adicione ao final do OwnerDashboard.module.css */
 
+/* ========== FILTROS DE EVENTOS ========== */
+.eventsFiltersSection {
+  margin: 24px 0 20px 0;
+}
+
+.filterToggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  color: var(--text-secondary);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  width: fit-content;
+}
+
+.filterToggle:hover {
+  background: var(--primary-100);
+  border-color: var(--primary-500);
+  color: var(--primary-600);
+}
+
+.filterCount {
+  margin-left: 8px;
+  padding: 2px 8px;
+  background: var(--primary-500);
+  color: white;
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.filtersPanel {
+  margin-top: 16px;
+  padding: 20px;
+  background: var(--bg-tertiary);
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+}
+
+.searchBox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+
+.searchBox svg {
+  color: var(--text-muted);
+}
+
+.searchInput {
+  flex: 1;
+  border: none;
+  background: transparent;
+  font-size: 14px;
+  color: var(--text-primary);
+  outline: none;
+}
+
+.clearSearchButton {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.clearSearchButton:hover {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+
+.filtersGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.filterGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.filterGroup label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.filterSelect {
+  padding: 10px 12px;
+  border: 1px solid var(--input-border);
+  border-radius: 8px;
+  font-size: 14px;
+  background: var(--input-bg);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.filterSelect:hover {
+  border-color: var(--primary-500);
+}
+
+.filterSelect:focus {
+  outline: none;
+  border-color: var(--primary-500);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.dateRangeInputs,
+.valueRangeInputs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dateRangeInputs span,
+.valueRangeInputs span {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.dateInput,
+.valueInput {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid var(--input-border);
+  border-radius: 6px;
+  font-size: 13px;
+  background: var(--input-bg);
+  color: var(--text-primary);
+}
+
+.valueInput {
+  min-width: 80px;
+}
+
+.filtersActions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-color);
+}
+
+.filterResults {
+  font-size: 14px;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.clearFiltersButton {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: transparent;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.clearFiltersButton:hover {
+  background: var(--error-100);
+  border-color: var(--error-500);
+  color: var(--error-600);
+}
+
+@media (max-width: 768px) {
+  .filtersGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .dateRangeInputs,
+  .valueRangeInputs {
+    flex-direction: column;
+  }
+
+  .dateRangeInputs span,
+  .valueRangeInputs span {
+    display: none;
+  }
+
+  .dateInput,
+  .valueInput {
+    width: 100%;
+  }
+
+  .filtersActions {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .clearFiltersButton {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .filterToggle {
+    width: 100%;
+    justify-content: center;
+  }
+}
 .valueAmount {
   display: flex;
   align-items: center;

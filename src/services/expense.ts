@@ -1,3 +1,4 @@
+// src/services/expense.ts
 import { api } from './api';
 
 export interface Expense {
@@ -10,7 +11,7 @@ export interface Expense {
   categoria?: string;
   fornecedor?: string;
   formaPagamento?: string;
-  status: string; // "PAID" ou "PENDING" no frontend
+  status: string;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -23,7 +24,7 @@ export interface CreateExpenseDTO {
   categoria?: string;
   fornecedor?: string;
   formaPagamento?: string;
-  status: string; // "PAID" ou "PENDING"
+  status: string;
 }
 
 export const EXPENSE_CATEGORIES = [
@@ -42,19 +43,16 @@ export const EXPENSE_CATEGORIES = [
   { id: 'Outros', name: 'Outros' }
 ];
 
-// Mapeamento de status do frontend para o backend
 const STATUS_MAP_TO_BACKEND: Record<string, string> = {
   'PENDING': 'Pendente',
   'PAID': 'Pago'
 };
 
-// Mapeamento de status do backend para o frontend
 const STATUS_MAP_TO_FRONTEND: Record<string, string> = {
   'Pendente': 'PENDING',
   'Pago': 'PAID'
 };
 
-// Mapeamento de categorias do frontend para o backend
 export const CATEGORY_MAP_TO_BACKEND: Record<string, string> = {
   'Alimentação': 'Alimentação',
   'Bebidas': 'Bebidas',
@@ -71,7 +69,6 @@ export const CATEGORY_MAP_TO_BACKEND: Record<string, string> = {
   'Outros': 'Outros'
 };
 
-// Mapeamento de categorias do backend para o frontend
 export const CATEGORY_MAP_TO_FRONTEND: Record<string, string> = {
   'Alimentação': 'Alimentação',
   'Bebidas': 'Bebidas',
@@ -89,16 +86,12 @@ export const CATEGORY_MAP_TO_FRONTEND: Record<string, string> = {
 };
 
 export const expenseService = {
-  /**
-   * Busca todas as despesas
-   */
   getAllExpenses: async (): Promise<Expense[]> => {
     try {
       console.log('💰 Buscando todas as despesas...');
       const response = await api.get('/api/despesas');
       console.log('✅ Despesas carregadas:', response.data);
       
-      // Mapear a resposta para o formato do frontend
       const expenses = response.data.map((expense: any) => ({
         id: expense.id,
         eventId: expense.idEvento,
@@ -119,9 +112,6 @@ export const expenseService = {
     }
   },
 
-  /**
-   * Busca despesas por evento
-   */
   getExpensesByEvent: async (eventId: number): Promise<Expense[]> => {
     try {
       const allExpenses = await expenseService.getAllExpenses();
@@ -132,14 +122,10 @@ export const expenseService = {
     }
   },
 
-  /**
-   * Cria uma nova despesa
-   */
   createExpense: async (expenseData: CreateExpenseDTO): Promise<Expense> => {
     try {
       console.log('📝 Criando despesa:', expenseData);
       
-      // Validar dados
       if (!expenseData.eventId) throw new Error('eventId é obrigatório');
       if (!expenseData.descricao) throw new Error('descrição é obrigatória');
       if (!expenseData.valor || expenseData.valor <= 0) throw new Error('valor deve ser maior que zero');
@@ -161,7 +147,6 @@ export const expenseService = {
       const response = await api.post('/api/despesas', payload);
       console.log('✅ Resposta:', response.data);
       
-      // Mapear a resposta
       return {
         id: response.data.id,
         eventId: response.data.idEvento,
@@ -187,14 +172,10 @@ export const expenseService = {
     }
   },
 
-  /**
-   * Atualiza uma despesa existente
-   */
   updateExpense: async (id: number, expenseData: Partial<CreateExpenseDTO>): Promise<Expense> => {
     try {
       console.log(`✏️ Atualizando despesa ${id}:`, expenseData);
       
-      // Buscar a despesa atual primeiro para manter os dados existentes
       const currentExpenses = await expenseService.getAllExpenses();
       const currentExpense = currentExpenses.find(e => e.id === id);
       
@@ -202,16 +183,15 @@ export const expenseService = {
         throw new Error('Despesa não encontrada');
       }
       
-      // Construir payload com todos os campos necessários
       const payload: any = {
-        descricao: expenseData.descricao || currentExpense.descricao,
+        descricao: expenseData.descricao !== undefined ? expenseData.descricao : currentExpense.descricao,
         valor: expenseData.valor !== undefined ? expenseData.valor : currentExpense.valor,
-        data: expenseData.data || currentExpense.data,
+        data: expenseData.data !== undefined ? expenseData.data : currentExpense.data,
         categoria: expenseData.categoria !== undefined ? expenseData.categoria : currentExpense.categoria,
         fornecedor: expenseData.fornecedor !== undefined ? expenseData.fornecedor : currentExpense.fornecedor,
         formaPagamento: expenseData.formaPagamento !== undefined ? expenseData.formaPagamento : currentExpense.formaPagamento,
         status: expenseData.status ? STATUS_MAP_TO_BACKEND[expenseData.status] : STATUS_MAP_TO_BACKEND[currentExpense.status],
-        idEvento: expenseData.eventId || currentExpense.eventId
+        idEvento: expenseData.eventId !== undefined ? expenseData.eventId : currentExpense.eventId
       };
       
       console.log('📦 Payload atualização:', payload);
@@ -236,25 +216,16 @@ export const expenseService = {
     }
   },
 
-  /**
-   * Atualiza apenas o status de uma despesa - CORRIGIDO: usa o endpoint PUT
-   */
   updateExpenseStatus: async (id: number, status: 'PENDING' | 'PAID'): Promise<Expense> => {
     try {
       console.log(`🔄 Atualizando status da despesa ${id} para:`, status);
-      
-      // Usar o endpoint PUT existente, atualizando apenas o status
       return await expenseService.updateExpense(id, { status });
-      
     } catch (error: any) {
       console.error(`❌ Erro ao atualizar status da despesa ${id}:`, error);
       throw error;
     }
   },
 
-  /**
-   * Deleta uma despesa
-   */
   deleteExpense: async (id: number): Promise<void> => {
     try {
       console.log(`🗑️ Deletando despesa ${id}...`);

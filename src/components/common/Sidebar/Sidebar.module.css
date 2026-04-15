@@ -300,7 +300,6 @@
 .userName {
   font-size: 14px;
   font-weight: 600;
-  color: var(--text-primary);
   flex: 1;
   overflow: hidden;
   text-overflow: ellipsis;

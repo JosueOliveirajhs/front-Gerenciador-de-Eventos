@@ -1,15 +1,23 @@
+// src/components/admin/clients/ClientManagement.tsx
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { 
   FiSearch,  
   FiFilter,
   FiX,
   FiUsers,
-  FiUserPlus
+  FiUserPlus,
+  FiCalendar,
+  FiCheckCircle,
+  FiClock,
+  FiAlertCircle,
+  FiChevronDown,
+  FiChevronUp
 } from 'react-icons/fi';
 import { 
   MdPeople, 
+  MdFilterList
 } from 'react-icons/md';
-import { User, Filters, Receipt } from '../../types';
+import { User, Filters } from '../../types';
 import { userService } from '../../../../services/users';
 import { receiptService } from '../../../../services/receipts';
 import { boletoService } from '../../../../services/boletos';
@@ -28,590 +36,840 @@ import { BoletoModal } from '../../components/BoletoModal';
 
 import styles from './ClientManagement.module.css';
 
+interface AdvancedFilters {
+  status: 'ALL' | 'ACTIVE' | 'BLOCKED' | 'TERMINATED';
+  hasEvents: 'ALL' | 'YES' | 'NO';
+  dateRange: {
+    start: string;
+    end: string;
+  };
+}
+
+interface ClientStats {
+  total: number;
+  active: number;
+  blocked: number;
+  terminated: number;
+  withEvents: number;
+  withoutEvents: number;
+}
+
 export const ClientManagement: React.FC = () => {
-    // ✅ Flag para controlar se o componente está visível
-    const [isVisible, setIsVisible] = useState(false);
-    const hasLoadedRef = useRef(false);
+  const [isVisible, setIsVisible] = useState(false);
+  const hasLoadedRef = useRef(false);
+  
+  const [clients, setClients] = useState<User[]>([]);
+  const [filteredClients, setFilteredClients] = useState<User[]>([]);
+  const [clientEventsMap, setClientEventsMap] = useState<Map<number, number>>(new Map());
+  const [loading, setLoading] = useState(true);
+  const [showForm, setShowForm] = useState(false);
+  const [editingClient, setEditingClient] = useState<User | null>(null);
+  const [showFilters, setShowFilters] = useState(true);
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+  const [selectedClient, setSelectedClient] = useState<User | null>(null);
+  const [showReceiptModal, setShowReceiptModal] = useState(false);
+  const [showBoletoModal, setShowBoletoModal] = useState(false);
+  const [receipts, setReceipts] = useState<Receipt[]>([]);
+  
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [clientToDelete, setClientToDelete] = useState<User | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
+  const [successType, setSuccessType] = useState<'create' | 'update' | 'delete'>('create');
+  
+  const [showError, setShowError] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+  
+  const [linkedItemsInfo, setLinkedItemsInfo] = useState({
+    hasEvents: false,
+    eventsCount: 0,
+    events: [] as any[],
+    hasReceipts: false,
+    hasBoletos: false
+  });
+  
+  const [filters, setFilters] = useState<Filters>({
+    cpf: '',
+    name: '',
+    email: '',
+    phone: ''
+  });
+
+  const [advancedFilters, setAdvancedFilters] = useState<AdvancedFilters>({
+    status: 'ALL',
+    hasEvents: 'ALL',
+    dateRange: {
+      start: '',
+      end: ''
+    }
+  });
+
+  const [stats, setStats] = useState<ClientStats>({
+    total: 0,
+    active: 0,
+    blocked: 0,
+    terminated: 0,
+    withEvents: 0,
+    withoutEvents: 0
+  });
+
+  // Carregar clientes e eventos
+  const loadClients = useCallback(async () => {
+    if (!isVisible || hasLoadedRef.current) return;
     
-    // Estados principais
-    const [clients, setClients] = useState<User[]>([]);
-    const [filteredClients, setFilteredClients] = useState<User[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [showForm, setShowForm] = useState(false);
-    const [editingClient, setEditingClient] = useState<User | null>(null);
-    const [showFilters, setShowFilters] = useState(true);
-    const [selectedClient, setSelectedClient] = useState<User | null>(null);
-    const [showReceiptModal, setShowReceiptModal] = useState(false);
-    const [showBoletoModal, setShowBoletoModal] = useState(false);
-    const [receipts, setReceipts] = useState<Receipt[]>([]);
+    try {
+      setLoading(true);
+      console.log('🔍 Carregando clientes...');
+      
+      const clientsData = await userService.getAllClients();
+      console.log('✅ Clientes carregados:', clientsData.length);
+      
+      // Carregar contagem de eventos para cada cliente
+      const eventsMap = new Map<number, number>();
+      let activeCount = 0;
+      let blockedCount = 0;
+      let terminatedCount = 0;
+      let withEventsCount = 0;
+      
+      for (const client of clientsData) {
+        try {
+          const events = await eventService.getEventsByClientId(client.id);
+          eventsMap.set(client.id, events.length);
+          if (events.length > 0) withEventsCount++;
+          
+          // Contar por status
+          if (client.status === 'ACTIVE') activeCount++;
+          else if (client.status === 'BLOCKED') blockedCount++;
+          else if (client.status === 'TERMINATED') terminatedCount++;
+        } catch (error) {
+          eventsMap.set(client.id, 0);
+        }
+      }
+      
+      setClientEventsMap(eventsMap);
+      setClients(clientsData);
+      setFilteredClients(clientsData);
+      
+      setStats({
+        total: clientsData.length,
+        active: activeCount,
+        blocked: blockedCount,
+        terminated: terminatedCount,
+        withEvents: withEventsCount,
+        withoutEvents: clientsData.length - withEventsCount
+      });
+      
+      hasLoadedRef.current = true;
+    } catch (error) {
+      console.error('❌ Erro ao carregar clientes:', error);
+      setErrorMessage('Erro ao carregar clientes. Tente novamente.');
+      setShowError(true);
+    } finally {
+      setLoading(false);
+    }
+  }, [isVisible]);
+
+  useEffect(() => {
+    setIsVisible(true);
+    return () => setIsVisible(false);
+  }, []);
+
+  useEffect(() => {
+    if (isVisible && !hasLoadedRef.current) {
+      loadClients();
+    }
+  }, [isVisible, loadClients]);
+
+  const reloadClients = useCallback(async () => {
+    try {
+      setLoading(true);
+      const clientsData = await userService.getAllClients();
+      
+      const eventsMap = new Map<number, number>();
+      let activeCount = 0;
+      let blockedCount = 0;
+      let terminatedCount = 0;
+      let withEventsCount = 0;
+      
+      for (const client of clientsData) {
+        try {
+          const events = await eventService.getEventsByClientId(client.id);
+          eventsMap.set(client.id, events.length);
+          if (events.length > 0) withEventsCount++;
+          
+          if (client.status === 'ACTIVE') activeCount++;
+          else if (client.status === 'BLOCKED') blockedCount++;
+          else if (client.status === 'TERMINATED') terminatedCount++;
+        } catch (error) {
+          eventsMap.set(client.id, 0);
+        }
+      }
+      
+      setClientEventsMap(eventsMap);
+      setClients(clientsData);
+      setFilteredClients(clientsData);
+      
+      setStats({
+        total: clientsData.length,
+        active: activeCount,
+        blocked: blockedCount,
+        terminated: terminatedCount,
+        withEvents: withEventsCount,
+        withoutEvents: clientsData.length - withEventsCount
+      });
+    } catch (error) {
+      console.error('Erro ao recarregar clientes:', error);
+      setErrorMessage('Erro ao carregar clientes. Tente novamente.');
+      setShowError(true);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // Aplicar filtros
+  const applyFilters = useCallback(() => {
+    if (!clients.length) return;
     
-    // Estados para o modal de exclusão
-    const [showDeleteModal, setShowDeleteModal] = useState(false);
-    const [clientToDelete, setClientToDelete] = useState<User | null>(null);
-    const [isDeleting, setIsDeleting] = useState(false);
-    
-    // Estados para modal de sucesso
-    const [showSuccessModal, setShowSuccessModal] = useState(false);
-    const [successMessage, setSuccessMessage] = useState('');
-    const [successType, setSuccessType] = useState<'create' | 'update' | 'delete'>('create');
-    
-    // Estados para modal de erro
-    const [showError, setShowError] = useState(false);
-    const [errorMessage, setErrorMessage] = useState('');
-    
-    const [linkedItemsInfo, setLinkedItemsInfo] = useState({
-        hasEvents: false,
-        eventsCount: 0,
-        events: [] as any[],
-        hasReceipts: false,
-        hasBoletos: false
-    });
-    
-    const [filters, setFilters] = useState<Filters>({
-        cpf: '',
-        name: '',
-        email: '',
-        phone: ''
-    });
+    let result = [...clients];
 
-    // ✅ Só carrega dados quando o componente estiver visível
-    useEffect(() => {
-        setIsVisible(true);
-        return () => setIsVisible(false);
-    }, []);
-
-    // ✅ Carregar clientes - SÓ quando visível e ainda não carregou
-    const loadClients = useCallback(async () => {
-        if (!isVisible || hasLoadedRef.current) return;
-        
-        try {
-            setLoading(true);
-            const clientsData = await userService.getAllClients();
-            setClients(clientsData);
-            setFilteredClients(clientsData);
-            hasLoadedRef.current = true;
-        } catch (error) {
-            console.error('Erro ao carregar clientes:', error);
-            setErrorMessage('Erro ao carregar clientes. Tente novamente.');
-            setShowError(true);
-        } finally {
-            setLoading(false);
-        }
-    }, [isVisible]);
-
-    // ✅ useEffect para carregar dados APENAS quando visível
-    useEffect(() => {
-        if (isVisible && !hasLoadedRef.current) {
-            loadClients();
-        }
-    }, [isVisible, loadClients]);
-
-    // ✅ Recarregar clientes (quando necessário, ex: após criar/editar/excluir)
-    const reloadClients = useCallback(async () => {
-        try {
-            setLoading(true);
-            const clientsData = await userService.getAllClients();
-            setClients(clientsData);
-            setFilteredClients(clientsData);
-        } catch (error) {
-            console.error('Erro ao carregar clientes:', error);
-            setErrorMessage('Erro ao carregar clientes. Tente novamente.');
-            setShowError(true);
-        } finally {
-            setLoading(false);
-        }
-    }, []);
-
-    // ✅ Aplicar filtros - MEMOIZADO
-    const applyFilters = useCallback(() => {
-        if (!clients.length) return;
-        
-        let result = [...clients];
-
-        if (filters.cpf) {
-            const cpfClean = filters.cpf.replace(/\D/g, '');
-            result = result.filter(client => 
-                client.cpf.includes(cpfClean)
-            );
-        }
-
-        if (filters.name) {
-            result = result.filter(client => 
-                client.name.toLowerCase().includes(filters.name.toLowerCase())
-            );
-        }
-
-        if (filters.email) {
-            result = result.filter(client => 
-                client.email?.toLowerCase().includes(filters.email.toLowerCase())
-            );
-        }
-
-        if (filters.phone) {
-            const phoneClean = filters.phone.replace(/\D/g, '');
-            result = result.filter(client => 
-                client.phone?.replace(/\D/g, '').includes(phoneClean)
-            );
-        }
-
-        setFilteredClients(result);
-    }, [filters, clients]);
-
-    // ✅ useEffect para filtros - só quando há dados
-    useEffect(() => {
-        if (clients.length > 0) {
-            applyFilters();
-        }
-    }, [applyFilters, clients.length]);
-
-    // Handlers de filtro
-    const handleFilterChange = useCallback((field: keyof Filters, value: string) => {
-        setFilters(prev => ({ ...prev, [field]: value }));
-    }, []);
-
-    const handleClearFilters = useCallback(() => {
-        setFilters({
-            cpf: '',
-            name: '',
-            email: '',
-            phone: ''
-        });
-    }, []);
-
-    // Handlers de cliente
-    const handleCreateClient = async (clientData: any) => {
-        try {
-            await userService.createClient(clientData);
-            await reloadClients();
-            setSuccessMessage('Cliente cadastrado com sucesso!');
-            setSuccessType('create');
-            setShowSuccessModal(true);
-            setShowForm(false);
-        } catch (error: any) {
-            console.error('Erro ao criar cliente:', error);
-            
-            let message = 'Erro ao criar cliente. Tente novamente.';
-            if (error.message) {
-                message = error.message;
-            } else if (error.response?.data?.message) {
-                message = error.response.data.message;
-            } else if (error.response?.data?.error) {
-                message = error.response.data.error;
-            }
-            
-            setErrorMessage(message);
-            setShowError(true);
-            throw error;
-        }
-    };
-
-    const handleUpdateClient = async (id: number, clientData: any) => {
-        try {
-            await userService.updateClient(id, clientData);
-            await reloadClients();
-            setSuccessMessage('Cliente atualizado com sucesso!');
-            setSuccessType('update');
-            setShowSuccessModal(true);
-            setEditingClient(null);
-        } catch (error: any) {
-            console.error('Erro ao atualizar cliente:', error);
-            
-            let message = 'Erro ao atualizar cliente. Tente novamente.';
-            if (error.message) {
-                message = error.message;
-            } else if (error.response?.data?.message) {
-                message = error.response.data.message;
-            } else if (error.response?.data?.error) {
-                message = error.response.data.error;
-            }
-            
-            setErrorMessage(message);
-            setShowError(true);
-            throw error;
-        }
-    };
-
-    // Função para abrir modal de exclusão com verificação de eventos
-    const openDeleteModal = async (client: User) => {
-        console.log('🔍 Cliente recebido para exclusão:', client);
-        
-        if (!client || !client.id) {
-            console.error('❌ Cliente inválido:', client);
-            setErrorMessage('Erro: Cliente inválido');
-            setShowError(true);
-            return;
-        }
-        
-        try {
-            const clientEvents = await eventService.getEventsByClientId(client.id);
-            const hasEvents = clientEvents.length > 0;
-            
-            console.log(`📊 Cliente ${client.name} tem ${clientEvents.length} eventos:`, clientEvents);
-            
-            setLinkedItemsInfo({
-                hasEvents,
-                eventsCount: clientEvents.length,
-                events: clientEvents,
-                hasReceipts: false,
-                hasBoletos: false
-            });
-            
-        } catch (error) {
-            console.error('❌ Erro ao verificar eventos do cliente:', error);
-            setLinkedItemsInfo({
-                hasEvents: false,
-                eventsCount: 0,
-                events: [],
-                hasReceipts: false,
-                hasBoletos: false
-            });
-        }
-        
-        setClientToDelete(client);
-        setShowDeleteModal(true);
-    };
-
-    // Função para excluir cliente
-    const handleDeleteClient = async () => {
-        if (!clientToDelete || !clientToDelete.id) {
-            console.error('❌ Nenhum cliente selecionado para exclusão');
-            return;
-        }
-        
-        if (linkedItemsInfo.hasEvents) {
-            setErrorMessage('Este cliente possui eventos vinculados e não pode ser excluído.');
-            setShowError(true);
-            return;
-        }
-        
-        console.log('🗑️ Excluindo cliente:', clientToDelete.id, clientToDelete.name);
-        
-        setIsDeleting(true);
-        
-        try {
-            await userService.deleteClient(clientToDelete.id);
-            
-            setClients(prev => prev.filter(c => c.id !== clientToDelete.id));
-            setFilteredClients(prev => prev.filter(c => c.id !== clientToDelete.id));
-            
-            console.log('✅ Cliente excluído com sucesso');
-            
-            setShowDeleteModal(false);
-            setSuccessMessage(`Cliente ${clientToDelete.name} excluído com sucesso!`);
-            setSuccessType('delete');
-            setShowSuccessModal(true);
-            
-        } catch (error: any) {
-            console.error('❌ Erro ao excluir cliente:', error);
-            
-            let message = 'Erro ao excluir cliente. Verifique se não há eventos vinculados.';
-            if (error.message) {
-                message = error.message;
-            } else if (error.response?.data?.message) {
-                message = error.response.data.message;
-            } else if (error.response?.data?.error) {
-                message = error.response.data.error;
-            }
-            
-            setErrorMessage(message);
-            setShowError(true);
-        } finally {
-            setIsDeleting(false);
-        }
-    };
-
-    const handleSuccessClose = () => {
-        setShowSuccessModal(false);
-        if (successType === 'delete') {
-            setClientToDelete(null);
-        }
-    };
-
-    // Handlers de comprovantes
-    const handleViewReceipts = async (client: User) => {
-        setSelectedClient(client);
-        try {
-            const receiptsData = await receiptService.getClientReceipts(client.id);
-            setReceipts(receiptsData);
-            setShowReceiptModal(true);
-        } catch (error) {
-            console.error('Erro ao carregar comprovantes:', error);
-            setErrorMessage('Erro ao carregar comprovantes. Tente novamente.');
-            setShowError(true);
-        }
-    };
-
-    const handleUploadReceipt = async (file: File, description: string, value?: number) => {
-        if (!selectedClient) return;
-        
-        try {
-            await receiptService.uploadReceipt({
-                clientId: selectedClient.id,
-                file,
-                description,
-                value
-            });
-            const receiptsData = await receiptService.getClientReceipts(selectedClient.id);
-            setReceipts(receiptsData);
-        } catch (error) {
-            console.error('Erro ao fazer upload:', error);
-            setErrorMessage('Erro ao fazer upload do comprovante. Tente novamente.');
-            setShowError(true);
-            throw error;
-        }
-    };
-
-    const handleDeleteReceipt = async (receiptId: number) => {
-        if (window.confirm('Tem certeza que deseja excluir este comprovante?')) {
-            try {
-                await receiptService.deleteReceipt(receiptId);
-                if (selectedClient) {
-                    const receiptsData = await receiptService.getClientReceipts(selectedClient.id);
-                    setReceipts(receiptsData);
-                }
-            } catch (error) {
-                console.error('Erro ao excluir comprovante:', error);
-                setErrorMessage('Erro ao excluir comprovante. Tente novamente.');
-                setShowError(true);
-            }
-        }
-    };
-
-    // Handlers de boletos
-    const handleViewBoletos = async (client: User) => {
-        setSelectedClient(client);
-        setShowBoletoModal(true);
-    };
-
-    const handleGenerateBoleto = async (data: any) => {
-        if (!selectedClient) return;
-        
-        try {
-            await boletoService.generateBoleto({
-                clientId: selectedClient.id,
-                ...data
-            });
-        } catch (error) {
-            console.error('Erro ao gerar boleto:', error);
-            setErrorMessage('Erro ao gerar boleto. Tente novamente.');
-            setShowError(true);
-            throw error;
-        }
-    };
-
-    const handleSendBoletoEmail = async (boletoId: number) => {
-        try {
-            await boletoService.sendBoletoByEmail(boletoId);
-        } catch (error) {
-            console.error('Erro ao enviar boleto:', error);
-            setErrorMessage('Erro ao enviar boleto por email. Tente novamente.');
-            setShowError(true);
-            throw error;
-        }
-    };
-
-    const handleMarkBoletoAsPaid = async (boletoId: number) => {
-        try {
-            await boletoService.markAsPaid(boletoId);
-        } catch (error) {
-            console.error('Erro ao marcar boleto como pago:', error);
-            setErrorMessage('Erro ao marcar boleto como pago. Tente novamente.');
-            setShowError(true);
-            throw error;
-        }
-    };
-
-    // ✅ Valores memoizados
-    const hasActiveFilters = useMemo(() => {
-        return Object.values(filters).some(v => v.trim() !== '');
-    }, [filters]);
-
-    const showEmptyState = filteredClients.length === 0;
-
-    // ✅ Se não estiver visível ou carregando inicialmente, mostra placeholder
-    if (!isVisible || (loading && !hasLoadedRef.current)) {
-        return (
-            <div className={styles.container}>
-                <div className={styles.header}>
-                    <div className={styles.headerLeft}>
-                        <h1 className={styles.title}>
-                            <MdPeople size={28} />
-                            Gestão de Clientes
-                        </h1>
-                    </div>
-                </div>
-                <div className={styles.loadingPlaceholder}>
-                    <LoadingSpinner text="Carregando clientes..." />
-                </div>
-            </div>
-        );
+    // Filtros básicos
+    if (filters.cpf) {
+      const cpfClean = filters.cpf.replace(/\D/g, '');
+      result = result.filter(client => 
+        client.cpf.includes(cpfClean)
+      );
     }
 
+    if (filters.name) {
+      result = result.filter(client => 
+        client.name.toLowerCase().includes(filters.name.toLowerCase())
+      );
+    }
+
+    if (filters.email) {
+      result = result.filter(client => 
+        client.email?.toLowerCase().includes(filters.email.toLowerCase())
+      );
+    }
+
+    if (filters.phone) {
+      const phoneClean = filters.phone.replace(/\D/g, '');
+      result = result.filter(client => 
+        client.phone?.replace(/\D/g, '').includes(phoneClean)
+      );
+    }
+
+    // Filtros avançados - Status
+    if (advancedFilters.status !== 'ALL') {
+      result = result.filter(client => client.status === advancedFilters.status);
+    }
+
+    // Filtros avançados - Data de cadastro
+    if (advancedFilters.dateRange.start) {
+      result = result.filter(client => 
+        client.createdAt && new Date(client.createdAt) >= new Date(advancedFilters.dateRange.start)
+      );
+    }
+    
+    if (advancedFilters.dateRange.end) {
+      result = result.filter(client => 
+        client.createdAt && new Date(client.createdAt) <= new Date(advancedFilters.dateRange.end)
+      );
+    }
+
+    // Filtros avançados - Possui eventos
+    if (advancedFilters.hasEvents !== 'ALL') {
+      result = result.filter(client => {
+        const eventCount = clientEventsMap.get(client.id) || 0;
+        return advancedFilters.hasEvents === 'YES' ? eventCount > 0 : eventCount === 0;
+      });
+    }
+
+    setFilteredClients(result);
+  }, [filters, advancedFilters, clients, clientEventsMap]);
+
+  useEffect(() => {
+    if (clients.length > 0) {
+      applyFilters();
+    }
+  }, [applyFilters, clients.length]);
+
+  // Handlers de filtro
+  const handleFilterChange = useCallback((field: keyof Filters, value: string) => {
+    setFilters(prev => ({ ...prev, [field]: value }));
+  }, []);
+
+  const handleClearFilters = useCallback(() => {
+    setFilters({
+      cpf: '',
+      name: '',
+      email: '',
+      phone: ''
+    });
+  }, []);
+
+  const handleClearAdvancedFilters = useCallback(() => {
+    setAdvancedFilters({
+      status: 'ALL',
+      hasEvents: 'ALL',
+      dateRange: {
+        start: '',
+        end: ''
+      }
+    });
+  }, []);
+
+  const handleClearAllFilters = useCallback(() => {
+    handleClearFilters();
+    handleClearAdvancedFilters();
+  }, [handleClearFilters, handleClearAdvancedFilters]);
+
+  // Handlers de cliente
+  const handleCreateClient = async (clientData: any) => {
+    try {
+      await userService.createClient(clientData);
+      await reloadClients();
+      setSuccessMessage('Cliente cadastrado com sucesso!');
+      setSuccessType('create');
+      setShowSuccessModal(true);
+      setShowForm(false);
+    } catch (error: any) {
+      console.error('Erro ao criar cliente:', error);
+      
+      let message = 'Erro ao criar cliente. Tente novamente.';
+      if (error.message) {
+        message = error.message;
+      } else if (error.response?.data?.message) {
+        message = error.response.data.message;
+      } else if (error.response?.data?.error) {
+        message = error.response.data.error;
+      }
+      
+      setErrorMessage(message);
+      setShowError(true);
+      throw error;
+    }
+  };
+
+  const handleUpdateClient = async (id: number, clientData: any) => {
+    try {
+      await userService.updateClient(id, clientData);
+      await reloadClients();
+      setSuccessMessage('Cliente atualizado com sucesso!');
+      setSuccessType('update');
+      setShowSuccessModal(true);
+      setEditingClient(null);
+    } catch (error: any) {
+      console.error('Erro ao atualizar cliente:', error);
+      
+      let message = 'Erro ao atualizar cliente. Tente novamente.';
+      if (error.message) {
+        message = error.message;
+      } else if (error.response?.data?.message) {
+        message = error.response.data.message;
+      } else if (error.response?.data?.error) {
+        message = error.response.data.error;
+      }
+      
+      setErrorMessage(message);
+      setShowError(true);
+      throw error;
+    }
+  };
+
+  const openDeleteModal = async (client: User) => {
+    if (!client || !client.id) {
+      setErrorMessage('Erro: Cliente inválido');
+      setShowError(true);
+      return;
+    }
+    
+    try {
+      const clientEvents = await eventService.getEventsByClientId(client.id);
+      const hasEvents = clientEvents.length > 0;
+      
+      setLinkedItemsInfo({
+        hasEvents,
+        eventsCount: clientEvents.length,
+        events: clientEvents,
+        hasReceipts: false,
+        hasBoletos: false
+      });
+      
+    } catch (error) {
+      console.error('Erro ao verificar eventos do cliente:', error);
+      setLinkedItemsInfo({
+        hasEvents: false,
+        eventsCount: 0,
+        events: [],
+        hasReceipts: false,
+        hasBoletos: false
+      });
+    }
+    
+    setClientToDelete(client);
+    setShowDeleteModal(true);
+  };
+
+  const handleDeleteClient = async () => {
+    if (!clientToDelete || !clientToDelete.id) return;
+    
+    if (linkedItemsInfo.hasEvents) {
+      setErrorMessage('Este cliente possui eventos vinculados e não pode ser excluído.');
+      setShowError(true);
+      return;
+    }
+    
+    setIsDeleting(true);
+    
+    try {
+      await userService.deleteClient(clientToDelete.id);
+      
+      setClients(prev => prev.filter(c => c.id !== clientToDelete.id));
+      setFilteredClients(prev => prev.filter(c => c.id !== clientToDelete.id));
+      
+      setShowDeleteModal(false);
+      setSuccessMessage(`Cliente ${clientToDelete.name} excluído com sucesso!`);
+      setSuccessType('delete');
+      setShowSuccessModal(true);
+      
+    } catch (error: any) {
+      console.error('Erro ao excluir cliente:', error);
+      
+      let message = 'Erro ao excluir cliente. Verifique se não há eventos vinculados.';
+      if (error.message) message = error.message;
+      else if (error.response?.data?.message) message = error.response.data.message;
+      else if (error.response?.data?.error) message = error.response.data.error;
+      
+      setErrorMessage(message);
+      setShowError(true);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const handleSuccessClose = () => {
+    setShowSuccessModal(false);
+    if (successType === 'delete') {
+      setClientToDelete(null);
+    }
+  };
+
+  const handleViewReceipts = async (client: User) => {
+    setSelectedClient(client);
+    try {
+      const receiptsData = await receiptService.getClientReceipts(client.id);
+      setReceipts(receiptsData);
+      setShowReceiptModal(true);
+    } catch (error) {
+      console.error('Erro ao carregar comprovantes:', error);
+      setErrorMessage('Erro ao carregar comprovantes. Tente novamente.');
+      setShowError(true);
+    }
+  };
+
+  const handleUploadReceipt = async (file: File, description: string, value?: number) => {
+    if (!selectedClient) return;
+    
+    try {
+      await receiptService.uploadReceipt({
+        clientId: selectedClient.id,
+        file,
+        description,
+        value
+      });
+      const receiptsData = await receiptService.getClientReceipts(selectedClient.id);
+      setReceipts(receiptsData);
+    } catch (error) {
+      console.error('Erro ao fazer upload:', error);
+      setErrorMessage('Erro ao fazer upload do comprovante. Tente novamente.');
+      setShowError(true);
+      throw error;
+    }
+  };
+
+  const handleDeleteReceipt = async (receiptId: number) => {
+    if (window.confirm('Tem certeza que deseja excluir este comprovante?')) {
+      try {
+        await receiptService.deleteReceipt(receiptId);
+        if (selectedClient) {
+          const receiptsData = await receiptService.getClientReceipts(selectedClient.id);
+          setReceipts(receiptsData);
+        }
+      } catch (error) {
+        console.error('Erro ao excluir comprovante:', error);
+        setErrorMessage('Erro ao excluir comprovante. Tente novamente.');
+        setShowError(true);
+      }
+    }
+  };
+
+  const handleViewBoletos = async (client: User) => {
+    setSelectedClient(client);
+    setShowBoletoModal(true);
+  };
+
+  const handleGenerateBoleto = async (data: any) => {
+    if (!selectedClient) return;
+    
+    try {
+      await boletoService.generateBoleto({
+        clientId: selectedClient.id,
+        ...data
+      });
+    } catch (error) {
+      console.error('Erro ao gerar boleto:', error);
+      setErrorMessage('Erro ao gerar boleto. Tente novamente.');
+      setShowError(true);
+      throw error;
+    }
+  };
+
+  const handleSendBoletoEmail = async (boletoId: number) => {
+    try {
+      await boletoService.sendBoletoByEmail(boletoId);
+    } catch (error) {
+      console.error('Erro ao enviar boleto:', error);
+      setErrorMessage('Erro ao enviar boleto por email. Tente novamente.');
+      setShowError(true);
+      throw error;
+    }
+  };
+
+  const handleMarkBoletoAsPaid = async (boletoId: number) => {
+    try {
+      await boletoService.markAsPaid(boletoId);
+    } catch (error) {
+      console.error('Erro ao marcar boleto como pago:', error);
+      setErrorMessage('Erro ao marcar boleto como pago. Tente novamente.');
+      setShowError(true);
+      throw error;
+    }
+  };
+
+  const hasActiveFilters = useMemo(() => {
+    const hasBasicFilters = Object.values(filters).some(v => v.trim() !== '');
+    const hasAdvancedFilters = advancedFilters.status !== 'ALL' || 
+                               advancedFilters.hasEvents !== 'ALL' ||
+                               advancedFilters.dateRange.start !== '' ||
+                               advancedFilters.dateRange.end !== '';
+    return hasBasicFilters || hasAdvancedFilters;
+  }, [filters, advancedFilters]);
+
+  const showEmptyState = filteredClients.length === 0;
+
+  if (!isVisible || (loading && !hasLoadedRef.current)) {
     return (
-        <div className={styles.container}>
-            {/* Header */}
-            <div className={styles.header}>
-                <div className={styles.headerLeft}>
-                    <h1 className={styles.title}>
-                        <MdPeople size={28} />
-                        Gestão de Clientes
-                    </h1>
-                    {!showEmptyState && (
-                        <span className={styles.clientCount}>
-                            <FiUsers size={14} />
-                            {filteredClients.length} {filteredClients.length === 1 ? 'cliente' : 'clientes'}
-                        </span>
-                    )}
-                </div>
-                
-                <div className={styles.headerActions}>
-                    <button 
-                        onClick={() => setShowFilters(!showFilters)}
-                        className={`${styles.filterToggle} ${showFilters ? styles.active : ''}`}
-                        aria-label="Alternar filtros"
-                    >
-                        <FiFilter size={18} />
-                        <span className={styles.filterToggleText}>
-                            {showFilters ? 'Ocultar filtros' : 'Mostrar filtros'}
-                        </span>
-                    </button>
-                    
-                    <button 
-                        onClick={() => {
-                            setEditingClient(null);
-                            setShowForm(true);
-                        }}
-                        className={styles.primaryButton}
-                    >
-                        <FiUserPlus size={18} />
-                        <span>Novo Cliente</span>
-                    </button>
-                </div>
-            </div>
-
-            {/* Filtros */}
-            {showFilters && (
-                <ClientFilters
-                    filters={filters}
-                    onFilterChange={handleFilterChange}
-                    onClearFilters={handleClearFilters}
-                    totalResults={filteredClients.length}
-                />
-            )}
-
-            {/* Formulários */}
-            <ClientForm
-                client={editingClient || undefined}
-                onSubmit={editingClient 
-                    ? (data) => handleUpdateClient(editingClient.id, data)
-                    : handleCreateClient
-                }
-                onCancel={() => {
-                    setShowForm(false);
-                    setEditingClient(null);
-                }}
-                isOpen={showForm || !!editingClient}
-            />
-
-            {/* Modal de Exclusão */}
-            {showDeleteModal && clientToDelete && (
-                <DeleteClientModal
-                    client={clientToDelete}
-                    onConfirm={handleDeleteClient}
-                    onCancel={() => {
-                        setShowDeleteModal(false);
-                        setClientToDelete(null);
-                    }}
-                    isDeleting={isDeleting}
-                    hasEvents={linkedItemsInfo.hasEvents}
-                    eventsCount={linkedItemsInfo.eventsCount}
-                    events={linkedItemsInfo.events}
-                    hasReceipts={linkedItemsInfo.hasReceipts}
-                    hasBoletos={linkedItemsInfo.hasBoletos}
-                />
-            )}
-
-            {/* Modal de Sucesso */}
-            <ConfirmationModal
-                isOpen={showSuccessModal}
-                title="Sucesso!"
-                message={successMessage}
-                type="success"
-                onConfirm={handleSuccessClose}
-                onCancel={handleSuccessClose}
-                confirmText="OK"
-            />
-
-            {/* Modal de Erro */}
-            <ErrorModal
-                isOpen={showError}
-                message={errorMessage}
-                onClose={() => setShowError(false)}
-            />
-
-            {/* Modais */}
-            {showReceiptModal && selectedClient && (
-                <ReceiptModal
-                    client={selectedClient}
-                    receipts={receipts}
-                    onClose={() => {
-                        setShowReceiptModal(false);
-                        setSelectedClient(null);
-                        setReceipts([]);
-                    }}
-                    onUpload={handleUploadReceipt}
-                    onDelete={handleDeleteReceipt}
-                />
-            )}
-
-            {showBoletoModal && selectedClient && (
-                <BoletoModal
-                    client={selectedClient}
-                    onClose={() => {
-                        setShowBoletoModal(false);
-                        setSelectedClient(null);
-                    }}
-                    onGenerate={handleGenerateBoleto}
-                    onSendEmail={handleSendBoletoEmail}
-                    onMarkAsPaid={handleMarkBoletoAsPaid}
-                />
-            )}
-
-            {/* Tabela ou Empty State */}
-            {showEmptyState ? (
-                <div className={styles.emptyStateWrapper}>
-                    <EmptyState
-                        icon={hasActiveFilters ? <FiSearch size={48} /> : <MdPeople size={48} />}
-                        title={hasActiveFilters 
-                            ? 'Nenhum cliente encontrado' 
-                            : 'Nenhum cliente cadastrado'
-                        }
-                        description={hasActiveFilters
-                            ? 'Tente ajustar os filtros de busca para encontrar clientes.'
-                            : 'Comece cadastrando seu primeiro cliente para começar a gerenciar.'
-                        }
-                        action={hasActiveFilters ? {
-                            label: 'Limpar Filtros',
-                            onClick: handleClearFilters,
-                            icon: <FiX />
-                        } : {
-                            label: 'Cadastrar Primeiro Cliente',
-                            onClick: () => setShowForm(true),
-                            icon: <FiUserPlus />
-                        }}
-                    />
-                </div>
-            ) : (
-                <ClientTable
-                    clients={filteredClients}
-                    onEdit={setEditingClient}
-                    onDelete={openDeleteModal}
-                    onViewReceipts={handleViewReceipts}
-                    onViewBoletos={handleViewBoletos}
-                />
-            )}
+      <div className={styles.container}>
+        <div className={styles.header}>
+          <div className={styles.headerLeft}>
+            <h1 className={styles.title}>
+              <MdPeople size={28} />
+              Gestão de Clientes
+            </h1>
+          </div>
         </div>
+        <div className={styles.loadingPlaceholder}>
+          <LoadingSpinner text="Carregando clientes..." />
+        </div>
+      </div>
     );
+  }
+
+  return (
+    <div className={styles.container}>
+      {/* Header */}
+      <div className={styles.header}>
+        <div className={styles.headerLeft}>
+          <h1 className={styles.title}>
+            <MdPeople size={28} />
+            Gestão de Clientes
+          </h1>
+          {!showEmptyState && (
+            <span className={styles.clientCount}>
+              <FiUsers size={14} />
+              {filteredClients.length} {filteredClients.length === 1 ? 'cliente' : 'clientes'}
+            </span>
+          )}
+        </div>
+        
+        <div className={styles.headerActions}>
+          <button 
+            onClick={() => setShowFilters(!showFilters)}
+            className={`${styles.filterToggle} ${showFilters ? styles.active : ''}`}
+          >
+            <FiFilter size={18} />
+            <span>{showFilters ? 'Ocultar filtros' : 'Mostrar filtros'}</span>
+          </button>
+          
+          <button 
+            onClick={() => {
+              setEditingClient(null);
+              setShowForm(true);
+            }}
+            className={styles.primaryButton}
+          >
+            <FiUserPlus size={18} />
+            <span>Novo Cliente</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Stats Bar */}
+      <div className={styles.statsBar}>
+        <div className={styles.statItem}>
+          <MdPeople size={16} />
+          <span>Total: <strong>{stats.total}</strong></span>
+        </div>
+        <div className={styles.statItem}>
+          <FiCheckCircle size={16} color="#10b981" />
+          <span>Ativos: <strong>{stats.active}</strong></span>
+        </div>
+        <div className={styles.statItem}>
+          <FiAlertCircle size={16} color="#f59e0b" />
+          <span>Bloqueados: <strong>{stats.blocked}</strong></span>
+        </div>
+        <div className={styles.statItem}>
+          <FiX size={16} color="#ef4444" />
+          <span>Inativos: <strong>{stats.terminated}</strong></span>
+        </div>
+        <div className={styles.statItem}>
+          <FiCalendar size={16} color="#3b82f6" />
+          <span>Com eventos: <strong>{stats.withEvents}</strong></span>
+        </div>
+        <div className={styles.statItem}>
+          <FiUsers size={16} color="#64748b" />
+          <span>Sem eventos: <strong>{stats.withoutEvents}</strong></span>
+        </div>
+      </div>
+
+      {/* Filtros Básicos */}
+      {showFilters && (
+        <>
+          <ClientFilters
+            filters={filters}
+            onFilterChange={handleFilterChange}
+            onClearFilters={handleClearFilters}
+            totalResults={filteredClients.length}
+          />
+          
+          {/* Toggle Filtros Avançados */}
+          <button 
+            onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+            className={styles.advancedFilterToggle}
+          >
+            <MdFilterList size={16} />
+            {showAdvancedFilters ? 'Ocultar filtros avançados' : 'Mostrar filtros avançados'}
+            {showAdvancedFilters ? <FiChevronUp size={16} /> : <FiChevronDown size={16} />}
+          </button>
+
+          {/* Painel de Filtros Avançados */}
+          {showAdvancedFilters && (
+            <div className={styles.advancedFilters}>
+              <div className={styles.advancedFiltersGrid}>
+                {/* Filtro por Status */}
+                <div className={styles.filterGroup}>
+                  <label className={styles.filterLabel}>
+                    <FiCheckCircle size={14} />
+                    Status do Cliente
+                  </label>
+                  <select
+                    value={advancedFilters.status}
+                    onChange={(e) => setAdvancedFilters(prev => ({ 
+                      ...prev, 
+                      status: e.target.value as AdvancedFilters['status']
+                    }))}
+                    className={styles.filterSelect}
+                  >
+                    <option value="ALL">Todos os status</option>
+                    <option value="ACTIVE">Ativos</option>
+                    <option value="BLOCKED">Bloqueados</option>
+                    <option value="TERMINATED">Inativos</option>
+                  </select>
+                </div>
+
+                {/* Filtro por Eventos */}
+                <div className={styles.filterGroup}>
+                  <label className={styles.filterLabel}>
+                    <FiCalendar size={14} />
+                    Possui Eventos
+                  </label>
+                  <select
+                    value={advancedFilters.hasEvents}
+                    onChange={(e) => setAdvancedFilters(prev => ({ 
+                      ...prev, 
+                      hasEvents: e.target.value as AdvancedFilters['hasEvents']
+                    }))}
+                    className={styles.filterSelect}
+                  >
+                    <option value="ALL">Todos</option>
+                    <option value="YES">Com eventos</option>
+                    <option value="NO">Sem eventos</option>
+                  </select>
+                </div>
+
+                {/* Filtro por Data de Cadastro */}
+                <div className={styles.filterGroup}>
+                  <label className={styles.filterLabel}>
+                    <FiCalendar size={14} />
+                    Data de Cadastro
+                  </label>
+                  <div className={styles.dateRange}>
+                    <input
+                      type="date"
+                      value={advancedFilters.dateRange.start}
+                      onChange={(e) => setAdvancedFilters(prev => ({
+                        ...prev,
+                        dateRange: { ...prev.dateRange, start: e.target.value }
+                      }))}
+                      className={styles.dateInput}
+                      placeholder="De"
+                    />
+                    <span className={styles.dateSeparator}>até</span>
+                    <input
+                      type="date"
+                      value={advancedFilters.dateRange.end}
+                      onChange={(e) => setAdvancedFilters(prev => ({
+                        ...prev,
+                        dateRange: { ...prev.dateRange, end: e.target.value }
+                      }))}
+                      className={styles.dateInput}
+                      placeholder="Até"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Ações dos filtros avançados */}
+              <div className={styles.advancedFiltersActions}>
+                <button 
+                  onClick={handleClearAdvancedFilters}
+                  className={styles.clearFiltersButton}
+                >
+                  <FiX size={14} />
+                  Limpar Filtros Avançados
+                </button>
+              </div>
+            </div>
+          )}
+        </>
+      )}
+
+      {/* Formulários */}
+      <ClientForm
+        client={editingClient || undefined}
+        onSubmit={editingClient 
+          ? (data) => handleUpdateClient(editingClient.id, data)
+          : handleCreateClient
+        }
+        onCancel={() => {
+          setShowForm(false);
+          setEditingClient(null);
+        }}
+        isOpen={showForm || !!editingClient}
+      />
+
+      {/* Modal de Exclusão */}
+      {showDeleteModal && clientToDelete && (
+        <DeleteClientModal
+          client={clientToDelete}
+          onConfirm={handleDeleteClient}
+          onCancel={() => {
+            setShowDeleteModal(false);
+            setClientToDelete(null);
+          }}
+          isDeleting={isDeleting}
+          hasEvents={linkedItemsInfo.hasEvents}
+          eventsCount={linkedItemsInfo.eventsCount}
+          events={linkedItemsInfo.events}
+          hasReceipts={linkedItemsInfo.hasReceipts}
+          hasBoletos={linkedItemsInfo.hasBoletos}
+        />
+      )}
+
+      {/* Modal de Sucesso */}
+      <ConfirmationModal
+        isOpen={showSuccessModal}
+        title="Sucesso!"
+        message={successMessage}
+        type="success"
+        onConfirm={handleSuccessClose}
+        onCancel={handleSuccessClose}
+        confirmText="OK"
+      />
+
+      {/* Modal de Erro */}
+      <ErrorModal
+        isOpen={showError}
+        message={errorMessage}
+        onClose={() => setShowError(false)}
+      />
+
+      {/* Modais de Documentos */}
+      {showReceiptModal && selectedClient && (
+        <ReceiptModal
+          client={selectedClient}
+          receipts={receipts}
+          onClose={() => {
+            setShowReceiptModal(false);
+            setSelectedClient(null);
+            setReceipts([]);
+          }}
+          onUpload={handleUploadReceipt}
+          onDelete={handleDeleteReceipt}
+        />
+      )}
+
+      {showBoletoModal && selectedClient && (
+        <BoletoModal
+          client={selectedClient}
+          onClose={() => {
+            setShowBoletoModal(false);
+            setSelectedClient(null);
+          }}
+          onGenerate={handleGenerateBoleto}
+          onSendEmail={handleSendBoletoEmail}
+          onMarkAsPaid={handleMarkBoletoAsPaid}
+        />
+      )}
+
+      {/* Tabela ou Empty State */}
+      {showEmptyState ? (
+        <div className={styles.emptyStateWrapper}>
+          <EmptyState
+            icon={hasActiveFilters ? <FiSearch size={48} /> : <MdPeople size={48} />}
+            title={hasActiveFilters 
+              ? 'Nenhum cliente encontrado' 
+              : 'Nenhum cliente cadastrado'
+            }
+            description={hasActiveFilters
+              ? 'Tente ajustar os filtros de busca para encontrar clientes.'
+              : 'Comece cadastrando seu primeiro cliente para começar a gerenciar.'
+            }
+            action={hasActiveFilters ? {
+              label: 'Limpar Todos os Filtros',
+              onClick: handleClearAllFilters,
+              icon: <FiX />
+            } : {
+              label: 'Cadastrar Primeiro Cliente',
+              onClick: () => setShowForm(true),
+              icon: <FiUserPlus />
+            }}
+          />
+        </div>
+      ) : (
+        <ClientTable
+          clients={filteredClients}
+          onEdit={setEditingClient}
+          onDelete={openDeleteModal}
+          onViewReceipts={handleViewReceipts}
+          onViewBoletos={handleViewBoletos}
+        />
+      )}
+    </div>
+  );
 };
 
 export default ClientManagement;

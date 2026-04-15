@@ -1,3 +1,4 @@
+// src/components/admin/ItemsManagement/ItemsManagement.tsx
 import React, { useState, useEffect, useMemo } from "react";
 import { 
   FiPackage, 
@@ -14,7 +15,8 @@ import {
   FiSave,
   FiX,
   FiSearch,
-  FiInfo
+  FiInfo,
+  FiTool
 } from 'react-icons/fi';
 import { 
   MdCategory,  
@@ -22,18 +24,35 @@ import {
   MdEvent,
   MdDescription,
   MdAttachMoney,
+  MdChair,
+  MdKitchen,
+  MdVideocam,
+  MdAcUnit,
+  MdSecurity,
+  MdSportsEsports,
+  MdLocalFlorist,
+  MdCurtains,
+  MdSignpost,
+  MdMoreHoriz,
+  MdLightbulb,
+  MdRestaurant,
+  MdToys
 } from 'react-icons/md';
 import { 
-  FaCouch, 
-  FaUtensils, 
   FaPalette, 
-  FaBoxes 
+  FaBoxes,
+  FaChild,
+  FaTruck,
+  FaBuilding
 } from 'react-icons/fa';
+import { 
+  GiChefToque
+} from 'react-icons/gi';
 import { ConfirmationModal } from "../../../common/Alerts/ConfirmationModal";
 import { ErrorModal } from "../../../common/Alerts/ErrorModal";
 import { Pagination } from "../../../common/Pagination/Pagination";
 import styles from "./ItemsManagement.module.css";
-import { itemService, Item, CreateItemDTO } from '../../../../services/items';
+import { itemService, Item, CreateItemDTO, CategoriaFrontend } from '../../../../services/items';
 import { eventService, Event } from '../../../../services/events';
 
 interface ItemReservation {
@@ -45,7 +64,6 @@ interface ItemReservation {
   status: 'RESERVED' | 'CONFIRMED' | 'RETURNED';
 }
 
-// Função segura para obter quantidade total
 const getQTotal = (item: any): number => {
   if (!item) return 0;
   return Number(item.quantityTotal || 0);
@@ -72,12 +90,13 @@ export const ItemsManagement: React.FC = () => {
   const [errorMessage, setErrorMessage] = useState('');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<number | null>(null);
+  
+  const [showDeleteReservationConfirm, setShowDeleteReservationConfirm] = useState(false);
+  const [reservationToDelete, setReservationToDelete] = useState<{itemId: number, eventId: number} | null>(null);
 
-  // ✅ Estados de Paginação
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
-  // Carregar dados iniciais
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
@@ -87,15 +106,15 @@ export const ItemsManagement: React.FC = () => {
           eventService.getAllEvents()
         ]);
 
-        console.log('📦 Itens carregados:', itemsData);
-        console.log('📅 Eventos carregados:', eventsData);
+        console.log('Itens carregados:', itemsData);
+        console.log('Eventos carregados:', eventsData);
 
         setItems(itemsData);
         setEvents(eventsData);
         
       } catch (error) {
-        console.error('❌ Erro ao carregar dados:', error);
-        setErrorMessage('Erro ao carregar dados. Verifique a conexão com o servidor.');
+        console.error('Erro ao carregar dados:', error);
+        setErrorMessage('Erro ao carregar dados. Verifique a conexao com o servidor.');
         setShowErrorModal(true);
       } finally {
         setLoading(false);
@@ -105,10 +124,55 @@ export const ItemsManagement: React.FC = () => {
     fetchData();
   }, []);
 
-  // ✅ Resetar para a primeira página quando os filtros ou total de itens mudarem
   useEffect(() => {
     setCurrentPage(1);
   }, [searchTerm, filterCategory, filterLowStock, items.length]);
+
+  const getCategoryIcon = (category: string) => {
+    const icons: Record<string, JSX.Element> = {
+      'FURNITURE': <MdChair size={16} />,
+      'DECORATION': <FaPalette size={16} />,
+      'UTENSIL': <MdKitchen size={16} />,
+      'EQUIPMENT': <FiTool size={16} />,
+      'LIGHTING': <MdLightbulb size={16} />,
+      'AUDIO_VIDEO': <MdVideocam size={16} />,
+      'CLIMATE': <MdAcUnit size={16} />,
+      'SECURITY': <MdSecurity size={16} />,
+      'RECREATION': <MdSportsEsports size={16} />,
+      'GASTRONOMY': <GiChefToque size={16} />,
+      'FLORAL': <MdLocalFlorist size={16} />,
+      'FABRICS': <MdCurtains size={16} />,
+      'SIGNAGE': <MdSignpost size={16} />,
+      'TOYS': <FaChild size={16} />,
+      'STRUCTURES': <FaBuilding size={16} />,
+      'TRANSPORT': <FaTruck size={16} />,
+      'OTHER': <MdMoreHoriz size={16} />
+    };
+    return icons[category] || <FiBox size={16} />;
+  };
+
+  const getCategoryLabel = (cat: string) => {
+    const labels: Record<string, string> = {
+      'FURNITURE': 'Mobiliario',
+      'DECORATION': 'Decoracao',
+      'UTENSIL': 'Utensilios',
+      'EQUIPMENT': 'Equipamentos',
+      'LIGHTING': 'Iluminacao',
+      'AUDIO_VIDEO': 'Audio e Video',
+      'CLIMATE': 'Climatizacao',
+      'SECURITY': 'Seguranca',
+      'RECREATION': 'Recreacao',
+      'GASTRONOMY': 'Gastronomia',
+      'FLORAL': 'Arranjos Florais',
+      'FABRICS': 'Tecidos e Cortinas',
+      'SIGNAGE': 'Sinalizacao',
+      'TOYS': 'Brinquedos',
+      'STRUCTURES': 'Estruturas',
+      'TRANSPORT': 'Transporte',
+      'OTHER': 'Outros'
+    };
+    return labels[cat] || cat;
+  };
 
   const checkAvailability = (itemId: number, date: string, quantity: number): boolean => {
     const itemReservations = reservations.filter(r => 
@@ -139,14 +203,14 @@ export const ItemsManagement: React.FC = () => {
     if (available <= 0) {
       return { 
         type: 'error', 
-        message: 'Indisponível', 
+        message: 'Indisponivel', 
         color: '#ef4444',
         icon: <FiXCircle size={14} />
       };
     } else if (item.minStock && available <= item.minStock) {
       return { 
         type: 'warning', 
-        message: `Estoque crítico (${available} un.)`, 
+        message: `Estoque critico (${available} un.)`, 
         color: '#f59e0b',
         icon: <MdWarning size={14} />
       };
@@ -160,29 +224,10 @@ export const ItemsManagement: React.FC = () => {
     }
     return { 
       type: 'success', 
-      message: `${available} disponíveis`, 
+      message: `${available} disponiveis`, 
       color: '#10b981',
       icon: <FiCheckCircle size={14} />
     };
-  };
-
-  const getCategoryIcon = (category: string) => {
-    switch(category) {
-      case 'DECORATION': return <FaPalette size={16} />;
-      case 'FURNITURE': return <FaCouch size={16} />;
-      case 'UTENSIL': return <FaUtensils size={16} />;
-      default: return <FaBoxes size={16} />;
-    }
-  };
-
-  const getCategoryLabel = (cat: string) => {
-    const labels: { [key: string]: string } = {
-      DECORATION: "Decoração",
-      FURNITURE: "Mobiliário",
-      UTENSIL: "Utensílios",
-      OTHER: "Outros",
-    };
-    return labels[cat] || cat;
   };
 
   const handleCreateItem = async (itemData: Omit<Item, "id">, reservationData?: { eventId: number, quantity: number }) => {
@@ -196,10 +241,10 @@ export const ItemsManagement: React.FC = () => {
         description: itemData.description
       };
 
-      console.log('📝 Enviando dados para criar item:', dataToSend);
+      console.log('Enviando dados para criar item:', dataToSend);
       
       const newItem = await itemService.createItem(dataToSend);
-      console.log('✅ Item criado com sucesso:', newItem);
+      console.log('Item criado com sucesso:', newItem);
       
       setItems(prev => [...prev, newItem]);
       setShowForm(false);
@@ -225,7 +270,7 @@ export const ItemsManagement: React.FC = () => {
       setSuccessMessage(msg);
       setShowSuccessModal(true);
     } catch (error: any) {
-      console.error('❌ Erro detalhado:', error);
+      console.error('Erro detalhado:', error);
       
       let errorMsg = 'Erro ao tentar cadastrar o item.';
       if (error.response?.data?.message) {
@@ -282,12 +327,12 @@ export const ItemsManagement: React.FC = () => {
       setReservations(reservations.filter(r => r.itemId !== itemToDelete));
       setShowDeleteConfirm(false);
       setItemToDelete(null);
-      setSuccessMessage('Item excluído com sucesso!');
+      setSuccessMessage('Item excluido com sucesso!');
       setShowSuccessModal(true);
     } catch (error: any) {
       setShowDeleteConfirm(false);
       setItemToDelete(null);
-      let errorMsg = 'Erro ao excluir item. Ele pode ter dependências.';
+      let errorMsg = 'Erro ao excluir item. Ele pode ter dependencias.';
       if (error.response?.data?.message) {
         errorMsg = error.response.data.message;
       }
@@ -301,7 +346,7 @@ export const ItemsManagement: React.FC = () => {
     if (!event) return;
 
     if (!checkAvailability(itemId, event.eventDate, quantity)) {
-      setErrorMessage('Quantidade indisponível para a data deste evento!');
+      setErrorMessage('Quantidade indisponivel para a data deste evento!');
       setShowErrorModal(true);
       return;
     }
@@ -332,6 +377,25 @@ export const ItemsManagement: React.FC = () => {
     setShowSuccessModal(true);
   };
 
+  const handleDeleteReservation = (itemId: number, eventId: number) => {
+    setReservationToDelete({ itemId, eventId });
+    setShowDeleteReservationConfirm(true);
+  };
+
+  const confirmDeleteReservation = () => {
+    if (!reservationToDelete) return;
+    
+    const { itemId, eventId } = reservationToDelete;
+    setReservations(reservations.filter(r => 
+      !(r.itemId === itemId && r.eventId === eventId)
+    ));
+    
+    setShowDeleteReservationConfirm(false);
+    setReservationToDelete(null);
+    setSuccessMessage('Reserva removida com sucesso!');
+    setShowSuccessModal(true);
+  };
+
   const filteredItems = items
     .filter(item => {
       if (searchTerm) {
@@ -350,7 +414,6 @@ export const ItemsManagement: React.FC = () => {
       return i.minStock ? available <= i.minStock : available < quantityTotal * 0.2;
     })());
 
-  // ✅ Aplicando a paginação nos itens filtrados
   const paginatedItems = useMemo(() => {
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
@@ -377,7 +440,7 @@ export const ItemsManagement: React.FC = () => {
           <div>
             <h2 className={styles.pageTitle}>
               <FiPackage size={28} />
-              Gestão de Itens e Estoque
+              Gestao de Itens e Estoque
             </h2>
             <p className={styles.subtitle}>
               <FiBox size={14} />
@@ -403,10 +466,31 @@ export const ItemsManagement: React.FC = () => {
               onChange={(e) => setFilterCategory(e.target.value)}
             >
               <option value="ALL">Todas Categorias</option>
-              <option value="FURNITURE">Mobiliário</option>
-              <option value="DECORATION">Decoração</option>
-              <option value="UTENSIL">Utensílios</option>
-              <option value="OTHER">Outros</option>
+              <optgroup label="Mobiliario e Decoracao">
+                <option value="FURNITURE">Mobiliario</option>
+                <option value="DECORATION">Decoracao</option>
+                <option value="FLORAL">Arranjos Florais</option>
+                <option value="FABRICS">Tecidos e Cortinas</option>
+              </optgroup>
+              <optgroup label="Equipamentos e Tecnologia">
+                <option value="EQUIPMENT">Equipamentos Gerais</option>
+                <option value="LIGHTING">Iluminacao</option>
+                <option value="AUDIO_VIDEO">Audio e Video</option>
+                <option value="CLIMATE">Climatizacao</option>
+              </optgroup>
+              <optgroup label="Servicos e Estruturas">
+                <option value="UTENSIL">Utensilios</option>
+                <option value="GASTRONOMY">Gastronomia</option>
+                <option value="STRUCTURES">Estruturas</option>
+                <option value="TRANSPORT">Transporte</option>
+              </optgroup>
+              <optgroup label="Entretenimento e Outros">
+                <option value="RECREATION">Recreacao</option>
+                <option value="TOYS">Brinquedos</option>
+                <option value="SECURITY">Seguranca</option>
+                <option value="SIGNAGE">Sinalizacao</option>
+                <option value="OTHER">Outros</option>
+              </optgroup>
             </select>
 
             <label className={styles.checkboxLabel}>
@@ -474,15 +558,14 @@ export const ItemsManagement: React.FC = () => {
               <tr>
                 <th>Item</th>
                 <th>Categoria</th>
-                <th>Inventário Total</th>
-                <th>Disponível</th>
+                <th>Inventario Total</th>
+                <th>Disponivel</th>
                 <th>Status</th>
                 <th>Reservas Ativas</th>
-                <th>Ações</th>
+                <th>Acoes</th>
               </tr>
             </thead>
             <tbody>
-              {/* ✅ Mapeando sobre os paginatedItems em vez de filteredItems */}
               {paginatedItems.map((item) => {
                 const alert = getAvailabilityAlert(item);
                 const itemReservations = getItemReservations(item.id);
@@ -504,7 +587,7 @@ export const ItemsManagement: React.FC = () => {
                           {item.minStock !== undefined && (
                             <small>
                               <FiAlertCircle size={12} />
-                              Alerta mín: {item.minStock} un.
+                              Alerta min: {item.minStock} un.
                             </small>
                           )}
                           {item.unitPrice && item.unitPrice > 0 ? (
@@ -563,14 +646,22 @@ export const ItemsManagement: React.FC = () => {
                                   <span style={{ fontWeight: 'bold', color: '#0f172a' }}><FiLayers size={10} /> Qtd reservada: {r.quantity}</span>
                                 </div>
                               </div>
-                              <button 
-                                onClick={() => setEditingReservation(r)} 
-                                className={styles.editButton} 
-                                style={{ padding: '6px', background: '#e0f2fe', border: 'none', borderRadius: '4px', cursor: 'pointer', color: '#0284c7', marginLeft: '8px' }}
-                                title="Editar quantidade"
-                              >
-                                <FiEdit2 size={14} />
-                              </button>
+                              <div style={{ display: 'flex', gap: '4px', marginLeft: '8px' }}>
+                                <button 
+                                  onClick={() => setEditingReservation(r)} 
+                                  style={{ padding: '6px', background: '#e0f2fe', border: 'none', borderRadius: '4px', cursor: 'pointer', color: '#0284c7' }}
+                                  title="Editar quantidade"
+                                >
+                                  <FiEdit2 size={14} />
+                                </button>
+                                <button 
+                                  onClick={() => handleDeleteReservation(r.itemId, r.eventId)} 
+                                  style={{ padding: '6px', background: '#fee2e2', border: 'none', borderRadius: '4px', cursor: 'pointer', color: '#ef4444' }}
+                                  title="Remover reserva"
+                                >
+                                  <FiTrash2 size={14} />
+                                </button>
+                              </div>
                             </div>
                           ))}
                         </div>
@@ -614,7 +705,6 @@ export const ItemsManagement: React.FC = () => {
           </table>
         </div>
 
-        {/* ✅ Rodapé da Tabela com Paginação */}
         {filteredItems.length > 0 && (
           <div style={{ padding: '16px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #e2e8f0', background: '#f8fafc' }}>
             <span style={{ fontSize: '14px', fontWeight: 600, color: '#1e293b' }}>
@@ -637,7 +727,7 @@ export const ItemsManagement: React.FC = () => {
             </div>
             <h3 className={styles.emptyTitle}>Nenhum item encontrado</h3>
             <p className={styles.emptyText}>
-              Você não possui itens cadastrados ou nenhum item atende aos filtros atuais.
+              Voce nao possui itens cadastrados ou nenhum item atende aos filtros atuais.
             </p>
             {!searchTerm && filterCategory === 'ALL' && !filterLowStock && (
               <button
@@ -653,7 +743,6 @@ export const ItemsManagement: React.FC = () => {
       </div>
 
       <div className={styles.summaryCards}>
-        {/* Cartões de resumo permanecem inalterados */}
         <div className={styles.summaryCard}>
           <div className={styles.summaryIcon} style={{ background: '#e0f2fe' }}>
             <FiPackage color="#0284c7" size={24} />
@@ -675,7 +764,7 @@ export const ItemsManagement: React.FC = () => {
               const qTotal = getQTotal(item);
               return sum + (qTotal - reserved);
             }, 0)}</strong>
-            <span>Unidades Disponíveis</span>
+            <span>Unidades Disponiveis</span>
           </div>
         </div>
         <div className={styles.summaryCard}>
@@ -706,7 +795,7 @@ export const ItemsManagement: React.FC = () => {
               const qTotal = getQTotal(item);
               return (qTotal - reserved) <= 0;
             }).length}</strong>
-            <span>Indisponíveis</span>
+            <span>Indisponiveis</span>
           </div>
         </div>
       </div>
@@ -729,7 +818,7 @@ export const ItemsManagement: React.FC = () => {
 
       <ConfirmationModal
         isOpen={showDeleteConfirm}
-        title="Confirmar Exclusão"
+        title="Confirmar Exclusao"
         message="Tem certeza que deseja excluir este item permanentemente?"
         type="warning"
         onConfirm={confirmDeleteItem}
@@ -739,11 +828,22 @@ export const ItemsManagement: React.FC = () => {
         }}
         confirmText="Excluir"
       />
+
+      <ConfirmationModal
+        isOpen={showDeleteReservationConfirm}
+        title="Confirmar Remocao de Reserva"
+        message="Tem certeza que deseja remover esta reserva? O item voltara a ficar disponivel."
+        type="warning"
+        onConfirm={confirmDeleteReservation}
+        onCancel={() => {
+          setShowDeleteReservationConfirm(false);
+          setReservationToDelete(null);
+        }}
+        confirmText="Remover Reserva"
+      />
     </div>
   );
 };
-
-// ... COMPONENTES INTERNOS MANTIDOS INALTERADOS ...
 
 interface ItemFormProps {
   item?: Item;
@@ -755,14 +855,13 @@ interface ItemFormProps {
 const ItemForm: React.FC<ItemFormProps> = ({ item, events, onSubmit, onCancel }) => {
   const [formData, setFormData] = useState({
     name: item?.name || "",
-    category: item?.category || "DECORATION",
+    category: item?.category || "FURNITURE",
     quantityTotal: item?.quantityTotal || 1,
     description: item?.description || "",
     minStock: item?.minStock || 5,
     unitPrice: item?.unitPrice || 0,
   });
 
-  // Estados para controle dos inputs
   const [quantityTotalInput, setQuantityTotalInput] = useState<string>(item?.quantityTotal?.toString() || "1");
   const [minStockInput, setMinStockInput] = useState<string>(item?.minStock?.toString() || "5");
   const [unitPriceInput, setUnitPriceInput] = useState<string>(
@@ -878,22 +977,22 @@ const ItemForm: React.FC<ItemFormProps> = ({ item, events, onSubmit, onCancel })
   const validateForm = () => {
     const newErrors: { [key: string]: string } = {};
 
-    if (!formData.name.trim()) newErrors.name = "O nome é obrigatório";
+    if (!formData.name.trim()) newErrors.name = "O nome e obrigatorio";
     if (formData.quantityTotal < 1)
-      newErrors.quantityTotal = "Você precisa de no mínimo 1 unidade.";
+      newErrors.quantityTotal = "Voce precisa de no minimo 1 unidade.";
     if (formData.minStock < 0)
-      newErrors.minStock = "Não pode ser negativo.";
+      newErrors.minStock = "Nao pode ser negativo.";
     if (formData.unitPrice <= 0)
-      newErrors.unitPrice = "Preço deve ser maior que zero.";
+      newErrors.unitPrice = "Preco deve ser maior que zero.";
       
     if (assignToEvent && !reservationData.eventId) {
-      newErrors.eventId = "Selecione um evento válido.";
+      newErrors.eventId = "Selecione um evento valido.";
     }
     if (assignToEvent && reservationData.quantity > formData.quantityTotal) {
-      newErrors.reservationQty = "Você não pode reservar mais do que possui.";
+      newErrors.reservationQty = "Voce nao pode reservar mais do que possui.";
     }
     if (assignToEvent && reservationData.quantity < 1) {
-      newErrors.reservationQty = "A quantidade deve ser no mínimo 1.";
+      newErrors.reservationQty = "A quantidade deve ser no minimo 1.";
     }
 
     setErrors(newErrors);
@@ -914,12 +1013,12 @@ const ItemForm: React.FC<ItemFormProps> = ({ item, events, onSubmit, onCancel })
     };
 
     if (dataToSubmit.quantityTotal < 1) {
-      setErrors({ ...errors, quantityTotal: "Quantidade total deve ser no mínimo 1" });
+      setErrors({ ...errors, quantityTotal: "Quantidade total deve ser no minimo 1" });
       return;
     }
 
     if (dataToSubmit.unitPrice <= 0) {
-      setErrors({ ...errors, unitPrice: "Preço deve ser maior que zero" });
+      setErrors({ ...errors, unitPrice: "Preco deve ser maior que zero" });
       return;
     }
 
@@ -934,7 +1033,7 @@ const ItemForm: React.FC<ItemFormProps> = ({ item, events, onSubmit, onCancel })
         
       await onSubmit(dataToSubmit, resData);
     } catch (error) {
-      console.error('❌ Erro no submit:', error);
+      console.error('Erro no submit:', error);
     } finally {
       setLoading(false);
     }
@@ -962,7 +1061,7 @@ const ItemForm: React.FC<ItemFormProps> = ({ item, events, onSubmit, onCancel })
               </label>
               <input
                 type="text"
-                placeholder="Ex: Cadeira de Plástico Branca"
+                placeholder="Ex: Cadeira de Plastico Branca"
                 value={formData.name}
                 onChange={(e) =>
                   setFormData({ ...formData, name: e.target.value })
@@ -981,15 +1080,37 @@ const ItemForm: React.FC<ItemFormProps> = ({ item, events, onSubmit, onCancel })
               </label>
               <select
                 value={formData.category}
-                onChange={(e) =>
-                  setFormData({ ...formData, category: e.target.value as any })
-                }
+                onChange={(e) => setFormData({ ...formData, category: e.target.value as CategoriaFrontend })}
                 className={styles.formInput}
               >
-                <option value="DECORATION">Decoração</option>
-                <option value="FURNITURE">Mobiliário</option>
-                <option value="UTENSIL">Utensílios</option>
-                <option value="OTHER">Outros</option>
+                <optgroup label="Mobiliario e Decoracao">
+                  <option value="FURNITURE">Mobiliario (cadeiras, mesas, sofas)</option>
+                  <option value="DECORATION">Decoracao (objetos decorativos)</option>
+                  <option value="FLORAL">Arranjos Florais (flores, vasos)</option>
+                  <option value="FABRICS">Tecidos e Cortinas (toalhas, forros)</option>
+                </optgroup>
+                
+                <optgroup label="Equipamentos e Tecnologia">
+                  <option value="EQUIPMENT">Equipamentos Gerais (diversos)</option>
+                  <option value="LIGHTING">Iluminacao (lustres, spots, refletores)</option>
+                  <option value="AUDIO_VIDEO">Audio e Video (som, microfones, TVs)</option>
+                  <option value="CLIMATE">Climatizacao (ar condicionado, ventiladores)</option>
+                </optgroup>
+                
+                <optgroup label="Servicos e Estruturas">
+                  <option value="UTENSIL">Utensilios (pratos, talheres, copos)</option>
+                  <option value="GASTRONOMY">Gastronomia (equipamentos de cozinha)</option>
+                  <option value="STRUCTURES">Estruturas (tendas, palcos, pistas)</option>
+                  <option value="TRANSPORT">Transporte (vans, carrinhos, veiculos)</option>
+                </optgroup>
+                
+                <optgroup label="Entretenimento e Outros">
+                  <option value="RECREATION">Recreacao (jogos, atividades)</option>
+                  <option value="TOYS">Brinquedos (playground, brinquedos infantis)</option>
+                  <option value="SECURITY">Seguranca (cameras, grades, detectores)</option>
+                  <option value="SIGNAGE">Sinalizacao (placas, banners, totens)</option>
+                  <option value="OTHER">Outros (itens nao categorizados)</option>
+                </optgroup>
               </select>
             </div>
           </div>
@@ -998,7 +1119,7 @@ const ItemForm: React.FC<ItemFormProps> = ({ item, events, onSubmit, onCancel })
             <div className={styles.formGroup}>
               <label className={styles.formLabel}>
                 <FiLayers size={14} />
-                Estoque Físico Total *
+                Estoque Fisico Total *
               </label>
               <input
                 type="text"
@@ -1011,7 +1132,7 @@ const ItemForm: React.FC<ItemFormProps> = ({ item, events, onSubmit, onCancel })
                 placeholder="1"
               />
               <small className={styles.helpText}>
-                <FiInfo size={12}/> Quantas unidades totais você possui no galpão/estoque.
+                <FiInfo size={12}/> Quantas unidades totais voce possui no galpao/estoque.
               </small>
               {errors.quantityTotal && (
                 <span className={styles.errorText}>{errors.quantityTotal}</span>
@@ -1021,7 +1142,7 @@ const ItemForm: React.FC<ItemFormProps> = ({ item, events, onSubmit, onCancel })
             <div className={styles.formGroup}>
               <label className={styles.formLabel}>
                 <FiAlertCircle size={14} />
-                Alerta de Estoque Mínimo
+                Alerta de Estoque Minimo
               </label>
               <input
                 type="text"
@@ -1034,14 +1155,14 @@ const ItemForm: React.FC<ItemFormProps> = ({ item, events, onSubmit, onCancel })
                 placeholder="0"
               />
               <small className={styles.helpText}>
-                <FiInfo size={12}/> O sistema avisa se a quantidade disponível cair abaixo disso.
+                <FiInfo size={12}/> O sistema avisa se a quantidade disponivel cair abaixo disso.
               </small>
             </div>
 
             <div className={styles.formGroup}>
               <label className={styles.formLabel}>
                 <MdAttachMoney size={14} />
-                Preço Unitário (R$) *
+                Preco Unitario (R$) *
               </label>
               <input
                 type="text"
@@ -1061,7 +1182,7 @@ const ItemForm: React.FC<ItemFormProps> = ({ item, events, onSubmit, onCancel })
           <div className={styles.formGroup}>
             <label className={styles.formLabel}>
               <MdDescription size={14} />
-              Descrição Extra (Opcional)
+              Descricao Extra (Opcional)
             </label>
             <textarea
               rows={2}
@@ -1083,7 +1204,7 @@ const ItemForm: React.FC<ItemFormProps> = ({ item, events, onSubmit, onCancel })
                   onChange={(e) => setAssignToEvent(e.target.checked)}
                   style={{ width: '16px', height: '16px' }}
                 />
-                Deseja já reservar este item para um evento?
+                Deseja ja reservar este item para um evento?
               </label>
               
               {assignToEvent && (
@@ -1238,7 +1359,7 @@ const ReservationModal: React.FC<ReservationModalProps> = ({ item, events, onCon
               <strong>{item.name}</strong>
               <span>
                 <FiLayers size={12} />
-                Inventário Total: {qTotal} unidades
+                Inventario Total: {qTotal} unidades
               </span>
             </div>
           </div>
@@ -1284,12 +1405,12 @@ const ReservationModal: React.FC<ReservationModalProps> = ({ item, events, onCon
               {isAvailable ? (
                 <div className={styles.availableMessage}>
                   <FiCheckCircle size={18} color="#10b981" />
-                  Quantidade disponível para a data!
+                  Quantidade disponivel para a data!
                 </div>
               ) : (
                 <div className={styles.unavailableMessage}>
                   <FiXCircle size={18} color="#ef4444" />
-                  Você não tem essa quantidade disponível nesta data.
+                  Voce nao tem essa quantidade disponivel nesta data.
                 </div>
               )}
             </div>
@@ -1396,7 +1517,7 @@ const EditReservationModal: React.FC<EditReservationModalProps> = ({ reservation
               className={styles.formInput}
             />
             <small className={styles.helpText}>
-              Máximo disponível (considerando outras reservas): {maxAvailableNow} un.
+              Maximo disponivel (considerando outras reservas): {maxAvailableNow} un.
             </small>
           </div>
 
@@ -1404,12 +1525,12 @@ const EditReservationModal: React.FC<EditReservationModalProps> = ({ reservation
             {isAvailable ? (
               <div className={styles.availableMessage}>
                 <FiCheckCircle size={18} color="#10b981" />
-                Alteração válida.
+                Alteracao valida.
               </div>
             ) : (
               <div className={styles.unavailableMessage}>
                 <FiXCircle size={18} color="#ef4444" />
-                Excede o limite físico.
+                Excede o limite fisico.
               </div>
             )}
           </div>
@@ -1424,7 +1545,7 @@ const EditReservationModal: React.FC<EditReservationModalProps> = ({ reservation
               className={styles.primaryButton}
               disabled={!isAvailable}
             >
-              Salvar Alteração
+              Salvar Alteracao
             </button>
           </div>
         </div>

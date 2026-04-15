@@ -10,7 +10,12 @@ import {
   FiSettings,
   FiChevronDown,
   FiCheck,
-  FiX
+  FiX,
+  FiCalendar,
+  FiDollarSign,
+  FiPackage,
+  FiAlertCircle,
+  FiInfo
 } from 'react-icons/fi';
 import { MdEvent, MdGroup } from 'react-icons/md';
 import { FaBox } from 'react-icons/fa';
@@ -36,27 +41,15 @@ export const Header: React.FC<HeaderProps> = ({ onMenuToggle, onViewChange, onSe
   const userDropdownRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLDivElement>(null);
 
-  // Formatação de tempo
+  // Formatacao de tempo relativo
   const formatTimeAgo = (timestamp: string): string => {
-    if (!timestamp) return 'Data desconhecida';
+    if (!timestamp) return 'Agora mesmo';
     
     try {
-      let date: Date;
+      const date = new Date(timestamp);
       
-      if (!isNaN(Number(timestamp))) {
-        date = new Date(Number(timestamp));
-      } else {
-        const possibleDate = new Date(timestamp);
-        if (!isNaN(possibleDate.getTime())) {
-          date = possibleDate;
-        } else {
-          const normalizedDate = timestamp.replace(' ', 'T');
-          date = new Date(normalizedDate);
-        }
-      }
-      
-      if (!date || isNaN(date.getTime())) {
-        return timestamp;
+      if (isNaN(date.getTime())) {
+        return 'Agora mesmo';
       }
       
       const now = new Date();
@@ -67,10 +60,10 @@ export const Header: React.FC<HeaderProps> = ({ onMenuToggle, onViewChange, onSe
       const diffDay = Math.floor(diffHr / 24);
       
       if (diffSec < 60) return 'Agora mesmo';
-      if (diffMin < 60) return `Há ${diffMin} ${diffMin === 1 ? 'minuto' : 'minutos'}`;
-      if (diffHr < 24) return `Há ${diffHr} ${diffHr === 1 ? 'hora' : 'horas'}`;
+      if (diffMin < 60) return `Ha ${diffMin} ${diffMin === 1 ? 'minuto' : 'minutos'}`;
+      if (diffHr < 24) return `Ha ${diffHr} ${diffHr === 1 ? 'hora' : 'horas'}`;
       if (diffDay === 1) return 'Ontem';
-      if (diffDay < 7) return `Há ${diffDay} dias`;
+      if (diffDay < 7) return `Ha ${diffDay} dias`;
       
       return date.toLocaleDateString('pt-BR', {
         day: '2-digit',
@@ -80,23 +73,19 @@ export const Header: React.FC<HeaderProps> = ({ onMenuToggle, onViewChange, onSe
       
     } catch (error) {
       console.error('Erro ao formatar data:', error);
-      return timestamp;
+      return 'Agora mesmo';
     }
   };
 
-  // ✅ FUNÇÃO CORRIGIDA - Exibe o cargo baseado em userType e role
   const getUserRoleText = () => {
-    // DESENVOLVEDOR
     if (user?.userType === 'DEVELOPER') {
       return 'Desenvolvedor';
     }
     
-    // CLIENTE
     if (user?.userType === 'CLIENT') {
       return 'Cliente';
     }
     
-    // OWNER (Funcionário/Diretor) - baseado na role
     if (user?.userType === 'OWNER') {
       const roleMap: Record<string, string> = {
         'ADMIN': 'Administrador',
@@ -104,10 +93,10 @@ export const Header: React.FC<HeaderProps> = ({ onMenuToggle, onViewChange, onSe
         'MANAGER': 'Gerente',
         'ANALYST': 'Analista'
       };
-      return roleMap[user?.role || ''] || 'Funcionário';
+      return roleMap[user?.role || ''] || 'Funcionario';
     }
     
-    return 'Usuário';
+    return 'Usuario';
   };
 
   const getUserInitials = () => {
@@ -119,14 +108,14 @@ export const Header: React.FC<HeaderProps> = ({ onMenuToggle, onViewChange, onSe
       .slice(0, 2) || 'U';
   };
 
-  // Carregar notificações
   const loadNotifications = async () => {
     try {
       setLoading(true);
       const data = await notificationService.getAllNotifications();
+      console.log('Notificacoes carregadas:', data);
       setNotifications(data);
     } catch (error) {
-      console.error('Erro ao carregar notificações:', error);
+      console.error('Erro ao carregar notificacoes:', error);
     } finally {
       setLoading(false);
     }
@@ -138,7 +127,6 @@ export const Header: React.FC<HeaderProps> = ({ onMenuToggle, onViewChange, onSe
     return () => clearInterval(interval);
   }, []);
 
-  // Fechar dropdowns ao clicar fora
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (notificationRef.current && !notificationRef.current.contains(event.target as Node)) {
@@ -156,7 +144,6 @@ export const Header: React.FC<HeaderProps> = ({ onMenuToggle, onViewChange, onSe
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Função de busca - executa imediatamente ao digitar
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const query = e.target.value;
     setSearchQuery(query);
@@ -188,11 +175,11 @@ export const Header: React.FC<HeaderProps> = ({ onMenuToggle, onViewChange, onSe
     }
   };
 
-  const unreadNotifications = notifications.filter(n => !n.read);
+  const unreadNotifications = notifications.filter(n => !n.lida);
   const unreadCount = unreadNotifications.length;
 
   const handleNavigation = (view: string) => {
-    console.log('🚀 Mudando para view:', view);
+    console.log('Mudando para view:', view);
     if (onViewChange) {
       onViewChange(view);
     }
@@ -201,7 +188,7 @@ export const Header: React.FC<HeaderProps> = ({ onMenuToggle, onViewChange, onSe
   };
 
   const handleLogout = async () => {
-    console.log('🚪 Fazendo logout');
+    console.log('Fazendo logout');
     await logout();
   };
 
@@ -210,7 +197,7 @@ export const Header: React.FC<HeaderProps> = ({ onMenuToggle, onViewChange, onSe
     try {
       await notificationService.markAsRead(id);
       setNotifications(prev => 
-        prev.map(n => n.id === id ? { ...n, read: true } : n)
+        prev.map(n => n.id === id ? { ...n, lida: true } : n)
       );
     } catch (error) {
       console.error('Erro ao marcar como lida:', error);
@@ -221,39 +208,65 @@ export const Header: React.FC<HeaderProps> = ({ onMenuToggle, onViewChange, onSe
     event.stopPropagation();
     try {
       await notificationService.markAllAsRead();
-      setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+      setNotifications(prev => prev.map(n => ({ ...n, lida: true })));
     } catch (error) {
       console.error('Erro ao marcar todas como lidas:', error);
     }
   };
 
   const handleNotificationClick = (notification: Notification) => {
-    if (notification.actionUrl) {
-      const view = notification.actionUrl.split('/')[1];
-      if (view) {
-        handleNavigation(view);
-      }
-    } else {
-      handleNavigation('notificacoes');
+    if (!notification.lida) {
+      handleMarkAsRead(notification.id);
+    }
+    
+    if (notification.urlAcao) {
+      window.location.href = notification.urlAcao;
+    } else if (onViewChange) {
+      onViewChange('notificacoes');
     }
     setShowNotifications(false);
   };
 
   const getTypeIcon = (type: string) => {
-    switch(type) {
-      case 'event': return <MdEvent size={16} />;
-      default: return <FiBell size={16} />;
+    const normalizedType = type?.toLowerCase() || 'system';
+    switch(normalizedType) {
+      case 'evento':
+      case 'event': 
+        return <FiCalendar size={16} />;
+      case 'pagamento':
+      case 'payment': 
+        return <FiDollarSign size={16} />;
+      case 'estoque':
+      case 'stock': 
+        return <FiPackage size={16} />;
+      case 'alerta':
+      case 'alert': 
+        return <FiAlertCircle size={16} />;
+      default: 
+        return <FiBell size={16} />;
     }
   };
 
   const getTypeColor = (type: string) => {
-    switch(type) {
-      case 'event': return '#3b82f6';
-      case 'payment': return '#10b981';
-      case 'stock': return '#f59e0b';
-      case 'reminder': return '#8b5cf6';
-      case 'system': return '#64748b';
-      default: return '#64748b';
+    const normalizedType = type?.toLowerCase() || 'system';
+    switch(normalizedType) {
+      case 'evento':
+      case 'event': 
+        return '#3b82f6';
+      case 'pagamento':
+      case 'payment': 
+        return '#10b981';
+      case 'estoque':
+      case 'stock': 
+        return '#f59e0b';
+      case 'alerta':
+      case 'alert': 
+        return '#ef4444';
+      case 'lembrete':
+      case 'reminder': 
+        return '#8b5cf6';
+      default: 
+        return '#64748b';
     }
   };
 
@@ -298,7 +311,6 @@ export const Header: React.FC<HeaderProps> = ({ onMenuToggle, onViewChange, onSe
             )}
           </div>
           
-          {/* Resultados da pesquisa */}
           {showSearchResults && (
             <div className={styles.searchResults}>
               <div className={styles.searchResultsHeader}>
@@ -358,7 +370,7 @@ export const Header: React.FC<HeaderProps> = ({ onMenuToggle, onViewChange, onSe
             {showNotifications && (
               <div className={styles.notificationMenu}>
                 <div className={styles.notificationHeader}>
-                  <h3>Notificações</h3>
+                  <h3>Notificacoes</h3>
                   <button 
                     className={styles.viewAllBtn}
                     onClick={() => handleNavigation('notificacoes')}
@@ -382,43 +394,45 @@ export const Header: React.FC<HeaderProps> = ({ onMenuToggle, onViewChange, onSe
                       >
                         <div 
                           className={styles.notificationIcon}
-                          style={{ backgroundColor: `${getTypeColor(notification.type)}15` }}
+                          style={{ backgroundColor: `${getTypeColor(notification.tipo)}15` }}
                         >
-                          <div style={{ color: getTypeColor(notification.type) }}>
-                            {getTypeIcon(notification.type)}
+                          <div style={{ color: getTypeColor(notification.tipo) }}>
+                            {getTypeIcon(notification.tipo)}
                           </div>
                         </div>
                         <div className={styles.notificationContent}>
                           <p className={styles.notificationText}>
-                            <strong>{notification.title}</strong>
+                            <strong>{notification.titulo}</strong>
                           </p>
                           <p className={styles.notificationMessage}>
-                            {notification.message}
+                            {notification.mensagem}
                           </p>
                           <span className={styles.notificationTime}>
-                            {formatTimeAgo(notification.timestamp)}
+                            {formatTimeAgo(notification.dataCriacao)}
                           </span>
                         </div>
-                        <button 
-                          className={styles.notificationMarkRead}
-                          onClick={(e) => handleMarkAsRead(notification.id, e)}
-                          title="Marcar como lida"
-                        >
-                          <FiCheck size={14} />
-                        </button>
+                        {!notification.lida && (
+                          <button 
+                            className={styles.notificationMarkRead}
+                            onClick={(e) => handleMarkAsRead(notification.id, e)}
+                            title="Marcar como lida"
+                          >
+                            <FiCheck size={14} />
+                          </button>
+                        )}
                       </div>
                     ))
                   ) : (
                     <div className={styles.notificationEmpty}>
                       <FiBell size={32} />
-                      <p>Nenhuma notificação nova</p>
+                      <p>Nenhuma notificacao nova</p>
                     </div>
                   )}
 
                   {unreadNotifications.length > 5 && (
                     <div className={styles.notificationMore}>
                       <button onClick={() => handleNavigation('notificacoes')}>
-                        Ver mais {unreadNotifications.length - 5} notificações
+                        Ver mais {unreadNotifications.length - 5} notificacoes
                       </button>
                     </div>
                   )}
@@ -443,7 +457,7 @@ export const Header: React.FC<HeaderProps> = ({ onMenuToggle, onViewChange, onSe
           <button 
             className={styles.headerBtn}
             onClick={() => handleNavigation('configuracoes')}
-            title="Configurações"
+            title="Configuracoes"
           >
             <FiSettings size={20} />
           </button>
@@ -495,7 +509,7 @@ export const Header: React.FC<HeaderProps> = ({ onMenuToggle, onViewChange, onSe
                   onClick={() => handleNavigation('configuracoes')}
                 >
                   <FiSettings size={16} />
-                  <span>Configurações</span>
+                  <span>Configuracoes</span>
                 </button>
                 
                 <div className={styles.dropdownDivider} />

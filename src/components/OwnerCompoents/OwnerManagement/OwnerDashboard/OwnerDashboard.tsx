@@ -1,6 +1,5 @@
 // src/components/admin/dashboard/OwnerDashboard.tsx
-
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { 
   FiRefreshCw, 
   FiCalendar, 
@@ -8,7 +7,12 @@ import {
   FiCheckCircle,
   FiTrendingUp,
   FiBarChart2,
-  FiPieChart
+  FiPieChart,
+  FiFilter,
+  FiX,
+  FiChevronDown,
+  FiChevronUp,
+  FiSearch
 } from 'react-icons/fi';
 import { 
   MdEvent, 
@@ -17,7 +21,8 @@ import {
   MdCheckCircle,
   MdCancel,
   MdPeople,
-  MdDashboard
+  MdDashboard,
+  MdFilterList
 } from 'react-icons/md';
 import { 
   FaMoneyBillWave, 
@@ -31,6 +36,39 @@ import { useTheme } from "../../../../context/ThemeContext";
 import Chart from 'react-apexcharts';
 import { ApexOptions } from 'apexcharts';
 import styles from "./OwnerDashboard.module.css";
+
+interface DashboardFilters {
+  period: 'MONTH' | 'QUARTER' | 'YEAR' | 'CUSTOM';
+  selectedMonth: string;
+  selectedYear: string;
+  dateRange: {
+    start: string;
+    end: string;
+  };
+  eventType: string;
+  status: string;
+  minValue: string;
+  maxValue: string;
+  searchTerm: string;
+}
+
+const EVENT_TYPES = [
+  { value: 'ALL', label: 'Todos os tipos' },
+  { value: 'CASAMENTO', label: 'Casamento' },
+  { value: 'ANIVERSARIO', label: 'Aniversário' },
+  { value: 'CORPORATIVO', label: 'Corporativo' },
+  { value: 'FORMATURA', label: 'Formatura' },
+  { value: 'CONFRATERNIZACAO', label: 'Confraternização' },
+  { value: 'OUTRO', label: 'Outro' }
+];
+
+const STATUS_OPTIONS = [
+  { value: 'ALL', label: 'Todos os status' },
+  { value: 'CONFIRMED', label: 'Confirmados' },
+  { value: 'QUOTE', label: 'Em Cotação' },
+  { value: 'COMPLETED', label: 'Concluídos' },
+  { value: 'CANCELLED', label: 'Cancelados' }
+];
 
 export const OwnerDashboard: React.FC = () => {
   const { isDark } = useTheme();
@@ -52,8 +90,24 @@ export const OwnerDashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [chartKey, setChartKey] = useState(0);
+  
+  // Estados dos filtros
+  const [showFilters, setShowFilters] = useState(false);
+  const [filters, setFilters] = useState<DashboardFilters>({
+    period: 'MONTH',
+    selectedMonth: new Date().toISOString().slice(0, 7),
+    selectedYear: new Date().getFullYear().toString(),
+    dateRange: {
+      start: '',
+      end: ''
+    },
+    eventType: 'ALL',
+    status: 'ALL',
+    minValue: '',
+    maxValue: '',
+    searchTerm: ''
+  });
 
-  // ✅ Cores adaptáveis ao tema
   const textColor = isDark ? '#f1f5f9' : '#263238';
   const textSecondary = isDark ? '#cbd5e1' : '#64748b';
   const gridColor = isDark ? '#334155' : '#e0e0e0';
@@ -63,7 +117,6 @@ export const OwnerDashboard: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    // Recriar gráficos quando o tema mudar
     setChartKey(prev => prev + 1);
   }, [isDark]);
 
@@ -85,6 +138,89 @@ export const OwnerDashboard: React.FC = () => {
       setLoading(false);
     }
   };
+
+  // Handlers dos filtros
+  const handleFilterChange = (field: keyof DashboardFilters, value: any) => {
+    setFilters(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleDateRangeChange = (field: 'start' | 'end', value: string) => {
+    setFilters(prev => ({
+      ...prev,
+      dateRange: { ...prev.dateRange, [field]: value }
+    }));
+  };
+
+  const handleClearFilters = () => {
+    setFilters({
+      period: 'MONTH',
+      selectedMonth: new Date().toISOString().slice(0, 7),
+      selectedYear: new Date().getFullYear().toString(),
+      dateRange: {
+        start: '',
+        end: ''
+      },
+      eventType: 'ALL',
+      status: 'ALL',
+      minValue: '',
+      maxValue: '',
+      searchTerm: ''
+    });
+  };
+
+  // Filtrar próximos eventos
+  const filteredUpcomingEvents = useMemo(() => {
+    return stats.upcomingEvents.filter(event => {
+      // Filtro por busca (título ou cliente)
+      if (filters.searchTerm) {
+        const term = filters.searchTerm.toLowerCase();
+        const matchesTitle = event.title?.toLowerCase().includes(term);
+        const matchesClient = event.client?.name?.toLowerCase().includes(term);
+        if (!matchesTitle && !matchesClient) return false;
+      }
+
+      // Filtro por tipo de evento
+      if (filters.eventType !== 'ALL' && event.eventType !== filters.eventType) {
+        return false;
+      }
+
+      // Filtro por status
+      if (filters.status !== 'ALL' && event.status !== filters.status) {
+        return false;
+      }
+
+      // Filtro por valor mínimo
+      if (filters.minValue && event.totalValue < parseFloat(filters.minValue)) {
+        return false;
+      }
+
+      // Filtro por valor máximo
+      if (filters.maxValue && event.totalValue > parseFloat(filters.maxValue)) {
+        return false;
+      }
+
+      // Filtro por período personalizado
+      if (filters.period === 'CUSTOM') {
+        if (filters.dateRange.start && new Date(event.eventDate) < new Date(filters.dateRange.start)) {
+          return false;
+        }
+        if (filters.dateRange.end && new Date(event.eventDate) > new Date(filters.dateRange.end)) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+  }, [stats.upcomingEvents, filters]);
+
+  const hasActiveFilters = useMemo(() => {
+    return filters.searchTerm !== '' ||
+           filters.eventType !== 'ALL' ||
+           filters.status !== 'ALL' ||
+           filters.minValue !== '' ||
+           filters.maxValue !== '' ||
+           filters.period === 'CUSTOM';
+  }, [filters]);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("pt-BR", {
@@ -123,7 +259,6 @@ export const OwnerDashboard: React.FC = () => {
     return colors[status] || "#6b7280";
   };
 
-  // ✅ GRÁFICO 1: Eventos por Status
   const statusChartOptions: ApexOptions = {
     chart: {
       type: 'bar',
@@ -247,7 +382,6 @@ export const OwnerDashboard: React.FC = () => {
     data: Object.values(stats.eventsByStatus)
   }];
 
-  // ✅ GRÁFICO 2: Eventos por Mês
   const monthlyEventsOptions: ApexOptions = {
     chart: {
       type: 'bar',
@@ -364,7 +498,6 @@ export const OwnerDashboard: React.FC = () => {
     data: Object.values(stats.eventsByMonth)
   }];
 
-  // ✅ GRÁFICO 3: Receita por Mês
   const revenueOptions: ApexOptions = {
     chart: {
       type: 'area',
@@ -692,6 +825,157 @@ export const OwnerDashboard: React.FC = () => {
         </div>
       </div>
 
+      {/* ========== FILTROS DE EVENTOS ========== */}
+      <div className={styles.eventsFiltersSection}>
+        <button 
+          onClick={() => setShowFilters(!showFilters)}
+          className={styles.filterToggle}
+        >
+          <MdFilterList size={18} />
+          {showFilters ? 'Ocultar filtros' : 'Filtrar eventos'}
+          {hasActiveFilters && (
+            <span className={styles.filterCount}>
+              {filteredUpcomingEvents.length}/{stats.upcomingEvents.length}
+            </span>
+          )}
+          {showFilters ? <FiChevronUp size={16} /> : <FiChevronDown size={16} />}
+        </button>
+
+        {showFilters && (
+          <div className={styles.filtersPanel}>
+            {/* Barra de busca */}
+            <div className={styles.searchBox}>
+              <FiSearch size={16} />
+              <input
+                type="text"
+                placeholder="Buscar por título ou cliente..."
+                value={filters.searchTerm}
+                onChange={(e) => handleFilterChange('searchTerm', e.target.value)}
+                className={styles.searchInput}
+              />
+              {filters.searchTerm && (
+                <button 
+                  onClick={() => handleFilterChange('searchTerm', '')}
+                  className={styles.clearSearchButton}
+                >
+                  <FiX size={14} />
+                </button>
+              )}
+            </div>
+
+            <div className={styles.filtersGrid}>
+              {/* Período */}
+              <div className={styles.filterGroup}>
+                <label><FiCalendar size={14} /> Período</label>
+                <select
+                  value={filters.period}
+                  onChange={(e) => handleFilterChange('period', e.target.value)}
+                  className={styles.filterSelect}
+                >
+                  <option value="MONTH">Mês atual</option>
+                  <option value="QUARTER">Trimestre</option>
+                  <option value="YEAR">Ano</option>
+                  <option value="CUSTOM">Personalizado</option>
+                </select>
+              </div>
+
+              {/* Período Personalizado */}
+              {filters.period === 'CUSTOM' && (
+                <div className={styles.filterGroup}>
+                  <label><FiCalendar size={14} /> Intervalo</label>
+                  <div className={styles.dateRangeInputs}>
+                    <input
+                      type="date"
+                      value={filters.dateRange.start}
+                      onChange={(e) => handleDateRangeChange('start', e.target.value)}
+                      className={styles.dateInput}
+                    />
+                    <span>até</span>
+                    <input
+                      type="date"
+                      value={filters.dateRange.end}
+                      onChange={(e) => handleDateRangeChange('end', e.target.value)}
+                      className={styles.dateInput}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Tipo de Evento */}
+              <div className={styles.filterGroup}>
+                <label><MdEvent size={14} /> Tipo de Evento</label>
+                <select
+                  value={filters.eventType}
+                  onChange={(e) => handleFilterChange('eventType', e.target.value)}
+                  className={styles.filterSelect}
+                >
+                  {EVENT_TYPES.map(type => (
+                    <option key={type.value} value={type.value}>{type.label}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Status */}
+              <div className={styles.filterGroup}>
+                <label><FiCheckCircle size={14} /> Status</label>
+                <select
+                  value={filters.status}
+                  onChange={(e) => handleFilterChange('status', e.target.value)}
+                  className={styles.filterSelect}
+                >
+                  {STATUS_OPTIONS.map(status => (
+                    <option key={status.value} value={status.value}>{status.label}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Faixa de Valor */}
+              <div className={styles.filterGroup}>
+                <label><MdAttachMoney size={14} /> Valor do Evento</label>
+                <div className={styles.valueRangeInputs}>
+                  <input
+                    type="number"
+                    placeholder="Mínimo"
+                    value={filters.minValue}
+                    onChange={(e) => handleFilterChange('minValue', e.target.value)}
+                    className={styles.valueInput}
+                    min="0"
+                    step="100"
+                  />
+                  <span>até</span>
+                  <input
+                    type="number"
+                    placeholder="Máximo"
+                    value={filters.maxValue}
+                    onChange={(e) => handleFilterChange('maxValue', e.target.value)}
+                    className={styles.valueInput}
+                    min="0"
+                    step="100"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Ações dos filtros */}
+            <div className={styles.filtersActions}>
+              <span className={styles.filterResults}>
+                <strong>{filteredUpcomingEvents.length}</strong> evento(s) encontrado(s)
+                {hasActiveFilters && ` de ${stats.upcomingEvents.length}`}
+              </span>
+              {hasActiveFilters && (
+                <button 
+                  onClick={handleClearFilters}
+                  className={styles.clearFiltersButton}
+                >
+                  <FiX size={14} />
+                  Limpar Todos os Filtros
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+
       {/* Próximos Eventos */}
       <div className={styles.upcomingEvents}>
         <div className={styles.sectionHeader}>
@@ -700,19 +984,27 @@ export const OwnerDashboard: React.FC = () => {
             Próximos Eventos
           </h2>
           <span className={styles.sectionBadge}>
-            {stats.upcomingEvents.length}
+            {filteredUpcomingEvents.length}
           </span>
         </div>
 
-        {stats.upcomingEvents.length === 0 ? (
+        {filteredUpcomingEvents.length === 0 ? (
           <EmptyState
             icon={<FiCalendar size={48} />}
             title="Nenhum evento próximo"
-            description="Não há eventos confirmados para os próximos dias."
+            description={hasActiveFilters 
+              ? "Nenhum evento corresponde aos filtros aplicados."
+              : "Não há eventos confirmados para os próximos dias."
+            }
+            action={hasActiveFilters ? {
+              label: 'Limpar Filtros',
+              onClick: handleClearFilters,
+              icon: <FiX />
+            } : undefined}
           />
         ) : (
           <div className={styles.eventsList}>
-            {stats.upcomingEvents.map((event) => (
+            {filteredUpcomingEvents.map((event) => (
               <div key={event.id} className={styles.eventCard}>
                 <div className={styles.eventDate}>
                   <span className={styles.dateDay}>

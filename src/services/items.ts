@@ -5,7 +5,7 @@ export interface Item {
   id: number;
   name: string;
   description?: string;
-  category: 'DECORATION' | 'FURNITURE' | 'UTENSIL' | 'OTHER';
+  category: CategoriaFrontend;
   quantityTotal: number;
   quantityAvailable: number;
   minStock: number;
@@ -14,40 +14,80 @@ export interface Item {
   status?: string;
 }
 
+export type CategoriaFrontend = 
+  | 'FURNITURE'
+  | 'DECORATION'
+  | 'UTENSIL'
+  | 'EQUIPMENT'
+  | 'LIGHTING'
+  | 'AUDIO_VIDEO'
+  | 'CLIMATE'
+  | 'SECURITY'
+  | 'RECREATION'
+  | 'GASTRONOMY'
+  | 'FLORAL'
+  | 'FABRICS'
+  | 'SIGNAGE'
+  | 'TOYS'
+  | 'STRUCTURES'
+  | 'TRANSPORT'
+  | 'OTHER';
+
 export interface CreateItemDTO {
   name: string;
   description?: string;
-  category: 'DECORATION' | 'FURNITURE' | 'UTENSIL' | 'OTHER';
+  category: CategoriaFrontend;
   quantityTotal: number;
   minStock: number;
   unitPrice: number;
 }
 
-// Mapeamento de categorias do frontend para backend (valores exatos do enum Java)
-const categoryToBackend: Record<string, Item.categorias> = {
-  'DECORATION': 'Decoracao',
+const categoryToBackend: Record<CategoriaFrontend, string> = {
   'FURNITURE': 'Mobiliario',
+  'DECORATION': 'Decoracao',
   'UTENSIL': 'Utensilios',
+  'EQUIPMENT': 'Equipamentos',
+  'LIGHTING': 'Iluminacao',
+  'AUDIO_VIDEO': 'AudioVideo',
+  'CLIMATE': 'Climatizacao',
+  'SECURITY': 'Seguranca',
+  'RECREATION': 'Recreacao',
+  'GASTRONOMY': 'Gastronomia',
+  'FLORAL': 'Floral',
+  'FABRICS': 'Tecidos',
+  'SIGNAGE': 'Sinalizacao',
+  'TOYS': 'Brinquedos',
+  'STRUCTURES': 'Estruturas',
+  'TRANSPORT': 'Transporte',
   'OTHER': 'Outros'
 };
 
-// Mapeamento de categorias do backend para frontend
-const categoryToFrontend: Record<string, "DECORATION" | "FURNITURE" | "UTENSIL" | "OTHER"> = {
-  'Decoracao': 'DECORATION',
+const categoryToFrontend: Record<string, CategoriaFrontend> = {
   'Mobiliario': 'FURNITURE',
+  'Decoracao': 'DECORATION',
   'Utensilios': 'UTENSIL',
+  'Equipamentos': 'EQUIPMENT',
+  'Iluminacao': 'LIGHTING',
+  'AudioVideo': 'AUDIO_VIDEO',
+  'Climatizacao': 'CLIMATE',
+  'Seguranca': 'SECURITY',
+  'Recreacao': 'RECREATION',
+  'Gastronomia': 'GASTRONOMY',
+  'Floral': 'FLORAL',
+  'Tecidos': 'FABRICS',
+  'Sinalizacao': 'SIGNAGE',
+  'Brinquedos': 'TOYS',
+  'Estruturas': 'STRUCTURES',
+  'Transporte': 'TRANSPORT',
   'Outros': 'OTHER'
 };
 
 export const itemService = {
-  /**
-   * Busca todos os itens
-   */
   getAllItems: async (): Promise<Item[]> => {
     try {
-      console.log('📦 Buscando todos os itens...');
+      console.log('Buscando todos os itens...');
       const response = await api.get('/api/itens');
-      console.log('✅ Itens carregados:', response.data.length);
+      console.log('Itens carregados:', response.data.length);
       
       return response.data.map((item: any) => ({
         id: item.id,
@@ -62,17 +102,14 @@ export const itemService = {
         status: item.status
       }));
     } catch (error: any) {
-      console.error('❌ Erro ao buscar itens:', error);
+      console.error('Erro ao buscar itens:', error);
       throw error;
     }
   },
 
-  /**
-   * Busca item por ID
-   */
   getItemById: async (id: number): Promise<Item> => {
     try {
-      console.log(`📦 Buscando item ${id}...`);
+      console.log(`Buscando item ${id}...`);
       const response = await api.get(`/api/itens/${id}`);
       
       return {
@@ -88,76 +125,58 @@ export const itemService = {
         status: response.data.status
       };
     } catch (error: any) {
-      console.error(`❌ Erro ao buscar item ${id}:`, error);
+      console.error(`Erro ao buscar item ${id}:`, error);
       throw error;
     }
   },
 
-  /**
-   * Cria um novo item
-   */
   createItem: async (itemData: CreateItemDTO): Promise<Item> => {
     try {
-      // Log detalhado do que está chegando
-      console.log('📥 Dados recebidos no createItem:', JSON.stringify(itemData, null, 2));
+      console.log('Dados recebidos no createItem:', JSON.stringify(itemData, null, 2));
 
-      // Validar dados obrigatórios
       if (!itemData.name?.trim()) {
-        throw new Error('Nome do item é obrigatório');
+        throw new Error('Nome do item e obrigatorio');
       }
 
       if (!itemData.category) {
-        throw new Error('Categoria é obrigatória');
+        throw new Error('Categoria e obrigatoria');
       }
 
-      // Converter valores para número e garantir que são números (não strings)
       const total = Number(itemData.quantityTotal);
       const estoqueMinimo = Number(itemData.minStock);
       const preco = Number(itemData.unitPrice);
 
-      // Validar se as conversões foram bem-sucedidas
       if (isNaN(total)) {
-        throw new Error('Quantidade total deve ser um número válido');
+        throw new Error('Quantidade total deve ser um numero valido');
       }
       if (isNaN(estoqueMinimo)) {
-        throw new Error('Estoque mínimo deve ser um número válido');
+        throw new Error('Estoque minimo deve ser um numero valido');
       }
       if (isNaN(preco)) {
-        throw new Error('Preço deve ser um número válido');
+        throw new Error('Preco deve ser um numero valido');
       }
 
-      // Obter o valor da categoria no formato que o backend espera (enum)
       const categoriaBackend = categoryToBackend[itemData.category];
       
       if (!categoriaBackend) {
-        throw new Error(`Categoria inválida: ${itemData.category}`);
+        throw new Error(`Categoria invalida: ${itemData.category}`);
       }
 
-      // Payload EXATO que o backend espera baseado no DTO
       const payload = {
         nome: itemData.name.trim(),
         descricao: itemData.description?.trim() || null,
-        categoria: categoriaBackend, // Enviar como string, o Spring converte para enum automaticamente
-        total: total, // number, não string
-        estoqueMinimo: estoqueMinimo, // number, não string
-        preco: preco // number, não string
+        categoria: categoriaBackend,
+        total: total,
+        estoqueMinimo: estoqueMinimo,
+        preco: preco
       };
 
-      console.log('📤 Enviando payload para o backend:', JSON.stringify(payload, null, 2));
-      console.log('📤 Tipos dos dados:', {
-        nome: typeof payload.nome,
-        descricao: typeof payload.descricao,
-        categoria: typeof payload.categoria,
-        total: typeof payload.total,
-        estoqueMinimo: typeof payload.estoqueMinimo,
-        preco: typeof payload.preco
-      });
+      console.log('Enviando payload para o backend:', JSON.stringify(payload, null, 2));
       
       const response = await api.post('/api/itens', payload);
       
-      console.log('✅ Resposta do backend:', response.data);
+      console.log('Resposta do backend:', response.data);
       
-      // Mapear resposta para o formato do frontend
       return {
         id: response.data.id,
         name: response.data.nome,
@@ -172,12 +191,11 @@ export const itemService = {
       };
       
     } catch (error: any) {
-      console.error('❌ Erro detalhado ao criar item:');
+      console.error('Erro detalhado ao criar item:');
       
       if (error.response) {
         console.error('Status:', error.response.status);
         console.error('Dados da resposta de erro:', error.response.data);
-        console.error('Headers:', error.response.headers);
 
         let errorMessage = 'Erro ao criar item';
         let errorDetails = '';
@@ -196,24 +214,19 @@ export const itemService = {
         throw new Error(`${errorMessage}${errorDetails ? ' - ' + errorDetails : ''} (Status: ${error.response.status})`);
       } else if (error.request) {
         console.error('Sem resposta do servidor:', error.request);
-        throw new Error('Servidor não respondeu. Verifique sua conexão.');
+        throw new Error('Servidor nao respondeu. Verifique sua conexao.');
       } else {
-        console.error('Erro na configuração:', error.message);
+        console.error('Erro na configuracao:', error.message);
         throw error;
       }
     }
   },
 
-  /**
-   * Atualiza um item existente
-   */
   updateItem: async (id: number, itemData: Partial<CreateItemDTO>): Promise<Item> => {
     try {
-      // Buscar item atual para obter valores não alterados
       const currentResponse = await api.get(`/api/itens/${id}`);
       const currentItem = currentResponse.data;
       
-      // Preparar payload com dados atualizados
       const payload: any = {
         nome: itemData.name?.trim() || currentItem.nome,
         descricao: itemData.description?.trim() || currentItem.descricao,
@@ -223,11 +236,11 @@ export const itemService = {
         preco: itemData.unitPrice !== undefined ? Number(itemData.unitPrice) : currentItem.preco
       };
 
-      console.log(`📤 Atualizando item ${id}:`, payload);
+      console.log(`Atualizando item ${id}:`, payload);
       
       const response = await api.put(`/api/itens/${id}`, payload);
       
-      console.log(`✅ Item ${id} atualizado com sucesso`);
+      console.log(`Item ${id} atualizado com sucesso`);
       
       return {
         id: response.data.id,
@@ -243,7 +256,7 @@ export const itemService = {
       };
       
     } catch (error: any) {
-      console.error(`❌ Erro ao atualizar item ${id}:`, error);
+      console.error(`Erro ao atualizar item ${id}:`, error);
       
       if (error.response) {
         let errorMessage = 'Erro ao atualizar item';
@@ -259,16 +272,13 @@ export const itemService = {
     }
   },
 
-  /**
-   * Deleta um item
-   */
   deleteItem: async (id: number): Promise<void> => {
     try {
-      console.log(`🗑️ Deletando item ${id}...`);
+      console.log(`Deletando item ${id}...`);
       await api.delete(`/api/itens/${id}`);
-      console.log(`✅ Item ${id} deletado com sucesso`);
+      console.log(`Item ${id} deletado com sucesso`);
     } catch (error: any) {
-      console.error(`❌ Erro ao deletar item ${id}:`, error);
+      console.error(`Erro ao deletar item ${id}:`, error);
       
       if (error.response) {
         let errorMessage = 'Erro ao deletar item';
@@ -285,9 +295,8 @@ export const itemService = {
   }
 };
 
-// Para usar o enum do backend no TypeScript
 export namespace Item {
-  export type categorias = 'Mobiliario' | 'Decoracao' | 'Utensilios' | 'Outros';
+  export type categorias = 'Mobiliario' | 'Decoracao' | 'Utensilios' | 'Equipamentos' | 'Iluminacao' | 'AudioVideo' | 'Climatizacao' | 'Seguranca' | 'Recreacao' | 'Gastronomia' | 'Floral' | 'Tecidos' | 'Sinalizacao' | 'Brinquedos' | 'Estruturas' | 'Transporte' | 'Outros';
 }
 
 export type { Item };
