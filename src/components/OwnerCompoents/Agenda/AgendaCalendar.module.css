@@ -17,7 +17,7 @@
 .pageTitle {
   font-size: 1.875rem;
   font-weight: 700;
-  color: #1e293b;
+  color: var(--text-primary);
   margin: 0;
 }
 
@@ -30,11 +30,11 @@
 .viewSelect,
 .filterSelect {
   padding: 0.5rem 1rem;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--input-border);
   border-radius: 8px;
   font-size: 0.875rem;
-  color: #374151;
-  background: white;
+  color: var(--text-primary);
+  background: var(--input-bg);
   cursor: pointer;
   transition: all 0.2s;
   min-width: 120px;
@@ -43,14 +43,14 @@
 .viewSelect:focus,
 .filterSelect:focus {
   outline: none;
-  border-color: #6366f1;
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+  border-color: #00B4D8;
+  box-shadow: 0 0 0 3px rgba(0, 180, 216, 0.1);
 }
 
 .secondaryButton {
-  background: white;
-  color: #374151;
-  border: 1px solid #e2e8f0;
+  background: var(--card-bg);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
   padding: 0.5rem 1rem;
   border-radius: 8px;
   font-weight: 500;
@@ -63,14 +63,14 @@
 }
 
 .secondaryButton:hover {
-  background: #f8fafc;
-  border-color: #cbd5e1;
+  background: var(--bg-tertiary);
+  border-color: var(--gray-300);
 }
 
 .secondaryButton.active {
-  background: #eef2ff;
-  border-color: #6366f1;
-  color: #4f46e5;
+  background: var(--primary-50);
+  border-color: #00B4D8;
+  color: #00B4D8;
 }
 
 .alertBadge {
@@ -79,10 +79,10 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.5rem 1rem;
-  background: #fef2f2;
-  border: 1px solid #fecaca;
+  background: var(--error-50);
+  border: 1px solid var(--error-100);
   border-radius: 8px;
-  color: #dc2626;
+  color: var(--error-600);
   font-size: 0.875rem;
   cursor: pointer;
 }
@@ -101,17 +101,17 @@
   top: 100%;
   right: 0;
   margin-top: 0.5rem;
-  background: white;
-  border: 1px solid #e2e8f0;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
   border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-lg);
   min-width: 250px;
   z-index: 100;
 }
 
 .alertItem {
   padding: 0.75rem 1rem;
-  border-bottom: 1px solid #f1f5f9;
+  border-bottom: 1px solid var(--border-color);
   font-size: 0.875rem;
 }
 
@@ -121,12 +121,12 @@
 
 .alertItem strong {
   display: block;
-  color: #1e293b;
+  color: var(--text-primary);
   margin-bottom: 0.25rem;
 }
 
 .alertItem span {
-  color: #64748b;
+  color: var(--text-muted);
   font-size: 0.75rem;
 }
 
@@ -135,14 +135,14 @@
   display: grid;
   grid-template-columns: 350px 1fr;
   gap: 2rem;
-  background: white;
+  background: var(--card-bg);
   border-radius: 12px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--border-color);
   padding: 1.5rem;
 }
 
 .calendarSection {
-  border-right: 1px solid #e2e8f0;
+  border-right: 1px solid var(--border-color);
   padding-right: 1.5rem;
 }
 
@@ -151,6 +151,7 @@
   width: 100%;
   border: none;
   font-family: inherit;
+  background: transparent;
 }
 
 .calendarSection :global(.react-calendar__navigation) {
@@ -158,7 +159,7 @@
 }
 
 .calendarSection :global(.react-calendar__navigation button) {
-  color: #374151;
+  color: var(--text-secondary);
   font-size: 1rem;
   background: none;
   border: none;
@@ -167,11 +168,11 @@
 }
 
 .calendarSection :global(.react-calendar__navigation button:hover) {
-  background: #f1f5f9;
+  background: var(--bg-tertiary);
 }
 
 .calendarSection :global(.react-calendar__month-view__weekdays__weekday) {
-  color: #64748b;
+  color: var(--text-muted);
   font-size: 0.75rem;
   font-weight: 600;
   text-transform: uppercase;
@@ -190,27 +191,27 @@
   border: none;
   border-radius: 6px;
   font-size: 0.875rem;
-  color: #1e293b;
+  color: var(--text-primary);
 }
 
 .calendarSection :global(.react-calendar__tile:hover) {
-  background: #f1f5f9;
+  background: var(--bg-tertiary);
 }
 
 .calendarSection :global(.react-calendar__tile--active) {
-  background: #eef2ff !important;
-  color: #4f46e5 !important;
+  background: var(--primary-50) !important;
+  color: #00B4D8 !important;
   font-weight: 600;
 }
 
 .calendarSection :global(.react-calendar__tile--now) {
-  background: #fef9c3;
-  color: #854d0e;
+  background: var(--warning-100);
+  color: var(--warning-700);
 }
 
 .blockedTile {
-  background: #fef2f2 !important;
-  color: #dc2626 !important;
+  background: var(--error-50) !important;
+  color: var(--error-500) !important;
   position: relative;
 }
 
@@ -231,12 +232,12 @@
 }
 
 .blockedIndicator {
-  color: #dc2626;
+  color: var(--error-500);
 }
 
 .eventIndicator {
-  background: #eef2ff;
-  color: #4f46e5;
+  background: var(--primary-50);
+  color: #00B4D8;
   padding: 0.125rem 0.25rem;
   border-radius: 4px;
   white-space: nowrap;
@@ -257,13 +258,13 @@
 .eventsHeader h3 {
   font-size: 1.125rem;
   font-weight: 600;
-  color: #1e293b;
+  color: var(--text-primary);
   margin: 0;
 }
 
 .eventCount {
-  background: #f1f5f9;
-  color: #64748b;
+  background: var(--bg-tertiary);
+  color: var(--text-muted);
   padding: 0.25rem 0.75rem;
   border-radius: 9999px;
   font-size: 0.75rem;
@@ -283,7 +284,7 @@
   display: flex;
   gap: 1rem;
   min-height: 60px;
-  border-bottom: 1px solid #f1f5f9;
+  border-bottom: 1px solid var(--border-color);
   padding: 0.5rem 0;
 }
 
@@ -294,7 +295,7 @@
 .hourLabel {
   width: 60px;
   font-weight: 600;
-  color: #64748b;
+  color: var(--text-muted);
   font-size: 0.875rem;
   flex-shrink: 0;
 }
@@ -307,8 +308,8 @@
 }
 
 .eventCard {
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
   border-radius: 6px;
   padding: 0.5rem;
   cursor: pointer;
@@ -318,42 +319,42 @@
 
 .eventCard:hover {
   transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-md);
 }
 
 .eventCard.quote {
-  border-left: 3px solid #f59e0b;
+  border-left: 3px solid var(--warning-500);
 }
 
 .eventCard.confirmed {
-  border-left: 3px solid #10b981;
+  border-left: 3px solid var(--success-500);
 }
 
 .eventCard.completed {
-  border-left: 3px solid #3b82f6;
+  border-left: 3px solid var(--primary-500);
 }
 
 .eventCard.cancelled {
-  border-left: 3px solid #ef4444;
+  border-left: 3px solid var(--error-500);
   opacity: 0.6;
 }
 
 .eventTime {
   font-size: 0.75rem;
-  color: #64748b;
+  color: var(--text-muted);
   margin-bottom: 0.25rem;
 }
 
 .eventTitle {
   font-weight: 600;
-  color: #1e293b;
+  color: var(--text-primary);
   font-size: 0.875rem;
   margin-bottom: 0.25rem;
 }
 
 .eventClient {
   font-size: 0.75rem;
-  color: #6b7280;
+  color: var(--text-muted);
 }
 
 /* Events List */
@@ -370,38 +371,38 @@
   align-items: center;
   gap: 1rem;
   padding: 0.75rem;
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
   border-radius: 6px;
   transition: all 0.2s;
 }
 
 .eventListItem:hover {
-  background: white;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  background: var(--card-bg);
+  box-shadow: var(--shadow-md);
 }
 
 .eventListItem.quote {
-  border-left: 3px solid #f59e0b;
+  border-left: 3px solid var(--warning-500);
 }
 
 .eventListItem.confirmed {
-  border-left: 3px solid #10b981;
+  border-left: 3px solid var(--success-500);
 }
 
 .eventListItem.completed {
-  border-left: 3px solid #3b82f6;
+  border-left: 3px solid var(--primary-500);
 }
 
 .eventListItem.cancelled {
-  border-left: 3px solid #ef4444;
+  border-left: 3px solid var(--error-500);
   opacity: 0.6;
 }
 
 .eventDate {
   min-width: 100px;
   font-weight: 600;
-  color: #374151;
+  color: var(--text-secondary);
   font-size: 0.875rem;
 }
 
@@ -411,18 +412,18 @@
 
 .eventInfo strong {
   display: block;
-  color: #1e293b;
+  color: var(--text-primary);
   margin-bottom: 0.25rem;
 }
 
 .eventInfo span {
-  color: #64748b;
+  color: var(--text-muted);
   font-size: 0.75rem;
 }
 
 .eventTime {
   min-width: 80px;
-  color: #6b7280;
+  color: var(--text-muted);
   font-size: 0.875rem;
 }
 
@@ -437,13 +438,13 @@
 .blockedDatesList {
   margin-top: 1.5rem;
   padding-top: 1.5rem;
-  border-top: 1px solid #e2e8f0;
+  border-top: 1px solid var(--border-color);
 }
 
 .blockedDatesList h4 {
   font-size: 1rem;
   font-weight: 600;
-  color: #1e293b;
+  color: var(--text-primary);
   margin: 0 0 1rem 0;
 }
 
@@ -452,21 +453,21 @@
   align-items: center;
   gap: 1rem;
   padding: 0.5rem;
-  background: #fef2f2;
-  border: 1px solid #fecaca;
+  background: var(--error-50);
+  border: 1px solid var(--error-100);
   border-radius: 6px;
   margin-bottom: 0.5rem;
 }
 
 .blockedDate {
   font-weight: 600;
-  color: #dc2626;
+  color: var(--error-500);
   min-width: 100px;
 }
 
 .blockedReason {
   flex: 1;
-  color: #374151;
+  color: var(--text-secondary);
   font-size: 0.875rem;
 }
 
@@ -478,33 +479,34 @@
   padding: 0.25rem;
   border-radius: 4px;
   transition: all 0.2s;
+  color: var(--text-muted);
 }
 
 .unblockButton:hover {
-  background: #fee2e2;
+  background: var(--error-100);
 }
 
 /* Integration Bar */
 .integrationBar {
   margin-top: 2rem;
   padding: 1rem;
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
   border-radius: 8px;
   display: flex;
   align-items: center;
   gap: 1rem;
-  color: #64748b;
+  color: var(--text-muted);
   font-size: 0.875rem;
 }
 
 .integrationButton {
-  background: white;
-  border: 1px solid #e2e8f0;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
   border-radius: 6px;
   padding: 0.5rem 1rem;
   font-size: 0.875rem;
-  color: #374151;
+  color: var(--text-secondary);
   cursor: not-allowed;
   opacity: 0.6;
   display: flex;
@@ -533,7 +535,7 @@
 }
 
 .modal {
-  background: white;
+  background: var(--card-bg);
   border-radius: 12px;
   width: 100%;
   max-width: 500px;
@@ -550,13 +552,13 @@
   align-items: center;
   justify-content: space-between;
   padding: 1.5rem;
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid var(--border-color);
 }
 
 .modalHeader h3 {
   font-size: 1.25rem;
   font-weight: 600;
-  color: #1e293b;
+  color: var(--text-primary);
   margin: 0;
 }
 
@@ -564,7 +566,7 @@
   background: none;
   border: none;
   font-size: 1.25rem;
-  color: #64748b;
+  color: var(--text-muted);
   cursor: pointer;
   padding: 0.25rem;
   border-radius: 4px;
@@ -577,8 +579,8 @@
 }
 
 .closeButton:hover {
-  background: #f1f5f9;
-  color: #374151;
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
 }
 
 .modalContent {
@@ -592,7 +594,7 @@
 .formGroup label {
   display: block;
   font-weight: 600;
-  color: #374151;
+  color: var(--text-secondary);
   font-size: 0.875rem;
   margin-bottom: 0.5rem;
 }
@@ -600,16 +602,18 @@
 .formInput {
   width: 100%;
   padding: 0.75rem;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--input-border);
   border-radius: 6px;
   font-size: 0.875rem;
   transition: all 0.2s;
+  background: var(--input-bg);
+  color: var(--text-primary);
 }
 
 .formInput:focus {
   outline: none;
-  border-color: #6366f1;
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+  border-color: #00B4D8;
+  box-shadow: 0 0 0 3px rgba(0, 180, 216, 0.1);
 }
 
 .checkboxLabel {
@@ -617,6 +621,7 @@
   align-items: center;
   gap: 0.5rem;
   cursor: pointer;
+  color: var(--text-secondary);
 }
 
 .checkboxLabel input[type="checkbox"] {
@@ -630,11 +635,11 @@
   gap: 1rem;
   justify-content: flex-end;
   padding: 1.5rem;
-  border-top: 1px solid #e2e8f0;
+  border-top: 1px solid var(--border-color);
 }
 
 .primaryButton {
-  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  background: #00B4D8;
   color: white;
   border: none;
   padding: 0.75rem 1.5rem;
@@ -650,7 +655,7 @@
 
 .primaryButton:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+  box-shadow: 0 4px 12px rgba(0, 180, 216, 0.3);
 }
 
 .primaryButton:disabled {
@@ -659,9 +664,9 @@
 }
 
 .secondaryButton {
-  background: white;
-  color: #374151;
-  border: 1px solid #d1d5db;
+  background: var(--card-bg);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
   padding: 0.75rem 1.5rem;
   border-radius: 8px;
   font-weight: 600;
@@ -674,28 +679,28 @@
 }
 
 .secondaryButton:hover:not(:disabled) {
-  background: #f9fafb;
-  border-color: #9ca3af;
+  background: var(--bg-tertiary);
+  border-color: var(--gray-400);
 }
 
 /* Conflict Item */
 .conflictItem {
   padding: 1rem;
-  background: #fef2f2;
-  border: 1px solid #fecaca;
+  background: var(--error-50);
+  border: 1px solid var(--error-100);
   border-radius: 6px;
   margin-bottom: 0.5rem;
 }
 
 .conflictItem strong {
   display: block;
-  color: #dc2626;
+  color: var(--error-600);
   margin-bottom: 0.25rem;
 }
 
 .conflictItem span {
   display: block;
-  color: #374151;
+  color: var(--text-secondary);
   font-size: 0.875rem;
   margin-bottom: 0.125rem;
 }
@@ -715,12 +720,12 @@
 .emptyState h4 {
   font-size: 1.125rem;
   font-weight: 600;
-  color: #374151;
+  color: var(--text-secondary);
   margin: 0 0 0.5rem 0;
 }
 
 .emptyState p {
-  color: #64748b;
+  color: var(--text-muted);
   margin: 0 0 1.5rem 0;
 }
 
@@ -731,14 +736,14 @@
   align-items: center;
   justify-content: center;
   padding: 3rem;
-  color: #64748b;
+  color: var(--text-muted);
 }
 
 .spinner {
   width: 2rem;
   height: 2rem;
-  border: 2px solid #e2e8f0;
-  border-top: 2px solid #6366f1;
+  border: 2px solid var(--border-color);
+  border-top: 2px solid #00B4D8;
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin-bottom: 1rem;
@@ -758,7 +763,7 @@
   .calendarSection {
     border-right: none;
     padding-right: 0;
-    border-bottom: 1px solid #e2e8f0;
+    border-bottom: 1px solid var(--border-color);
     padding-bottom: 1.5rem;
   }
 }

@@ -1,6 +1,8 @@
+// src/App.tsx
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { ThemeProvider } from './context/ThemeContext';
 import { Login } from './pages/Login/Login';
 import { Owner } from './pages/Owner/Owner';
 import { Client } from './pages/Client/Client';
@@ -8,8 +10,8 @@ import { Developer } from './pages/Developer/Developer';
 import { ForgotPasswordPage } from './pages/Password/Forgot/ForgotPasswordPage';
 import { ResetPasswordPage } from './pages/Password/Reset/ResetPasswordPage';
 import { LoadingSpinner as Loading } from './components/common/Loading/LoadingSpinner';
+import './index.css';
 
-// Componente de rota protegida
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, loading } = useAuth();
 
@@ -24,7 +26,6 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
   return <>{children}</>;
 };
 
-// Componente que redireciona baseado no tipo de usuário
 const RootRedirect: React.FC = () => {
   const { user, loading } = useAuth();
 
@@ -57,7 +58,6 @@ const AppRoutes: React.FC = () => {
 
   return (
     <Routes>
-      {/* Rotas públicas - só acessíveis se não estiver logado */}
       <Route 
         path="/login" 
         element={user ? <Navigate to="/" replace /> : <Login />}
@@ -71,7 +71,6 @@ const AppRoutes: React.FC = () => {
         element={user ? <Navigate to="/" replace /> : <ResetPasswordPage />}
       />
       
-      {/* Rotas protegidas */}
       <Route 
         path="/owner/*" 
         element={
@@ -99,10 +98,7 @@ const AppRoutes: React.FC = () => {
         } 
       />
       
-      {/* Rota raiz */}
       <Route path="/" element={<RootRedirect />} />
-      
-      {/* Fallback */}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
@@ -111,9 +107,11 @@ const AppRoutes: React.FC = () => {
 const App: React.FC = () => {
   return (
     <Router>
-      <AuthProvider>
-        <AppRoutes />
-      </AuthProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <AppRoutes />
+        </AuthProvider>
+      </ThemeProvider>
     </Router>
   );
 };

@@ -13,7 +13,7 @@ import {
   FiX
 } from 'react-icons/fi';
 import { MdEvent, MdGroup } from 'react-icons/md';
-import { FaBox } from 'react-icons/fa'; // <-- IMPORTANTE: Adicionar esta importação
+import { FaBox } from 'react-icons/fa';
 import { notificationService, Notification } from '../../../services/notification';
 import styles from './Header.module.css';
 
@@ -84,17 +84,30 @@ export const Header: React.FC<HeaderProps> = ({ onMenuToggle, onViewChange, onSe
     }
   };
 
+  // ✅ FUNÇÃO CORRIGIDA - Exibe o cargo baseado em userType e role
   const getUserRoleText = () => {
-    const roleMap: Record<string, string> = {
-      'ADMIN': 'Administrador',
-      'OWNER': 'Proprietário',
-      'MANAGER': 'Gerente',
-      'DIRECTOR': 'Diretor',
-      'ANALYST': 'Analista',
-      'CLIENT': 'Cliente',
-      'DEVELOPER': 'Desenvolvedor'
-    };
-    return roleMap[user?.role || ''] || user?.userType === 'OWNER' ? 'Proprietário' : 'Cliente';
+    // DESENVOLVEDOR
+    if (user?.userType === 'DEVELOPER') {
+      return 'Desenvolvedor';
+    }
+    
+    // CLIENTE
+    if (user?.userType === 'CLIENT') {
+      return 'Cliente';
+    }
+    
+    // OWNER (Funcionário/Diretor) - baseado na role
+    if (user?.userType === 'OWNER') {
+      const roleMap: Record<string, string> = {
+        'ADMIN': 'Administrador',
+        'DIRECTOR': 'Diretor',
+        'MANAGER': 'Gerente',
+        'ANALYST': 'Analista'
+      };
+      return roleMap[user?.role || ''] || 'Funcionário';
+    }
+    
+    return 'Usuário';
   };
 
   const getUserInitials = () => {

@@ -1,43 +1,60 @@
-/* ========== LAYOUT PRINCIPAL ========== */
+/* src/pages/OwnerCompoents/settings/NotificationsPage.module.css */
+
 .notificationsPage {
   padding: 24px;
-  max-width: 1200px;
+  max-width: 1400px;
   margin: 0 auto;
-  background-color: #f8fafc;
+  background-color: var(--bg-secondary);
   min-height: 100vh;
 }
 
-/* ========== PAGE HEADER ========== */
+/* ========== HEADER ========== */
 .pageHeader {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   margin-bottom: 24px;
   flex-wrap: wrap;
-  gap: 20px;
+  gap: 16px;
 }
 
 .pageTitle {
-  font-size: 24px;
-  font-weight: 600;
-  color: #0f172a;
-  margin: 0 0 8px 0;
   display: flex;
   align-items: center;
   gap: 12px;
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 8px 0;
+}
+
+.pageTitle svg {
+  color: var(--primary-500);
+}
+
+.unreadBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 24px;
+  padding: 0 8px;
+  background: var(--error-500);
+  color: white;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: 9999px;
 }
 
 .pageSubtitle {
   font-size: 14px;
-  color: #64748b;
+  color: var(--text-muted);
   margin: 0;
 }
 
 .headerActions {
   display: flex;
-  align-items: center;
   gap: 12px;
-  flex-wrap: wrap;
 }
 
 /* ========== BOTÕES ========== */
@@ -53,19 +70,18 @@
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s;
-  box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.3);
+  transition: all 0.2s;
 }
 
 .primaryButton:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.4);
+  background: #0096b4;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 180, 216, 0.3);
 }
 
 .primaryButton:disabled {
-  opacity: 0.5;
+  opacity: 0.6;
   cursor: not-allowed;
-  box-shadow: none;
 }
 
 .secondaryButton {
@@ -73,9 +89,9 @@
   align-items: center;
   gap: 8px;
   padding: 10px 20px;
-  background: #f1f5f9;
-  color: #475569;
-  border: 1px solid #e2e8f0;
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
   border-radius: 10px;
   font-size: 14px;
   font-weight: 500;
@@ -83,103 +99,63 @@
   transition: all 0.2s;
 }
 
-.secondaryButton:hover:not(:disabled) {
-  background: #e2e8f0;
-  color: #1e293b;
+.secondaryButton:hover {
+  background: var(--bg-secondary);
+  border-color: var(--primary-500);
+  color: var(--primary-500);
 }
 
-.secondaryButton.active, .primaryButton.active {
-  box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
-  transform: translateY(1px);
+.secondaryButton.active {
+  background: var(--primary-50);
+  border-color: var(--primary-500);
+  color: var(--primary-500);
 }
 
-.buttonSpinner {
-  width: 16px;
-  height: 16px;
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  border-top: 2px solid white;
-  border-radius: 50%;
-  animation: spin 0.6s linear infinite;
-  margin-right: 8px;
-}
-
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-/* ========== FILTROS ========== */
-.filtersBar {
-  background: white;
+/* ========== PAINÉIS ========== */
+.preferencesPanel,
+.managerPanel {
+  background: var(--card-bg);
   border-radius: 16px;
-  padding: 16px 20px;
-  margin-bottom: 24px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-  border: 1px solid #e2e8f0;
-}
-
-.filterGroup {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.filterButton {
-  padding: 8px 16px;
-  background: #f1f5f9;
-  border: none;
-  border-radius: 8px;
-  font-size: 13px;
-  font-weight: 500;
-  color: #475569;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.filterButton:hover {
-  background: #e2e8f0;
-  color: #1e293b;
-}
-
-.filterButton.activeFilter {
-  background: #00B4D8;
-  color: white;
-}
-
-/* ========== PAINÉIS COMPARTILHADOS ========== */
-.preferencesPanel, .managerPanel {
-  background: white;
-  border-radius: 20px;
   padding: 24px;
   margin-bottom: 24px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-  border: 1px solid #e2e8f0;
-  animation: slideDown 0.3s ease;
-}
-
-@keyframes slideDown {
-  from { opacity: 0; transform: translateY(-10px); }
-  to { opacity: 1; transform: translateY(0); }
+  border: 1px solid var(--card-border);
+  box-shadow: var(--shadow-md);
 }
 
 .panelTitle {
   font-size: 18px;
   font-weight: 600;
-  color: #0f172a;
+  color: var(--text-primary);
   margin: 0 0 20px 0;
-  padding-bottom: 12px;
-  border-bottom: 2px solid #e2e8f0;
 }
 
-.panelActions {
+.managerHeader {
   display: flex;
-  justify-content: flex-end;
-  gap: 12px;
-  padding-top: 20px;
-  border-top: 1px solid #e2e8f0;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
 }
 
-/* ========== PREFERÊNCIAS ========== */
+.toggleRecipientList {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.toggleRecipientList:hover {
+  background: var(--bg-secondary);
+  border-color: var(--primary-500);
+  color: var(--primary-500);
+}
+
 .preferencesGrid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -190,16 +166,16 @@
 .preferencesColumn h4 {
   font-size: 14px;
   font-weight: 600;
-  color: #475569;
+  color: var(--text-secondary);
   margin: 0 0 16px 0;
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 
-/* ========== GERENCIADOR DE NOTIFICAÇÕES (NOVO) ========== */
+/* ========== FORMULÁRIOS ========== */
 .managerGrid {
   display: grid;
-  grid-template-columns: 2fr 1fr;
+  grid-template-columns: 1fr 1fr;
   gap: 24px;
   margin-bottom: 24px;
 }
@@ -210,64 +186,285 @@
   gap: 16px;
 }
 
-.formTextarea {
-  min-height: 100px;
-  resize: vertical;
-  font-family: inherit;
-}
-
-.statusSelectsRow {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-}
-
-.managerUsers {
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
-  padding: 16px;
-  background-color: #f8fafc;
+.formGroup {
   display: flex;
   flex-direction: column;
+  gap: 6px;
 }
 
-.managerUsersTitle {
-  font-size: 14px;
+.formLabel {
+  font-size: 13px;
   font-weight: 600;
-  color: #475569;
-  margin: 0 0 16px 0;
+  color: var(--text-secondary);
+}
+
+.formInput,
+.formTextarea,
+.formSelect {
+  padding: 10px 12px;
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.formInput:focus,
+.formTextarea:focus,
+.formSelect:focus {
+  outline: none;
+  border-color: var(--primary-500);
+  box-shadow: 0 0 0 3px rgba(0, 180, 216, 0.1);
+}
+
+.formTextarea {
+  resize: vertical;
+  min-height: 100px;
+}
+
+.formRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.selectedCount {
   display: flex;
   align-items: center;
   gap: 8px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+  padding: 10px 12px;
+  background: var(--primary-50);
+  border-radius: 8px;
+  color: var(--primary-600);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+/* ========== LISTA DE DESTINATÁRIOS ========== */
+.managerUsers {
+  background: var(--bg-tertiary);
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  max-height: 400px;
+}
+
+.recipientHeader {
+  margin-bottom: 16px;
+}
+
+.managerUsersTitle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 12px 0;
+}
+
+.recipientFilters {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.filterChip {
+  padding: 6px 12px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.filterChip:hover {
+  background: var(--bg-primary);
+  border-color: var(--primary-500);
+}
+
+.filterChip.active {
+  background: var(--primary-500);
+  border-color: var(--primary-500);
+  color: white;
+}
+
+.recipientSearch {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  border-radius: 8px;
+  margin-bottom: 12px;
+}
+
+.recipientSearch svg {
+  color: var(--text-muted);
+}
+
+.recipientSearchInput {
+  flex: 1;
+  border: none;
+  background: transparent;
+  color: var(--text-primary);
+  font-size: 13px;
+  outline: none;
+}
+
+.recipientSearchInput::placeholder {
+  color: var(--text-muted);
+}
+
+.clearSearch {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 2px;
+  border-radius: 4px;
+}
+
+.clearSearch:hover {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+.selectAllLabel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0;
+  margin-bottom: 8px;
+  border-bottom: 1px solid var(--border-color);
+  cursor: pointer;
+}
+
+.selectAllLabel input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--primary-500);
+}
+
+.filteredCount {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-left: auto;
 }
 
 .usersListContainer {
   flex: 1;
-  max-height: 250px;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: 4px;
 }
 
-/* Personalizando a scrollbar da lista de usuários */
 .usersListContainer::-webkit-scrollbar {
   width: 6px;
 }
+
 .usersListContainer::-webkit-scrollbar-track {
-  background: #f1f5f9; 
-  border-radius: 4px;
-}
-.usersListContainer::-webkit-scrollbar-thumb {
-  background: #cbd5e1; 
+  background: var(--bg-secondary);
   border-radius: 4px;
 }
 
-.userAll {
+.usersListContainer::-webkit-scrollbar-thumb {
+  background: var(--gray-400);
+  border-radius: 4px;
+}
+
+.recipientItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 8px;
+  background: var(--bg-secondary);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.recipientItem:hover {
+  background: var(--bg-primary);
+}
+
+.recipientItem input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--primary-500);
+  flex-shrink: 0;
+}
+
+.recipientInfo {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.recipientName {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.recipientEmail {
+  font-size: 11px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.employeeBadge {
+  padding: 2px 8px;
+  background: var(--primary-100);
+  color: var(--primary-600);
+  font-size: 10px;
   font-weight: 600;
-  color: #3b82f6;
+  border-radius: 4px;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+
+.clientBadge {
+  padding: 2px 8px;
+  background: var(--success-100);
+  color: var(--success-600);
+  font-size: 10px;
+  font-weight: 600;
+  border-radius: 4px;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+
+.noRecipients {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.noRecipients svg {
+  margin-bottom: 8px;
+  opacity: 0.5;
 }
 
 /* ========== CHECKBOX ========== */
@@ -278,124 +475,13 @@
   padding: 8px 0;
   cursor: pointer;
   font-size: 14px;
-  color: #1e293b;
-  transition: background 0.2s;
-  border-radius: 6px;
+  color: var(--text-primary);
 }
 
-.checkboxLabel:hover {
-  background-color: #f1f5f9;
-}
-
-.checkboxLabel input[type="checkbox"] {
+.checkboxLabel input {
   width: 18px;
   height: 18px;
-  cursor: pointer;
-  accent-color: #3b82f6;
-}
-
-/* ========== SWITCH TOGGLE ========== */
-.switchLabel {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 12px;
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
-  cursor: pointer;
-  transition: all 0.2s;
-  margin-bottom: 12px;
-}
-
-.switchLabel:hover {
-  background: #f1f5f9;
-}
-
-.switchInfo {
-  flex: 1;
-}
-
-.switchInfo strong {
-  font-size: 14px;
-  color: #0f172a;
-  display: block;
-  margin-bottom: 2px;
-}
-
-.switchInfo small {
-  font-size: 12px;
-  color: #64748b;
-}
-
-.switchLabel input {
-  opacity: 0;
-  width: 0;
-  height: 0;
-  position: absolute;
-}
-
-.switchSlider {
-  position: relative;
-  display: inline-block;
-  width: 44px;
-  height: 24px;
-  background-color: #cbd5e1;
-  border-radius: 34px;
-  transition: .3s;
-}
-
-.switchSlider:before {
-  position: absolute;
-  content: "";
-  height: 20px;
-  width: 20px;
-  left: 2px;
-  bottom: 2px;
-  background-color: white;
-  border-radius: 50%;
-  transition: .3s;
-}
-
-input:checked + .switchSlider {
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-}
-
-input:checked + .switchSlider:before {
-  transform: translateX(20px);
-}
-
-/* ========== FORMULÁRIO ========== */
-.formGroup {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  margin-bottom: 16px;
-}
-
-.formLabel {
-  font-size: 13px;
-  font-weight: 600;
-  color: #475569;
-  letter-spacing: 0.3px;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.formInput {
-  padding: 10px 12px;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  font-size: 14px;
-  transition: all 0.2s;
-  background: white;
-}
-
-.formInput:focus {
-  outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  accent-color: var(--primary-500);
 }
 
 .quietHoursInputs {
@@ -409,6 +495,72 @@ input:checked + .switchSlider:before {
   flex: 1;
 }
 
+.quietHoursInputs span {
+  color: var(--text-muted);
+}
+
+/* ========== PAINEL ACTIONS ========== */
+.panelActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border-color);
+}
+
+/* ========== FILTROS ========== */
+.filtersBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 20px;
+  padding: 16px;
+  background: var(--card-bg);
+  border-radius: 12px;
+  border: 1px solid var(--card-border);
+}
+
+.filterGroup {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.filterButton {
+  padding: 8px 16px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.filterButton:hover {
+  background: var(--bg-secondary);
+  border-color: var(--primary-500);
+}
+
+.filterButton.activeFilter {
+  background: var(--primary-500);
+  border-color: var(--primary-500);
+  color: white;
+}
+
+.filterSelect {
+  padding: 8px 16px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-size: 13px;
+  cursor: pointer;
+}
+
 /* ========== LISTA DE NOTIFICAÇÕES ========== */
 .notificationsList {
   display: flex;
@@ -420,35 +572,35 @@ input:checked + .switchSlider:before {
   display: flex;
   gap: 16px;
   padding: 20px;
-  background: white;
+  background: var(--card-bg);
   border-radius: 16px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--card-border);
   transition: all 0.2s;
 }
 
 .notificationCard:hover {
-  transform: translateX(4px);
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-md);
+  border-color: var(--primary-500);
 }
 
 .notificationCard.unread {
-  background: #f0f9ff;
-  border-color: #bae6fd;
+  background: var(--primary-50);
+  border-color: var(--primary-200);
 }
 
 .notificationIcon {
   width: 48px;
   height: 48px;
-  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
+  border-radius: 12px;
   flex-shrink: 0;
 }
 
 .notificationContent {
   flex: 1;
+  min-width: 0;
 }
 
 .notificationHeader {
@@ -461,21 +613,20 @@ input:checked + .switchSlider:before {
 }
 
 .notificationTitle {
-  font-size: 16px;
-  font-weight: 600;
-  color: #0f172a;
-  margin: 0;
   display: flex;
   align-items: center;
   gap: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
 }
 
 .unreadDot {
   width: 8px;
   height: 8px;
+  background: var(--primary-500);
   border-radius: 50%;
-  background: #3b82f6;
-  display: inline-block;
 }
 
 .notificationMeta {
@@ -487,48 +638,45 @@ input:checked + .switchSlider:before {
 .priorityBadge {
   padding: 4px 8px;
   border-radius: 4px;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 600;
+  color: white;
   text-transform: uppercase;
-}
-
-.priorityHigh {
-  background: #fee2e2;
-  color: #dc2626;
-}
-
-.priorityMedium {
-  background: #fef3c7;
-  color: #d97706;
-}
-
-.priorityLow {
-  background: #f1f5f9;
-  color: #64748b;
 }
 
 .notificationTime {
   font-size: 12px;
-  color: #64748b;
-  white-space: nowrap;
+  color: var(--text-muted);
 }
 
 .notificationMessage {
   font-size: 14px;
-  color: #475569;
+  color: var(--text-secondary);
   margin: 0 0 12px 0;
   line-height: 1.5;
+}
+
+.notificationSender {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin: 0 0 12px 0;
+}
+
+.notificationSender strong {
+  color: var(--text-primary);
 }
 
 .notificationFooter {
   display: flex;
   align-items: center;
-  gap: 16px;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
 }
 
 .notificationAction {
   font-size: 13px;
-  color: #3b82f6;
+  color: var(--primary-500);
   text-decoration: none;
   font-weight: 500;
 }
@@ -537,84 +685,142 @@ input:checked + .switchSlider:before {
   text-decoration: underline;
 }
 
+.notificationActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
 .markReadButton {
   display: flex;
   align-items: center;
   gap: 4px;
-  padding: 4px 8px;
-  background: #f1f5f9;
+  padding: 6px 12px;
+  background: var(--bg-tertiary);
   border: none;
   border-radius: 6px;
   font-size: 12px;
-  color: #64748b;
+  color: var(--text-secondary);
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .markReadButton:hover {
-  background: #e2e8f0;
-  color: #1e293b;
+  background: var(--primary-50);
+  color: var(--primary-500);
 }
 
-/* ========== EMPTY STATE ========== */
-.emptyState {
-  text-align: center;
-  padding: 60px 20px;
-  background: white;
-  border-radius: 20px;
-  border: 1px solid #e2e8f0;
+.deleteButton {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.2s;
 }
 
-.emptyIcon {
-  font-size: 48px;
-  margin-bottom: 16px;
-  opacity: 0.5;
-  color: #94a3b8;
+.deleteButton:hover {
+  background: var(--error-50);
+  color: var(--error-500);
 }
 
-.emptyTitle {
-  font-size: 18px;
-  font-weight: 600;
-  color: #0f172a;
-  margin: 0 0 8px 0;
-}
-
-.emptyText {
-  font-size: 14px;
-  color: #64748b;
-  margin: 0;
-}
-
-/* ========== RESPONSIVIDADE ========== */
+/* ========== RESPONSIVO ========== */
 @media (max-width: 1024px) {
   .preferencesGrid {
     grid-template-columns: repeat(2, 1fr);
   }
+  
+  .managerGrid {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 768px) {
-  .notificationsPage { padding: 16px; }
-  .pageHeader { flex-direction: column; align-items: flex-start; }
-  .headerActions { width: 100%; flex-direction: column; }
-  .headerActions button { width: 100%; justify-content: center; }
-  .filterGroup { flex-direction: column; }
-  .filterButton { width: 100%; text-align: center; }
-  .preferencesGrid, .managerGrid { grid-template-columns: 1fr; }
-  .notificationCard { flex-direction: column; }
-  .notificationIcon { width: 40px; height: 40px; }
-  .notificationHeader { flex-direction: column; align-items: flex-start; }
-  .notificationMeta { width: 100%; justify-content: space-between; }
-  .notificationFooter { flex-direction: column; align-items: flex-start; }
-  .panelActions { flex-direction: column; }
-  .panelActions button { width: 100%; justify-content: center; }
-  .quietHoursInputs { flex-direction: column; }
-  .statusSelectsRow { grid-template-columns: 1fr; }
+  .notificationsPage {
+    padding: 16px;
+  }
+  
+  .pageHeader {
+    flex-direction: column;
+  }
+  
+  .headerActions {
+    width: 100%;
+  }
+  
+  .headerActions button {
+    flex: 1;
+    justify-content: center;
+  }
+  
+  .preferencesGrid {
+    grid-template-columns: 1fr;
+  }
+  
+  .filtersBar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .filterGroup {
+    justify-content: center;
+  }
+  
+  .filterButton {
+    flex: 1;
+    text-align: center;
+  }
+  
+  .notificationCard {
+    flex-direction: column;
+  }
+  
+  .notificationHeader {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .notificationFooter {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .notificationActions {
+    margin-left: 0;
+    width: 100%;
+    justify-content: flex-end;
+  }
+  
+  .panelActions {
+    flex-direction: column;
+  }
+  
+  .panelActions button {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .quietHoursInputs {
+    flex-direction: column;
+  }
 }
 
 @media (max-width: 480px) {
-  .notificationTitle { font-size: 15px; }
-  .notificationMessage { font-size: 13px; }
-  .emptyIcon { font-size: 40px; }
-  .emptyTitle { font-size: 16px; }
-  .emptyText { font-size: 13px; }
+  .pageTitle {
+    font-size: 24px;
+  }
+  
+  .recipientFilters {
+    flex-direction: column;
+  }
+  
+  .filterChip {
+    text-align: center;
+  }
 }

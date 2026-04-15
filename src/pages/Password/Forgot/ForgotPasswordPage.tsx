@@ -1,10 +1,13 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { authService } from '../../../services/auth';
+import { useTheme } from '../../../context/ThemeContext';
+import logoCompleta from '../../../assets/logo-big.png';
+import logoSemFundo from '../../../assets/logo-big-sem-fundo.png';
 import styles from './ForgotPasswordPage.module.css';
-import logoEventosFaceis from '../../../assets/logo-big.png';
 
 export const ForgotPasswordPage: React.FC = () => {
+  const { isDark } = useTheme();
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -32,7 +35,7 @@ export const ForgotPasswordPage: React.FC = () => {
       <div className={styles.forgotPasswordCard}>
         <div className={styles.logoContainer}>
           <img 
-            src={logoEventosFaceis} 
+            src={isDark ? logoSemFundo : logoCompleta} 
             alt="EventosFáceis" 
             className={styles.logo}
           />
@@ -82,3 +85,5 @@ export const ForgotPasswordPage: React.FC = () => {
     </div>
   );
 };
+
+export default ForgotPasswordPage;

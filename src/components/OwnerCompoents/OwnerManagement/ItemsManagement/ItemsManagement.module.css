@@ -3,15 +3,15 @@
   padding: 24px;
   max-width: 1400px;
   margin: 0 auto;
-  background-color: #f8fafc;
+  background-color: var(--bg-secondary);
   min-height: 100vh;
 }
 
 .card {
-  background: white;
+  background: var(--card-bg);
   border-radius: 20px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  border: 1px solid #e2e8f0;
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--card-border);
 }
 
 /* ========== LOADING ========== */
@@ -26,8 +26,8 @@
 .spinner {
   width: 50px;
   height: 50px;
-  border: 3px solid #e2e8f0;
-  border-top: 3px solid #3b82f6;
+  border: 3px solid var(--border-color);
+  border-top: 3px solid var(--primary-500);
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin-bottom: 16px;
@@ -54,7 +54,7 @@
 .pageTitle {
   font-size: 24px;
   font-weight: 600;
-  color: #0f172a;
+  color: var(--text-primary);
   margin: 0 0 8px 0;
   display: flex;
   align-items: center;
@@ -63,7 +63,7 @@
 
 .subtitle {
   font-size: 14px;
-  color: #64748b;
+  color: var(--text-muted);
   margin: 0;
   display: flex;
   align-items: center;
@@ -88,46 +88,47 @@
   left: 12px;
   top: 50%;
   transform: translateY(-50%);
-  color: #94a3b8;
+  color: var(--gray-400);
   font-size: 16px;
 }
 
 .searchInput {
   width: 100%;
   padding: 10px 12px 10px 38px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--input-border);
   border-radius: 10px;
   font-size: 14px;
-  background: white;
+  background: var(--input-bg);
+  color: var(--text-primary);
   transition: all 0.2s;
 }
 
 .searchInput:focus {
   outline: none;
-  border-color: #3b82f6;
+  border-color: var(--primary-500);
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
 /* ========== FILTERS ========== */
 .filterSelect {
   padding: 10px 14px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--input-border);
   border-radius: 10px;
   font-size: 14px;
-  color: #1e293b;
-  background: white;
+  color: var(--text-primary);
+  background: var(--input-bg);
   cursor: pointer;
   min-width: 160px;
   transition: all 0.2s;
 }
 
 .filterSelect:hover {
-  border-color: #94a3b8;
+  border-color: var(--gray-400);
 }
 
 .filterSelect:focus {
   outline: none;
-  border-color: #3b82f6;
+  border-color: var(--primary-500);
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
@@ -136,17 +137,17 @@
   align-items: center;
   gap: 8px;
   padding: 8px 12px;
-  background: #f1f5f9;
+  background: var(--bg-tertiary);
   border-radius: 10px;
   font-size: 14px;
-  color: #475569;
+  color: var(--text-secondary);
   cursor: pointer;
   transition: all 0.2s;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--border-color);
 }
 
 .checkboxLabel:hover {
-  background: #e2e8f0;
+  background: var(--gray-200);
 }
 
 /* ========== BUTTONS ========== */
@@ -163,12 +164,12 @@
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s;
-  box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.3);
+  box-shadow: 0 4px 6px -1px rgba(0, 180, 216, 0.3);
 }
 
 .primaryButton:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.4);
+  box-shadow: 0 10px 15px -3px rgba(0, 180, 216, 0.4);
 }
 
 .primaryButton:disabled {
@@ -182,9 +183,9 @@
   align-items: center;
   gap: 8px;
   padding: 10px 20px;
-  background: #f1f5f9;
-  color: #475569;
-  border: 1px solid #e2e8f0;
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
   border-radius: 10px;
   font-size: 14px;
   font-weight: 500;
@@ -193,8 +194,8 @@
 }
 
 .secondaryButton:hover:not(:disabled) {
-  background: #e2e8f0;
-  color: #1e293b;
+  background: var(--gray-200);
+  color: var(--text-primary);
 }
 
 /* ========== TABLE ========== */
@@ -215,15 +216,15 @@
 }
 
 .table thead {
-  background: #f8fafc;
-  border-bottom: 2px solid #e2e8f0;
+  background: var(--bg-tertiary);
+  border-bottom: 2px solid var(--border-color);
 }
 
 .table th {
   text-align: left;
   padding: 16px;
   font-weight: 600;
-  color: #475569;
+  color: var(--text-secondary);
   font-size: 13px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -231,12 +232,12 @@
 
 .table td {
   padding: 16px;
-  border-bottom: 1px solid #e2e8f0;
-  color: #1e293b;
+  border-bottom: 1px solid var(--border-color);
+  color: var(--text-primary);
 }
 
 .table tr:hover {
-  background: #f8fafc;
+  background: var(--bg-tertiary);
 }
 
 /* ========== CELL STYLES ========== */
@@ -248,7 +249,7 @@
 
 .nameCell strong {
   font-size: 15px;
-  color: #0f172a;
+  color: var(--text-primary);
 }
 
 .itemDetails {
@@ -262,8 +263,8 @@
   align-items: center;
   gap: 4px;
   font-size: 11px;
-  color: #64748b;
-  background: #f1f5f9;
+  color: var(--text-muted);
+  background: var(--bg-tertiary);
   padding: 2px 8px;
   border-radius: 9999px;
 }
@@ -273,11 +274,11 @@
   align-items: center;
   gap: 6px;
   padding: 6px 12px;
-  background: #f1f5f9;
+  background: var(--bg-tertiary);
   border-radius: 9999px;
   font-size: 13px;
   font-weight: 500;
-  color: #475569;
+  color: var(--text-secondary);
 }
 
 .quantityCell {
@@ -317,10 +318,10 @@
   align-items: center;
   gap: 4px;
   padding: 4px 8px;
-  background: #f1f5f9;
+  background: var(--bg-tertiary);
   border-radius: 9999px;
   font-size: 12px;
-  color: #475569;
+  color: var(--text-secondary);
 }
 
 .reservationTooltip {
@@ -328,11 +329,11 @@
   bottom: 100%;
   left: 50%;
   transform: translateX(-50%);
-  background: white;
-  border: 1px solid #e2e8f0;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
   border-radius: 12px;
   padding: 12px;
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-lg);
   min-width: 200px;
   display: none;
   z-index: 10;
@@ -345,7 +346,7 @@
 
 .reservationItem {
   padding: 8px 0;
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid var(--border-color);
 }
 
 .reservationItem:last-child {
@@ -356,6 +357,7 @@
   display: block;
   font-size: 13px;
   margin-bottom: 4px;
+  color: var(--text-primary);
 }
 
 .reservationItem span {
@@ -363,20 +365,20 @@
   align-items: center;
   gap: 4px;
   font-size: 11px;
-  color: #64748b;
+  color: var(--text-muted);
   margin-top: 2px;
 }
 
 .reservationItem .reserved {
-  color: #3b82f6;
+  color: var(--primary-500);
 }
 
 .reservationItem .confirmed {
-  color: #10b981;
+  color: var(--success-500);
 }
 
 .reservationItem .returned {
-  color: #64748b;
+  color: var(--text-muted);
 }
 
 .noReservations {
@@ -384,7 +386,7 @@
   align-items: center;
   gap: 4px;
   font-size: 12px;
-  color: #94a3b8;
+  color: var(--gray-400);
 }
 
 /* ========== ACTIONS ========== */
@@ -402,27 +404,28 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #f1f5f9;
+  background: var(--bg-tertiary);
   border: none;
   border-radius: 8px;
   font-size: 16px;
   cursor: pointer;
   transition: all 0.2s;
+  color: var(--text-secondary);
 }
 
 .reserveButton:hover:not(:disabled) {
-  background: #dbeafe;
-  color: #2563eb;
+  background: var(--primary-100);
+  color: var(--primary-600);
 }
 
 .editButton:hover {
-  background: #dbeafe;
-  color: #2563eb;
+  background: var(--primary-100);
+  color: var(--primary-600);
 }
 
 .deleteButton:hover {
-  background: #fee2e2;
-  color: #dc2626;
+  background: var(--error-100);
+  color: var(--error-600);
 }
 
 .reserveButton:disabled {
@@ -443,10 +446,10 @@
   align-items: center;
   gap: 16px;
   padding: 20px;
-  background: white;
+  background: var(--card-bg);
   border-radius: 16px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-  border: 1px solid #e2e8f0;
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--card-border);
 }
 
 .summaryIcon {
@@ -466,20 +469,20 @@
 .summaryInfo strong {
   font-size: 24px;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--text-primary);
   line-height: 1.2;
 }
 
 .summaryInfo span {
   font-size: 13px;
-  color: #64748b;
+  color: var(--text-muted);
 }
 
 /* ========== EMPTY STATE ========== */
 .emptyState {
   text-align: center;
   padding: 60px 20px;
-  background: #f8fafc;
+  background: var(--bg-tertiary);
   border-radius: 16px;
   margin: 20px;
 }
@@ -493,13 +496,13 @@
 .emptyTitle {
   font-size: 18px;
   font-weight: 600;
-  color: #0f172a;
+  color: var(--text-primary);
   margin: 0 0 8px 0;
 }
 
 .emptyText {
   font-size: 14px;
-  color: #64748b;
+  color: var(--text-muted);
   margin: 0 0 20px 0;
 }
 
@@ -525,13 +528,13 @@
 }
 
 .modal {
-  background: white;
+  background: var(--card-bg);
   border-radius: 24px;
   width: 100%;
   max-width: 600px;
   max-height: 90vh;
   overflow-y: auto;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  box-shadow: var(--shadow-2xl);
   animation: slideUp 0.3s ease;
 }
 
@@ -545,15 +548,15 @@
   justify-content: space-between;
   align-items: center;
   padding: 20px 24px;
-  border-bottom: 1px solid #e2e8f0;
-  background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+  border-bottom: 1px solid var(--border-color);
+  background: linear-gradient(135deg, var(--bg-tertiary) 0%, var(--card-bg) 100%);
   border-radius: 24px 24px 0 0;
 }
 
 .modalTitle {
   font-size: 20px;
   font-weight: 600;
-  color: #0f172a;
+  color: var(--text-primary);
   margin: 0;
   display: flex;
   align-items: center;
@@ -566,18 +569,18 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #f1f5f9;
+  background: var(--bg-tertiary);
   border: none;
   border-radius: 10px;
   font-size: 20px;
-  color: #64748b;
+  color: var(--text-muted);
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .closeButton:hover {
-  background: #e2e8f0;
-  color: #0f172a;
+  background: var(--gray-200);
+  color: var(--text-primary);
   transform: rotate(90deg);
 }
 
@@ -590,8 +593,8 @@
   justify-content: flex-end;
   gap: 12px;
   padding: 20px 24px;
-  border-top: 1px solid #e2e8f0;
-  background: #f8fafc;
+  border-top: 1px solid var(--border-color);
+  background: var(--bg-tertiary);
   border-radius: 0 0 24px 24px;
 }
 
@@ -616,7 +619,7 @@
 .formLabel {
   font-size: 13px;
   font-weight: 600;
-  color: #475569;
+  color: var(--text-secondary);
   letter-spacing: 0.3px;
   display: flex;
   align-items: center;
@@ -626,28 +629,29 @@
 .formInput,
 .formTextarea {
   padding: 12px 14px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--input-border);
   border-radius: 10px;
   font-size: 14px;
   transition: all 0.2s;
-  background: white;
+  background: var(--input-bg);
+  color: var(--text-primary);
 }
 
 .formInput:focus,
 .formTextarea:focus {
   outline: none;
-  border-color: #3b82f6;
+  border-color: var(--primary-500);
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
 .formInput.error {
-  border-color: #ef4444;
-  background: #fef2f2;
+  border-color: var(--error-500);
+  background: var(--error-50);
 }
 
 .errorText {
   font-size: 11px;
-  color: #ef4444;
+  color: var(--error-500);
 }
 
 .formTextarea {
@@ -657,7 +661,7 @@
 
 .helpText {
   font-size: 11px;
-  color: #64748b;
+  color: var(--text-muted);
   margin-top: 4px;
 }
 
@@ -667,7 +671,7 @@
   gap: 12px;
   margin-top: 24px;
   padding-top: 20px;
-  border-top: 1px solid #e2e8f0;
+  border-top: 1px solid var(--border-color);
 }
 
 .buttonSpinner {
@@ -685,16 +689,16 @@
   display: flex;
   gap: 16px;
   padding: 16px;
-  background: #f8fafc;
+  background: var(--bg-tertiary);
   border-radius: 12px;
   margin-bottom: 20px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--border-color);
 }
 
 .itemIcon {
   width: 48px;
   height: 48px;
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  background: linear-gradient(135deg, var(--primary-500) 0%, var(--primary-600) 100%);
   border-radius: 12px;
   display: flex;
   align-items: center;
@@ -710,7 +714,7 @@
 
 .itemDetails strong {
   font-size: 16px;
-  color: #0f172a;
+  color: var(--text-primary);
 }
 
 .itemDetails span {
@@ -718,7 +722,7 @@
   align-items: center;
   gap: 4px;
   font-size: 13px;
-  color: #64748b;
+  color: var(--text-muted);
 }
 
 .availabilityInfo {
@@ -731,7 +735,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  color: #10b981;
+  color: var(--success-500);
   font-weight: 500;
 }
 
@@ -739,7 +743,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  color: #ef4444;
+  color: var(--error-500);
   font-weight: 500;
 }
 
@@ -815,20 +819,20 @@
 
 .reservationItem {
   display: flex;
-  justify-content: space-between; /* Separa a info do botão */
+  justify-content: space-between;
   align-items: center;
 }
 
 .editReservationBtn {
   background: none;
   border: none;
-  color: #64748b;
+  color: var(--text-muted);
   cursor: pointer;
   padding: 4px;
   border-radius: 4px;
 }
 
 .editReservationBtn:hover {
-  background-color: #f1f5f9;
-  color: #0f172a;
+  background-color: var(--bg-tertiary);
+  color: var(--text-primary);
 }

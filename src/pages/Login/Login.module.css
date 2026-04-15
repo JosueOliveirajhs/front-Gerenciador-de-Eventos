@@ -3,7 +3,7 @@
   justify-content: center;
   align-items: center;
   padding: 2rem 2rem 1rem 2rem;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  border-bottom: 1px solid var(--border-color);
 }
 
 .logoFull {
@@ -12,7 +12,6 @@
   object-fit: contain;
 }
 
-/* Restante do CSS permanece igual */
 .loginPage {
   min-height: 100vh;
   position: relative;
@@ -32,6 +31,11 @@
   z-index: 0;
 }
 
+:global(.dark-mode) .background,
+:global([data-theme="dark"]) .background {
+  background: linear-gradient(135deg, #020617 0%, #0f172a 100%);
+}
+
 .loginContainer {
   position: relative;
   z-index: 1;
@@ -40,11 +44,12 @@
 }
 
 .loginCard {
-  background: white;
+  background: var(--card-bg);
   border-radius: 24px;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+  box-shadow: var(--shadow-xl);
   overflow: hidden;
   animation: slideUp 0.5s ease;
+  border: 1px solid var(--card-border);
 }
 
 @keyframes slideUp {
@@ -65,13 +70,13 @@
 .welcomeTitle {
   font-size: 1.75rem;
   font-weight: 600;
-  color: #0A2342;
+  color: var(--text-primary);
   margin-bottom: 0.5rem;
   text-align: center;
 }
 
 .welcomeSubtitle {
-  color: #666;
+  color: var(--text-secondary);
   text-align: center;
   margin-bottom: 2rem;
   font-size: 0.95rem;
@@ -79,13 +84,13 @@
 
 .loginFooter {
   padding: 1.5rem 2rem;
-  background: #f8f9fa;
+  background: var(--bg-tertiary);
   text-align: center;
-  border-top: 1px solid #eee;
+  border-top: 1px solid var(--border-color);
 }
 
 .footerText {
-  color: #666;
+  color: var(--text-secondary);
   font-size: 0.9rem;
   margin: 0;
 }
@@ -100,4 +105,26 @@
 .footerLink:hover {
   color: #0096b4;
   text-decoration: underline;
+}
+
+@media (max-width: 480px) {
+  .loginHeader {
+    padding: 1.5rem 1.5rem 0.75rem 1.5rem;
+  }
+
+  .logoFull {
+    max-width: 180px;
+  }
+
+  .loginFormContainer {
+    padding: 1.5rem;
+  }
+
+  .welcomeTitle {
+    font-size: 1.5rem;
+  }
+
+  .loginFooter {
+    padding: 1rem 1.5rem;
+  }
 }

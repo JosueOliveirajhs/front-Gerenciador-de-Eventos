@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { 
   FiSearch,  
   FiFilter,
@@ -9,7 +9,7 @@ import {
 import { 
   MdPeople, 
 } from 'react-icons/md';
-import { User, Filters, Receipt} from '../../types';
+import { User, Filters, Receipt } from '../../types';
 import { userService } from '../../../../services/users';
 import { receiptService } from '../../../../services/receipts';
 import { boletoService } from '../../../../services/boletos';
@@ -29,6 +29,10 @@ import { BoletoModal } from '../../components/BoletoModal';
 import styles from './ClientManagement.module.css';
 
 export const ClientManagement: React.FC = () => {
+    // ✅ Flag para controlar se o componente está visível
+    const [isVisible, setIsVisible] = useState(false);
+    const hasLoadedRef = useRef(false);
+    
     // Estados principais
     const [clients, setClients] = useState<User[]>([]);
     const [filteredClients, setFilteredClients] = useState<User[]>([]);
@@ -70,8 +74,40 @@ export const ClientManagement: React.FC = () => {
         phone: ''
     });
 
-    // Carregar clientes
+    // ✅ Só carrega dados quando o componente estiver visível
+    useEffect(() => {
+        setIsVisible(true);
+        return () => setIsVisible(false);
+    }, []);
+
+    // ✅ Carregar clientes - SÓ quando visível e ainda não carregou
     const loadClients = useCallback(async () => {
+        if (!isVisible || hasLoadedRef.current) return;
+        
+        try {
+            setLoading(true);
+            const clientsData = await userService.getAllClients();
+            setClients(clientsData);
+            setFilteredClients(clientsData);
+            hasLoadedRef.current = true;
+        } catch (error) {
+            console.error('Erro ao carregar clientes:', error);
+            setErrorMessage('Erro ao carregar clientes. Tente novamente.');
+            setShowError(true);
+        } finally {
+            setLoading(false);
+        }
+    }, [isVisible]);
+
+    // ✅ useEffect para carregar dados APENAS quando visível
+    useEffect(() => {
+        if (isVisible && !hasLoadedRef.current) {
+            loadClients();
+        }
+    }, [isVisible, loadClients]);
+
+    // ✅ Recarregar clientes (quando necessário, ex: após criar/editar/excluir)
+    const reloadClients = useCallback(async () => {
         try {
             setLoading(true);
             const clientsData = await userService.getAllClients();
@@ -86,16 +122,10 @@ export const ClientManagement: React.FC = () => {
         }
     }, []);
 
-    useEffect(() => {
-        loadClients();
-    }, [loadClients]);
-
-    // Aplicar filtros
-    useEffect(() => {
-        applyFilters();
-    }, [filters, clients]);
-
+    // ✅ Aplicar filtros - MEMOIZADO
     const applyFilters = useCallback(() => {
+        if (!clients.length) return;
+        
         let result = [...clients];
 
         if (filters.cpf) {
@@ -127,6 +157,13 @@ export const ClientManagement: React.FC = () => {
         setFilteredClients(result);
     }, [filters, clients]);
 
+    // ✅ useEffect para filtros - só quando há dados
+    useEffect(() => {
+        if (clients.length > 0) {
+            applyFilters();
+        }
+    }, [applyFilters, clients.length]);
+
     // Handlers de filtro
     const handleFilterChange = useCallback((field: keyof Filters, value: string) => {
         setFilters(prev => ({ ...prev, [field]: value }));
@@ -145,7 +182,7 @@ export const ClientManagement: React.FC = () => {
     const handleCreateClient = async (clientData: any) => {
         try {
             await userService.createClient(clientData);
-            await loadClients();
+            await reloadClients();
             setSuccessMessage('Cliente cadastrado com sucesso!');
             setSuccessType('create');
             setShowSuccessModal(true);
@@ -171,7 +208,7 @@ export const ClientManagement: React.FC = () => {
     const handleUpdateClient = async (id: number, clientData: any) => {
         try {
             await userService.updateClient(id, clientData);
-            await loadClients();
+            await reloadClients();
             setSuccessMessage('Cliente atualizado com sucesso!');
             setSuccessType('update');
             setShowSuccessModal(true);
@@ -205,7 +242,6 @@ export const ClientManagement: React.FC = () => {
             return;
         }
         
-        // Verificar se tem eventos vinculados usando o eventService
         try {
             const clientEvents = await eventService.getEventsByClientId(client.id);
             const hasEvents = clientEvents.length > 0;
@@ -235,23 +271,13 @@ export const ClientManagement: React.FC = () => {
         setShowDeleteModal(true);
     };
 
-    // Função para excluir cliente com modal de sucesso
+    // Função para excluir cliente
     const handleDeleteClient = async () => {
-        if (!clientToDelete) {
+        if (!clientToDelete || !clientToDelete.id) {
             console.error('❌ Nenhum cliente selecionado para exclusão');
             return;
         }
         
-        if (!clientToDelete.id) {
-            console.error('❌ Cliente sem ID:', clientToDelete);
-            setErrorMessage('Erro: Cliente sem ID');
-            setShowError(true);
-            setShowDeleteModal(false);
-            setClientToDelete(null);
-            return;
-        }
-        
-        // Se tiver eventos, não permite excluir
         if (linkedItemsInfo.hasEvents) {
             setErrorMessage('Este cliente possui eventos vinculados e não pode ser excluído.');
             setShowError(true);
@@ -265,13 +291,11 @@ export const ClientManagement: React.FC = () => {
         try {
             await userService.deleteClient(clientToDelete.id);
             
-            // Atualizar lista
             setClients(prev => prev.filter(c => c.id !== clientToDelete.id));
             setFilteredClients(prev => prev.filter(c => c.id !== clientToDelete.id));
             
             console.log('✅ Cliente excluído com sucesso');
             
-            // Fechar modal de confirmação e abrir modal de sucesso
             setShowDeleteModal(false);
             setSuccessMessage(`Cliente ${clientToDelete.name} excluído com sucesso!`);
             setSuccessType('delete');
@@ -397,12 +421,31 @@ export const ClientManagement: React.FC = () => {
         }
     };
 
-    if (loading) {
-        return <LoadingSpinner text="Carregando clientes..." fullScreen />;
-    }
+    // ✅ Valores memoizados
+    const hasActiveFilters = useMemo(() => {
+        return Object.values(filters).some(v => v.trim() !== '');
+    }, [filters]);
 
-    const hasActiveFilters = Object.values(filters).some(v => v.trim() !== '');
     const showEmptyState = filteredClients.length === 0;
+
+    // ✅ Se não estiver visível ou carregando inicialmente, mostra placeholder
+    if (!isVisible || (loading && !hasLoadedRef.current)) {
+        return (
+            <div className={styles.container}>
+                <div className={styles.header}>
+                    <div className={styles.headerLeft}>
+                        <h1 className={styles.title}>
+                            <MdPeople size={28} />
+                            Gestão de Clientes
+                        </h1>
+                    </div>
+                </div>
+                <div className={styles.loadingPlaceholder}>
+                    <LoadingSpinner text="Carregando clientes..." />
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className={styles.container}>
@@ -570,3 +613,5 @@ export const ClientManagement: React.FC = () => {
         </div>
     );
 };
+
+export default ClientManagement;

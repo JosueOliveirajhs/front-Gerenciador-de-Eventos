@@ -2,11 +2,13 @@ import React, { useState } from 'react';
 import { authService } from '../../services/auth';
 import { useAuth } from '../../context/AuthContext';
 import { Link } from 'react-router-dom';
+import { FiEye, FiEyeOff } from 'react-icons/fi';
 import styles from './LoginForm.module.css';
 
 export const LoginForm: React.FC = () => {
   const [cpf, setCpf] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   
@@ -74,16 +76,26 @@ export const LoginForm: React.FC = () => {
         <label htmlFor="password" className={styles.formLabel}>
           Senha
         </label>
-        <input
-          id="password"
-          type="password"
-          placeholder="Digite sua senha"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className={styles.formInput}
-          required
-          disabled={loading}
-        />
+        <div className={styles.passwordWrapper}>
+          <input
+            id="password"
+            type={showPassword ? 'text' : 'password'}
+            placeholder="Digite sua senha"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className={styles.formInput}
+            required
+            disabled={loading}
+          />
+          <button
+            type="button"
+            className={styles.passwordToggle}
+            onClick={() => setShowPassword(!showPassword)}
+            tabIndex={-1}
+          >
+            {showPassword ? <FiEyeOff size={18} /> : <FiEye size={18} />}
+          </button>
+        </div>
       </div>
 
       <div className={styles.forgotPassword}>

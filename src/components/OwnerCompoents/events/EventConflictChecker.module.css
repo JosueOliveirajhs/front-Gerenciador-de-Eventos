@@ -4,22 +4,22 @@
     margin: 16px 0;
     padding: 12px;
     border-radius: 8px;
-    background-color: #f9fafb;
+    background-color: var(--bg-tertiary);
 }
 
 .loading {
     display: flex;
     align-items: center;
     gap: 12px;
-    color: #6b7280;
+    color: var(--text-muted);
     font-size: 14px;
 }
 
 .spinner {
     width: 20px;
     height: 20px;
-    border: 2px solid #e5e7eb;
-    border-top-color: #3b82f6;
+    border: 2px solid var(--border-color);
+    border-top-color: var(--primary-500);
     border-radius: 50%;
     animation: spin 1s linear infinite;
 }
@@ -37,18 +37,18 @@
 .conflict {
     padding: 12px;
     border-radius: 6px;
-    background-color: white;
+    background-color: var(--card-bg);
     border-left: 4px solid;
 }
 
 .conflict.time {
-    border-left-color: #f59e0b;
-    background-color: #fffbeb;
+    border-left-color: var(--warning-500);
+    background-color: var(--warning-50);
 }
 
 .conflict.date {
-    border-left-color: #ef4444;
-    background-color: #fef2f2;
+    border-left-color: var(--error-500);
+    background-color: var(--error-50);
 }
 
 .conflict.resource {
@@ -70,7 +70,7 @@
 .conflictMessage {
     font-size: 14px;
     font-weight: 500;
-    color: #374151;
+    color: var(--text-primary);
 }
 
 .conflictEvents {
@@ -86,7 +86,7 @@
     justify-content: space-between;
     align-items: center;
     padding: 8px;
-    background-color: white;
+    background-color: var(--card-bg);
     border-radius: 4px;
     font-size: 13px;
 }
@@ -98,16 +98,16 @@
 }
 
 .conflictEventInfo strong {
-    color: #111827;
+    color: var(--text-primary);
 }
 
 .conflictEventTime {
-    color: #6b7280;
+    color: var(--text-muted);
     font-size: 12px;
 }
 
 .conflictEventClient {
-    color: #374151;
+    color: var(--text-secondary);
     font-size: 12px;
 }
 
@@ -119,30 +119,30 @@
 }
 
 .conflictEventStatus.quote {
-    background-color: #fef3c7;
-    color: #92400e;
+    background-color: var(--warning-100);
+    color: var(--warning-700);
 }
 
 .conflictEventStatus.confirmed {
-    background-color: #dbeafe;
-    color: #1e40af;
+    background-color: var(--primary-100);
+    color: var(--primary-700);
 }
 
 .conflictEventStatus.completed {
-    background-color: #d1fae5;
-    color: #065f46;
+    background-color: var(--success-100);
+    color: var(--success-700);
 }
 
 .conflictEventStatus.cancelled {
-    background-color: #fee2e2;
-    color: #991b1b;
+    background-color: var(--error-100);
+    color: var(--error-700);
 }
 
 .noConflicts {
     display: flex;
     align-items: center;
     gap: 8px;
-    color: #10b981;
+    color: var(--success-500);
     font-size: 14px;
     font-weight: 500;
 }

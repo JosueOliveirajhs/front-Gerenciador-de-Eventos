@@ -15,12 +15,10 @@ export interface SystemSettings {
   };
   theme: {
     mode: 'light' | 'dark' | 'system';
-    primaryColor: string;
-    accentColor: string;
   };
   notifications: {
     emailEnabled: boolean;
-    smsEnabled: boolean;
+    systemNotifications: boolean;
     newEventAlert: boolean;
     eventReminder: boolean;
     paymentReceived: boolean;
@@ -35,16 +33,15 @@ export interface SystemSettings {
     autoGenerateInvoices: boolean;
   };
   security: {
-    twoFactorAuth: boolean;
     sessionTimeout: number;
     passwordExpiryDays: number;
     maxLoginAttempts: number;
+    twoFactorAuth: boolean;
   };
   integrations: {
     googleCalendar: boolean;
     outlookCalendar: boolean;
     whatsApp: boolean;
-    emailMarketing: boolean;
   };
 }
 
@@ -58,12 +55,13 @@ export const settingsService = {
         try {
             const response = await api.get('/api/settings');
             console.log('✅ Configurações carregadas:', response.data);
-            return response.data;
+            
+            // Garantir que todos os campos existam (mesclar com defaults)
+            return mergeWithDefaults(response.data);
         } catch (error: any) {
             console.error('❌ Erro ao buscar configurações:', error);
             
             if (error.response?.status === 404) {
-                // Se não existir, retorna configurações padrão
                 console.log('ℹ️ Configurações não encontradas, usando padrão');
                 return getDefaultSettings();
             }
@@ -81,7 +79,7 @@ export const settingsService = {
         try {
             const response = await api.put('/api/settings', settings);
             console.log('✅ Configurações salvas:', response.data);
-            return response.data;
+            return mergeWithDefaults(response.data);
         } catch (error: any) {
             console.error('❌ Erro ao salvar configurações:', error);
             throw new Error(error.response?.data?.message || 'Erro ao salvar configurações');
@@ -97,7 +95,7 @@ export const settingsService = {
         try {
             const response = await api.post('/api/settings/reset');
             console.log('✅ Configurações restauradas:', response.data);
-            return response.data;
+            return mergeWithDefaults(response.data);
         } catch (error: any) {
             console.error('❌ Erro ao restaurar configurações:', error);
             
@@ -110,28 +108,62 @@ export const settingsService = {
 };
 
 /**
+ * Mescla as configurações recebidas com os valores padrão
+ * para garantir que nenhum campo obrigatório esteja faltando
+ */
+function mergeWithDefaults(settings: Partial<SystemSettings>): SystemSettings {
+    const defaults = getDefaultSettings();
+    
+    return {
+        company: {
+            ...defaults.company,
+            ...(settings.company || {})
+        },
+        theme: {
+            ...defaults.theme,
+            ...(settings.theme || {})
+        },
+        notifications: {
+            ...defaults.notifications,
+            ...(settings.notifications || {})
+        },
+        financial: {
+            ...defaults.financial,
+            ...(settings.financial || {})
+        },
+        security: {
+            ...defaults.security,
+            ...(settings.security || {})
+        },
+        integrations: {
+            ...defaults.integrations,
+            ...(settings.integrations || {})
+        }
+    };
+}
+
+/**
  * Configurações padrão do sistema
  */
 function getDefaultSettings(): SystemSettings {
     return {
         company: {
-            name: "Eventos Fáceis",
+            name: "",
             document: "",
             phone: "",
             email: "",
             address: "",
             city: "",
             state: "",
-            zipCode: ""
+            zipCode: "",
+            logo: ""
         },
         theme: {
-            mode: 'light',
-            primaryColor: '#3b82f6',
-            accentColor: '#10b981'
+            mode: 'system'
         },
         notifications: {
             emailEnabled: true,
-            smsEnabled: false,
+            systemNotifications: true,
             newEventAlert: true,
             eventReminder: true,
             paymentReceived: true,
@@ -146,16 +178,15 @@ function getDefaultSettings(): SystemSettings {
             autoGenerateInvoices: true
         },
         security: {
-            twoFactorAuth: false,
             sessionTimeout: 60,
             passwordExpiryDays: 90,
-            maxLoginAttempts: 5
+            maxLoginAttempts: 5,
+            twoFactorAuth: false
         },
         integrations: {
             googleCalendar: false,
             outlookCalendar: false,
-            whatsApp: false,
-            emailMarketing: false
+            whatsApp: false
         }
     };
 }

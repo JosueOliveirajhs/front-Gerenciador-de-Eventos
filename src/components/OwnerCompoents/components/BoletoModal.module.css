@@ -26,9 +26,9 @@
     width: 100%;
     max-height: 90vh;
     overflow-y: auto;
-    background: white;
+    background: var(--card-bg);
     border-radius: 24px;
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+    box-shadow: var(--shadow-2xl);
     animation: slideIn 0.3s ease;
 }
 
@@ -45,15 +45,15 @@
 
 .modalHeader {
     padding: 24px 32px;
-    border-bottom: 1px solid #f1f5f9;
+    border-bottom: 1px solid var(--border-color);
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    background: linear-gradient(to right, #ffffff, #fafafa);
+    background: linear-gradient(to right, var(--card-bg), var(--bg-tertiary));
     border-radius: 24px 24px 0 0;
     position: sticky;
     top: 0;
-    background: white;
+    background: var(--card-bg);
     z-index: 10;
 }
 
@@ -67,7 +67,7 @@
     gap: 12px;
     font-size: 24px;
     font-weight: 700;
-    color: #0f172a;
+    color: var(--text-primary);
     margin: 0 0 8px 0;
 }
 
@@ -76,7 +76,7 @@
 }
 
 .modalSubtitle {
-    color: #64748b;
+    color: var(--text-muted);
     font-size: 15px;
     margin: 0;
     line-height: 1.5;
@@ -86,7 +86,7 @@
     background: none;
     border: none;
     font-size: 32px;
-    color: #94a3b8;
+    color: var(--gray-400);
     cursor: pointer;
     padding: 0;
     width: 44px;
@@ -100,8 +100,8 @@
 }
 
 .closeButton:hover {
-    background: #f1f5f9;
-    color: #ef4444;
+    background: var(--bg-tertiary);
+    color: var(--error-500);
     transform: rotate(90deg);
 }
 
@@ -112,7 +112,7 @@
 .generateButton {
     width: 100%;
     padding: 16px;
-    background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);
+    background: #00B4D8;
     border: none;
     border-radius: 16px;
     color: white;
@@ -130,7 +130,7 @@
 
 .generateButton:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 20px rgba(79, 70, 229, 0.4);
+    box-shadow: 0 8px 20px rgba(0, 180, 216, 0.4);
 }
 
 .buttonIcon {
@@ -138,17 +138,17 @@
 }
 
 .formContainer {
-    background: #f8fafc;
+    background: var(--bg-tertiary);
     border-radius: 16px;
     padding: 24px;
     margin-bottom: 32px;
-    border: 1px solid #e2e8f0;
+    border: 1px solid var(--border-color);
 }
 
 .formTitle {
     font-size: 18px;
     font-weight: 600;
-    color: #0f172a;
+    color: var(--text-primary);
     margin: 0 0 20px 0;
     display: flex;
     align-items: center;
@@ -176,44 +176,45 @@
 .formLabel {
     font-size: 14px;
     font-weight: 600;
-    color: #1e293b;
+    color: var(--text-primary);
     display: flex;
     align-items: center;
     gap: 4px;
 }
 
 .required {
-    color: #ef4444;
+    color: var(--error-500);
 }
 
 .formInput {
     padding: 12px 16px;
-    border: 1px solid #e2e8f0;
+    border: 1px solid var(--input-border);
     border-radius: 12px;
     font-size: 15px;
     transition: all 0.2s ease;
-    background: white;
+    background: var(--input-bg);
+    color: var(--text-primary);
 }
 
 .formInput:focus {
     outline: none;
-    border-color: #4f46e5;
-    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+    border-color: #00B4D8;
+    box-shadow: 0 0 0 3px rgba(0, 180, 216, 0.1);
 }
 
 .inputError {
-    border-color: #ef4444;
-    background: #fef2f2;
+    border-color: var(--error-500);
+    background: var(--error-50);
 }
 
 .inputError:focus {
-    border-color: #ef4444;
+    border-color: var(--error-500);
     box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
 }
 
 .errorMessage {
     font-size: 12px;
-    color: #ef4444;
+    color: var(--error-500);
     margin-top: 4px;
     display: flex;
     align-items: center;
@@ -229,10 +230,10 @@
 
 .cancelButton {
     padding: 12px 24px;
-    background: white;
-    border: 1px solid #e2e8f0;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
     border-radius: 10px;
-    color: #475569;
+    color: var(--text-secondary);
     font-size: 14px;
     font-weight: 600;
     cursor: pointer;
@@ -240,13 +241,13 @@
 }
 
 .cancelButton:hover {
-    background: #f1f5f9;
-    border-color: #94a3b8;
+    background: var(--bg-tertiary);
+    border-color: var(--gray-400);
 }
 
 .submitButton {
     padding: 12px 24px;
-    background: #4f46e5;
+    background: #00B4D8;
     border: none;
     border-radius: 10px;
     color: white;
@@ -257,9 +258,9 @@
 }
 
 .submitButton:hover:not(:disabled) {
-    background: #4338ca;
+    background: #0096b0;
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+    box-shadow: 0 4px 12px rgba(0, 180, 216, 0.3);
 }
 
 .submitButton:disabled {
@@ -277,13 +278,13 @@
     justify-content: space-between;
     font-size: 18px;
     font-weight: 600;
-    color: #0f172a;
+    color: var(--text-primary);
     margin: 0 0 20px 0;
 }
 
 .listCount {
-    background: #e2e8f0;
-    color: #475569;
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
     padding: 4px 12px;
     border-radius: 20px;
     font-size: 14px;
@@ -297,16 +298,16 @@
 }
 
 .boletoCard {
-    background: white;
-    border: 1px solid #e2e8f0;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
     border-radius: 16px;
     padding: 20px;
     transition: all 0.2s ease;
 }
 
 .boletoCard:hover {
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
-    border-color: #cbd5e1;
+    box-shadow: var(--shadow-lg);
+    border-color: var(--gray-300);
     transform: translateY(-2px);
 }
 
@@ -320,7 +321,7 @@
 .boletoDescription {
     font-size: 16px;
     font-weight: 600;
-    color: #0f172a;
+    color: var(--text-primary);
     margin: 0 0 8px 0;
 }
 
@@ -335,33 +336,33 @@
 }
 
 .statusPending {
-    background: #fff7ed;
-    color: #c2410c;
+    background: var(--warning-50);
+    color: var(--warning-700);
 }
 
 .statusPaid {
-    background: #ecfdf5;
-    color: #065f46;
+    background: var(--success-50);
+    color: var(--success-700);
 }
 
 .statusOverdue {
-    background: #fef2f2;
-    color: #b91c1c;
+    background: var(--error-50);
+    color: var(--error-700);
 }
 
 .statusCancelled {
-    background: #f1f5f9;
-    color: #475569;
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
 }
 
 .boletoValue {
     font-size: 20px;
     font-weight: 700;
-    color: #0f172a;
+    color: var(--text-primary);
 }
 
 .boletoInfo {
-    background: #f8fafc;
+    background: var(--bg-tertiary);
     padding: 16px;
     border-radius: 12px;
     margin-bottom: 16px;
@@ -372,7 +373,7 @@
     justify-content: space-between;
     align-items: center;
     padding: 8px 0;
-    border-bottom: 1px solid #e2e8f0;
+    border-bottom: 1px solid var(--border-color);
 }
 
 .infoRow:last-child {
@@ -381,17 +382,17 @@
 
 .infoLabel {
     font-size: 14px;
-    color: #64748b;
+    color: var(--text-muted);
 }
 
 .infoValue {
     font-size: 14px;
     font-weight: 600;
-    color: #0f172a;
+    color: var(--text-primary);
 }
 
 .barcodeSection {
-    background: #f1f5f9;
+    background: var(--bg-secondary);
     padding: 16px;
     border-radius: 12px;
     margin-bottom: 20px;
@@ -400,7 +401,7 @@
 .barcodeLabel {
     display: block;
     font-size: 12px;
-    color: #475569;
+    color: var(--text-secondary);
     margin-bottom: 8px;
     font-weight: 600;
     text-transform: uppercase;
@@ -411,11 +412,11 @@
     display: block;
     font-family: 'Courier New', monospace;
     font-size: 14px;
-    color: #0f172a;
-    background: white;
+    color: var(--text-primary);
+    background: var(--card-bg);
     padding: 12px;
     border-radius: 8px;
-    border: 1px solid #e2e8f0;
+    border: 1px solid var(--border-color);
     word-break: break-all;
 }
 
@@ -431,10 +432,10 @@
     justify-content: center;
     gap: 8px;
     padding: 12px 16px;
-    background: white;
-    border: 1px solid #e2e8f0;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
     border-radius: 10px;
-    color: #475569;
+    color: var(--text-secondary);
     font-size: 14px;
     font-weight: 500;
     cursor: pointer;
@@ -442,9 +443,9 @@
 }
 
 .actionButton:hover:not(:disabled) {
-    background: #f8fafc;
-    border-color: #4f46e5;
-    color: #4f46e5;
+    background: var(--bg-tertiary);
+    border-color: #00B4D8;
+    color: #00B4D8;
     transform: translateY(-2px);
 }
 
@@ -454,9 +455,9 @@
 }
 
 .paidButton:hover:not(:disabled) {
-    background: #ecfdf5;
-    border-color: #059669;
-    color: #059669;
+    background: var(--success-50);
+    border-color: var(--success-600);
+    color: var(--success-600);
 }
 
 .actionIcon {

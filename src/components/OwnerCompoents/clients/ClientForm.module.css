@@ -1,92 +1,5 @@
 /* src/components/admin/clients/components/ClientForm.module.css */
-/* Adicione no final do arquivo src/components/admin/clients/components/ClientForm.module.css */
 
-/* ========== MODAL DE SUCESSO ========== */
-.successModal {
-  max-width: 400px;
-  text-align: center;
-  padding: 32px 24px;
-}
-
-.successIconContainer {
-  display: flex;
-  justify-content: center;
-  margin-bottom: 20px;
-}
-
-.successIcon {
-  color: #10b981;
-  animation: successPop 0.5s ease;
-}
-
-@keyframes successPop {
-  0% {
-    transform: scale(0);
-    opacity: 0;
-  }
-  50% {
-    transform: scale(1.2);
-  }
-  100% {
-    transform: scale(1);
-    opacity: 1;
-  }
-}
-
-.successTitle {
-  font-size: 24px;
-  font-weight: 700;
-  color: #0f172a;
-  margin: 0 0 12px 0;
-}
-
-.successMessage {
-  font-size: 16px;
-  color: #475569;
-  margin: 0 0 24px 0;
-}
-
-.successButton {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 12px 32px;
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-  border: none;
-  border-radius: 12px;
-  color: white;
-  font-size: 16px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
-}
-
-.successButton:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(16, 185, 129, 0.4);
-}
-
-/* Responsividade */
-@media (max-width: 480px) {
-  .successModal {
-    margin: 16px;
-    padding: 24px 16px;
-  }
-  
-  .successTitle {
-    font-size: 20px;
-  }
-  
-  .successMessage {
-    font-size: 14px;
-  }
-  
-  .successButton {
-    width: 100%;
-  }
-}
 .modalOverlay {
     position: fixed;
     top: 0;
@@ -113,9 +26,9 @@
     width: 100%;
     max-height: 90vh;
     overflow-y: auto;
-    background: white;
+    background: var(--card-bg);
     border-radius: 24px;
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+    box-shadow: var(--shadow-2xl);
     animation: slideIn 0.3s ease;
 }
 
@@ -132,11 +45,11 @@
 
 .header {
     padding: 28px 32px;
-    border-bottom: 1px solid #f1f5f9;
+    border-bottom: 1px solid var(--border-color);
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    background: linear-gradient(to right, #ffffff, #fafafa);
+    background: linear-gradient(to right, var(--card-bg), var(--bg-tertiary));
     border-radius: 24px 24px 0 0;
 }
 
@@ -150,7 +63,7 @@
     gap: 10px;
     font-size: 24px;
     font-weight: 700;
-    color: #1e293b;
+    color: var(--text-primary);
     margin: 0 0 8px 0;
 }
 
@@ -159,7 +72,7 @@
 }
 
 .subtitle {
-    color: #64748b;
+    color: var(--text-muted);
     font-size: 15px;
     margin: 0;
     line-height: 1.5;
@@ -169,7 +82,7 @@
     background: none;
     border: none;
     font-size: 36px;
-    color: #94a3b8;
+    color: var(--gray-400);
     cursor: pointer;
     padding: 0;
     width: 44px;
@@ -183,8 +96,8 @@
 }
 
 .closeButton:hover {
-    background: #f1f5f9;
-    color: #ef4444;
+    background: var(--bg-tertiary);
+    color: var(--error-500);
     transform: rotate(90deg);
 }
 
@@ -208,14 +121,14 @@
 .label {
     font-size: 14px;
     font-weight: 600;
-    color: #1e293b;
+    color: var(--text-primary);
     display: flex;
     align-items: center;
     gap: 4px;
 }
 
 .required {
-    color: #ef4444;
+    color: var(--error-500);
     font-size: 14px;
 }
 
@@ -228,38 +141,38 @@
     width: 100%;
     padding: 14px 16px;
     padding-left: 48px;
-    border: 2px solid #e2e8f0;
+    border: 2px solid var(--input-border);
     border-radius: 12px;
     font-size: 15px;
     transition: all 0.2s ease;
-    background: white;
-    color: #1e293b;
+    background: var(--input-bg);
+    color: var(--text-primary);
 }
 
 .input:hover {
-    border-color: #94a3b8;
+    border-color: var(--gray-400);
 }
 
 .input:focus {
     outline: none;
-    border-color: #4f46e5;
-    box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1);
+    border-color: #00B4D8;
+    box-shadow: 0 0 0 4px rgba(0, 180, 216, 0.1);
 }
 
 .inputError {
-    border-color: #ef4444;
-    background: #fef2f2;
+    border-color: var(--error-500);
+    background: var(--error-50);
 }
 
 .inputError:focus {
-    border-color: #ef4444;
+    border-color: var(--error-500);
     box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.1);
 }
 
 .inputDisabled {
-    background: #f8fafc;
-    border-color: #e2e8f0;
-    color: #64748b;
+    background: var(--bg-tertiary);
+    border-color: var(--border-color);
+    color: var(--text-muted);
     cursor: not-allowed;
 }
 
@@ -268,7 +181,7 @@
     left: 16px;
     top: 50%;
     transform: translateY(-50%);
-    color: #94a3b8;
+    color: var(--gray-400);
     font-size: 16px;
 }
 
@@ -277,9 +190,9 @@
     align-items: center;
     gap: 6px;
     font-size: 12px;
-    color: #ef4444;
+    color: var(--error-500);
     margin-top: 4px;
-    background: #fee2e2;
+    background: var(--error-100);
     padding: 6px 12px;
     border-radius: 6px;
     font-weight: 500;
@@ -292,9 +205,9 @@
 .passwordSection {
     margin-top: 28px;
     padding: 24px;
-    background: #f8fafc;
+    background: var(--bg-tertiary);
     border-radius: 16px;
-    border: 1px solid #e2e8f0;
+    border: 1px solid var(--border-color);
 }
 
 .passwordHeader {
@@ -311,7 +224,7 @@
 .passwordTitle {
     font-size: 16px;
     font-weight: 600;
-    color: #1e293b;
+    color: var(--text-primary);
     margin: 0;
 }
 
@@ -321,9 +234,9 @@
     gap: 8px;
     margin-top: 16px;
     padding: 12px 16px;
-    background: #f1f5f9;
+    background: var(--bg-secondary);
     border-radius: 10px;
-    color: #475569;
+    color: var(--text-secondary);
     font-size: 13px;
 }
 
@@ -337,15 +250,15 @@
     gap: 16px;
     margin-top: 32px;
     padding-top: 24px;
-    border-top: 2px solid #f1f5f9;
+    border-top: 2px solid var(--border-color);
 }
 
 .cancelButton {
     padding: 14px 28px;
-    background: white;
-    border: 2px solid #e2e8f0;
+    background: var(--card-bg);
+    border: 2px solid var(--border-color);
     border-radius: 12px;
-    color: #475569;
+    color: var(--text-secondary);
     font-size: 15px;
     font-weight: 600;
     cursor: pointer;
@@ -353,8 +266,8 @@
 }
 
 .cancelButton:hover:not(:disabled) {
-    background: #f1f5f9;
-    border-color: #94a3b8;
+    background: var(--bg-tertiary);
+    border-color: var(--gray-400);
     transform: translateY(-2px);
 }
 
@@ -371,12 +284,12 @@
     display: flex;
     align-items: center;
     gap: 10px;
-    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+    box-shadow: 0 4px 12px rgba(0, 180, 216, 0.3);
 }
 
 .submitButton:hover:not(:disabled) {
     transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(79, 70, 229, 0.4);
+    box-shadow: 0 6px 16px rgba(0, 180, 216, 0.4);
 }
 
 .submitButton:disabled,
@@ -402,6 +315,73 @@
 
 @keyframes spin {
     to { transform: rotate(360deg); }
+}
+
+/* ========== MODAL DE SUCESSO ========== */
+.successModal {
+  max-width: 400px;
+  text-align: center;
+  padding: 32px 24px;
+}
+
+.successIconContainer {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.successIcon {
+  color: var(--success-500);
+  animation: successPop 0.5s ease;
+}
+
+@keyframes successPop {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.successTitle {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 12px 0;
+}
+
+.successMessage {
+  font-size: 16px;
+  color: var(--text-secondary);
+  margin: 0 0 24px 0;
+}
+
+.successButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 32px;
+  background: linear-gradient(135deg, var(--success-500) 0%, var(--success-600) 100%);
+  border: none;
+  border-radius: 12px;
+  color: white;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.successButton:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(16, 185, 129, 0.4);
 }
 
 /* Responsive */
@@ -464,5 +444,22 @@
         padding: 12px 14px;
         padding-left: 44px;
         font-size: 14px;
+    }
+
+    .successModal {
+        margin: 16px;
+        padding: 24px 16px;
+    }
+    
+    .successTitle {
+        font-size: 20px;
+    }
+    
+    .successMessage {
+        font-size: 14px;
+    }
+    
+    .successButton {
+        width: 100%;
     }
 }

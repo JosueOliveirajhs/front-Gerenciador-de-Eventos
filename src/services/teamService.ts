@@ -16,7 +16,7 @@ export interface UpdateMemberDTO {
   email?: string;
   phone?: string;
   role?: string;
-  status?: 'ACTIVE' | 'INACTIVE';
+  status?: 'ACTIVE' | 'BLOCKED' | 'TERMINATED';  // ✅ CORRIGIDO
 }
 
 const getCurrentUser = () => {
@@ -43,10 +43,11 @@ const getCurrentUser = () => {
 };
 
 export const teamService = {
+  // ✅ Buscar membros da equipe (OWNER)
   getTeamMembers: async (): Promise<User[]> => {
     try {
-      console.log('👥 Buscando membros da equipe...');
-      const response = await api.get('/api/users/clients');
+      console.log('👥 Buscando membros da equipe (OWNER)...');
+      const response = await api.get('/api/users/team');
       
       const members = (response.data || []).map((user: any) => ({
         id: user.id,
@@ -63,7 +64,7 @@ export const teamService = {
         lastAccess: user.lastAccess
       }));
       
-      console.log(`✅ ${members.length} membros encontrados`);
+      console.log(`✅ ${members.length} membros da equipe encontrados`);
       return members;
     } catch (error) {
       console.error('❌ Erro ao buscar membros da equipe:', error);
@@ -105,7 +106,7 @@ export const teamService = {
         throw new Error('Usuário não está associado a uma organização');
       }
       
-      console.log('🏢 Criando membro para organização ID:', organizationId);
+      console.log('🏢 Criando membro da equipe para organização ID:', organizationId);
       
       const userData = {
         name: data.name,
@@ -114,14 +115,14 @@ export const teamService = {
         phone: data.phone ? data.phone.replace(/\D/g, '') : '',
         password: data.password,
         role: data.role || 'MANAGER',
-        userType: 'CLIENT',
+        userType: 'OWNER',
         status: 'ACTIVE',
         organizationId: organizationId
       };
       
       console.log('📤 Enviando dados:', { ...userData, password: '***' });
       
-      const response = await api.post('/api/users/clients', userData);
+      const response = await api.post('/api/users/team', userData);
       console.log('✅ Resposta do servidor:', response.data);
       
       return {
@@ -187,9 +188,16 @@ export const teamService = {
     }
   },
 
+  // ✅ CORRIGIDO: Mapear status do frontend para o backend
   updateMemberStatus: async (id: number, status: string): Promise<User> => {
     try {
-      const response = await api.put(`/api/users/${id}`, { status });
+      // Mapear status do frontend para o backend
+      let backendStatus = status;
+      if (status === 'INACTIVE') {
+        backendStatus = 'BLOCKED';
+      }
+      
+      const response = await api.put(`/api/users/${id}`, { status: backendStatus });
       return {
         id: response.data.id,
         name: response.data.name,
@@ -279,7 +287,8 @@ export const teamService = {
       'DIRECTOR': 'Diretor',
       'MANAGER': 'Gerente',
       'ANALYST': 'Analista',
-      'DEVELOPER': 'Desenvolvedor'
+      'DEVELOPER': 'Desenvolvedor',
+      'OWNER': 'Proprietário'
     };
     return labels[role] || role;
   },
@@ -290,8 +299,29 @@ export const teamService = {
       'DIRECTOR': '#ea580c',
       'MANAGER': '#0284c7',
       'ANALYST': '#16a34a',
-      'DEVELOPER': '#3b82f6'
+      'DEVELOPER': '#3b82f6',
+      'OWNER': '#00B4D8'
     };
     return colors[role] || '#6b7280';
+  },
+
+  // ✅ Função auxiliar para mapear status para exibição
+  getStatusLabel: (status: string): string => {
+    const labels: { [key: string]: string } = {
+      'ACTIVE': 'Ativo',
+      'BLOCKED': 'Bloqueado',
+      'TERMINATED': 'Desligado'
+    };
+    return labels[status] || status;
+  },
+
+  // ✅ Função auxiliar para cor de status
+  getStatusColor: (status: string): string => {
+    const colors: { [key: string]: string } = {
+      'ACTIVE': '#10b981',
+      'BLOCKED': '#f59e0b',
+      'TERMINATED': '#ef4444'
+    };
+    return colors[status] || '#6b7280';
   }
 };

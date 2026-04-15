@@ -5,11 +5,11 @@
   grid-template-columns: 1fr 1.2fr;
   gap: 20px;
   width: 81rem;
-  background: white;
+  background: var(--card-bg);
   border-radius: 24px;
   padding: 20px;
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.02);
-  border: 1px solid #f1f5f9;
+  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--card-border);
   max-width: 1400px;
   margin: 0 auto;
 }
@@ -32,22 +32,22 @@
   gap: 10px;
   font-size: 20px;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--text-primary);
   margin: 0;
 }
 
 .calendarTitle svg {
-  color: #3b82f6;
+  color: var(--primary-500);
 }
 
 .legend {
   display: flex;
   gap: 20px;
   flex-wrap: wrap;
-  background: #f8fafc;
+  background: var(--bg-tertiary);
   padding: 8px 16px;
   border-radius: 40px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--border-color);
 }
 
 .legendItem {
@@ -56,7 +56,7 @@
   gap: 8px;
   font-size: 13px;
   font-weight: 500;
-  color: #334155;
+  color: var(--text-secondary);
 }
 
 .legendDot {
@@ -71,24 +71,24 @@
 }
 
 .legendDot.confirmed {
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  background: linear-gradient(135deg, var(--primary-500) 0%, var(--primary-600) 100%);
 }
 
 .legendDot.completed {
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  background: linear-gradient(135deg, var(--success-500) 0%, var(--success-600) 100%);
 }
 
 .legendDot.cancelled {
-  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  background: linear-gradient(135deg, var(--error-500) 0%, var(--error-600) 100%);
 }
 
 /* ===== CALENDÁRIO ===== */
 .calendarWrapper {
-  background: white;
+  background: var(--card-bg);
   padding: 20px;
   border-radius: 20px;
-  border: 1px solid #f1f5f9;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02);
+  border: 1px solid var(--card-border);
+  box-shadow: var(--shadow-sm);
 }
 
 .calendarWrapper :global(.react-calendar) {
@@ -106,25 +106,25 @@
   min-width: 36px;
   background: none;
   font-size: 15px;
-  color: #334155;
+  color: var(--text-secondary);
   border-radius: 8px;
   transition: all 0.2s;
 }
 
 .calendarWrapper :global(.react-calendar__navigation button:hover) {
-  background: #f1f5f9 !important;
+  background: var(--bg-tertiary) !important;
 }
 
 .calendarWrapper :global(.react-calendar__navigation button:enabled:hover) {
-  background: #f1f5f9;
+  background: var(--bg-tertiary);
 }
 
 .calendarWrapper :global(.react-calendar__navigation button:enabled:focus) {
-  background: #e2e8f0;
+  background: var(--gray-200);
 }
 
 .calendarWrapper :global(.react-calendar__month-view__weekdays) {
-  color: #64748b;
+  color: var(--text-muted);
   font-weight: 500;
   font-size: 13px;
   text-transform: uppercase;
@@ -147,7 +147,7 @@
   transition: all 0.2s;
   font-size: 14px;
   font-weight: 500;
-  color: #1e293b;
+  color: var(--text-primary);
   aspect-ratio: 1;
   display: flex;
   align-items: center;
@@ -155,7 +155,7 @@
 }
 
 .calendarWrapper :global(.react-calendar__tile:hover) {
-  background: #f1f5f9 !important;
+  background: var(--bg-tertiary) !important;
   transform: scale(0.95);
 }
 
@@ -166,27 +166,27 @@
 }
 
 .calendarWrapper :global(.react-calendar__tile--now) {
-  background: #fef3c7;
-  color: #92400e;
+  background: var(--warning-100);
+  color: var(--warning-700);
   font-weight: 700;
 }
 
 .calendarWrapper :global(.react-calendar__tile--now:hover) {
-  background: #fde68a !important;
+  background: var(--warning-200) !important;
 }
 
 .eventDay {
-  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%) !important;
+  background: var(--primary-100) !important;
   font-weight: 700;
-  color: #1e40af !important;
-  box-shadow: inset 0 -2px 0 #3b82f6;
+  color: var(--primary-700) !important;
+  box-shadow: inset 0 -2px 0 var(--primary-500);
 }
 
 .eventCount {
   position: absolute;
   top: 4px;
   right: 4px;
-  background: #ef4444;
+  background: var(--error-500);
   color: white;
   font-size: 9px;
   font-weight: 700;
@@ -202,10 +202,10 @@
 
 /* ===== LISTA DE EVENTOS DO DIA ===== */
 .dayEvents {
-  background: white;
+  background: var(--card-bg);
   border-radius: 20px;
   padding: 20px;
-  border: 1px solid #f1f5f9;
+  border: 1px solid var(--card-border);
   display: flex;
   flex-direction: column;
   height: fit-content;
@@ -218,7 +218,7 @@
   align-items: center;
   margin-bottom: 16px;
   padding-bottom: 12px;
-  border-bottom: 2px solid #f1f5f9;
+  border-bottom: 2px solid var(--border-color);
 }
 
 .dayEventsTitle {
@@ -227,22 +227,22 @@
   gap: 8px;
   font-size: 18px;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--text-primary);
   margin: 0;
 }
 
 .dayEventsTitle svg {
-  color: #3b82f6;
+  color: var(--primary-500);
 }
 
 .eventCountBadge {
   padding: 6px 14px;
-  background: #f1f5f9;
-  color: #334155;
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
   border-radius: 40px;
   font-size: 13px;
   font-weight: 600;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--border-color);
 }
 
 .dayEventsList {
@@ -259,17 +259,17 @@
 }
 
 .dayEventsList::-webkit-scrollbar-track {
-  background: #f1f5f9;
+  background: var(--bg-tertiary);
   border-radius: 10px;
 }
 
 .dayEventsList::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: var(--gray-300);
   border-radius: 10px;
 }
 
 .dayEventsList::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  background: var(--gray-400);
 }
 
 /* ===== CARDS DE EVENTOS ===== */
@@ -277,19 +277,19 @@
   display: flex;
   gap: 16px;
   padding: 16px;
-  background: white;
+  background: var(--card-bg);
   border-radius: 16px;
   transition: all 0.3s;
-  border: 1px solid #f1f5f9;
+  border: 1px solid var(--border-color);
   cursor: pointer;
   position: relative;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+  box-shadow: var(--shadow-sm);
 }
 
 .dayEventCard:hover {
   transform: translateX(6px) translateY(-2px);
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.02);
-  border-color: #3b82f6;
+  box-shadow: var(--shadow-xl);
+  border-color: var(--primary-500);
 }
 
 .dayEventStatus {
@@ -319,7 +319,7 @@
 .dayEventTitle {
   font-size: 16px;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--text-primary);
   margin: 0;
   line-height: 1.4;
 }
@@ -335,23 +335,23 @@
 }
 
 .eventStatusBadge.quote {
-  background: #fef3c7;
-  color: #92400e;
+  background: var(--warning-100);
+  color: var(--warning-700);
 }
 
 .eventStatusBadge.confirmed {
-  background: #dbeafe;
-  color: #1e40af;
+  background: var(--primary-100);
+  color: var(--primary-700);
 }
 
 .eventStatusBadge.completed {
-  background: #d1fae5;
-  color: #065f46;
+  background: var(--success-100);
+  color: var(--success-700);
 }
 
 .eventStatusBadge.cancelled {
-  background: #fee2e2;
-  color: #991b1b;
+  background: var(--error-100);
+  color: var(--error-700);
 }
 
 .eventDetails {
@@ -366,13 +366,13 @@
   align-items: center;
   gap: 6px;
   font-size: 13px;
-  color: #475569;
+  color: var(--text-secondary);
   margin: 0;
 }
 
 .dayEventTime svg,
 .dayEventClient svg {
-  color: #64748b;
+  color: var(--text-muted);
 }
 
 .eventMeta {
@@ -388,16 +388,16 @@
   align-items: center;
   gap: 6px;
   font-size: 12px;
-  color: #64748b;
-  background: #f8fafc;
+  color: var(--text-muted);
+  background: var(--bg-tertiary);
   padding: 4px 10px;
   border-radius: 40px;
-  border: 1px solid #f1f5f9;
+  border: 1px solid var(--border-color);
 }
 
 .eventGuests svg,
 .eventType svg {
-  color: #64748b;
+  color: var(--text-muted);
 }
 
 /* ===== VALORES ===== */
@@ -409,7 +409,7 @@
   gap: 4px;
   min-width: 110px;
   padding-left: 8px;
-  border-left: 2px solid #f1f5f9;
+  border-left: 2px solid var(--border-color);
 }
 
 .dayEventValue strong {
@@ -418,16 +418,16 @@
   gap: 4px;
   font-size: 16px;
   font-weight: 700;
-  color: #059669;
+  color: var(--success-600);
 }
 
 .dayEventValue svg {
-  color: #10b981;
+  color: var(--success-500);
 }
 
 .depositInfo {
   font-size: 11px;
-  color: #94a3b8;
+  color: var(--gray-400);
   display: flex;
   align-items: center;
   gap: 2px;
@@ -438,16 +438,16 @@
   position: absolute;
   top: -6px;
   right: -6px;
-  background: #fef3c7;
-  color: #f59e0b;
+  background: var(--warning-100);
+  color: var(--warning-500);
   width: 28px;
   height: 28px;
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: 9999px;
-  border: 2px solid white;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  border: 2px solid var(--card-bg);
+  box-shadow: var(--shadow-md);
   cursor: help;
 }
 
@@ -455,25 +455,25 @@
 .noDayEvents {
   text-align: center;
   padding: 48px 24px;
-  color: #64748b;
+  color: var(--text-muted);
   font-size: 14px;
-  background: #f8fafc;
+  background: var(--bg-tertiary);
   border-radius: 16px;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 16px;
-  border: 2px dashed #e2e8f0;
+  border: 2px dashed var(--border-color);
 }
 
 .noDayEvents svg {
-  color: #94a3b8;
+  color: var(--gray-400);
   opacity: 0.5;
 }
 
 .noEventsHint {
   font-size: 13px;
-  color: #94a3b8;
+  color: var(--gray-400);
   margin-top: 4px;
 }
 
@@ -482,6 +482,7 @@
   .container {
     gap: 16px;
     padding: 16px;
+    width: auto;
   }
 
   .calendarWrapper {
@@ -554,7 +555,7 @@
     width: 100%;
     align-items: flex-start;
     border-left: none;
-    border-top: 2px solid #f1f5f9;
+    border-top: 2px solid var(--border-color);
     padding-left: 0;
     padding-top: 12px;
     margin-top: 4px;

@@ -27,11 +27,13 @@ import {
 } from 'react-icons/fa';
 import { dashboardService, DashboardStats } from "../../../../services/dashboard";
 import { EmptyState } from "../../../common/EmptyState/EmptyState";
+import { useTheme } from "../../../../context/ThemeContext";
 import Chart from 'react-apexcharts';
 import { ApexOptions } from 'apexcharts';
 import styles from "./OwnerDashboard.module.css";
 
 export const OwnerDashboard: React.FC = () => {
+  const { isDark } = useTheme();
   const [stats, setStats] = useState<DashboardStats>({
     totalEvents: 0,
     confirmedEvents: 0,
@@ -49,11 +51,21 @@ export const OwnerDashboard: React.FC = () => {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [chartKey, setChartKey] = useState(0); // Forçar recriação dos gráficos
+  const [chartKey, setChartKey] = useState(0);
+
+  // ✅ Cores adaptáveis ao tema
+  const textColor = isDark ? '#f1f5f9' : '#263238';
+  const textSecondary = isDark ? '#cbd5e1' : '#64748b';
+  const gridColor = isDark ? '#334155' : '#e0e0e0';
 
   useEffect(() => {
     loadDashboardData();
   }, []);
+
+  useEffect(() => {
+    // Recriar gráficos quando o tema mudar
+    setChartKey(prev => prev + 1);
+  }, [isDark]);
 
   const loadDashboardData = async () => {
     try {
@@ -65,7 +77,7 @@ export const OwnerDashboard: React.FC = () => {
       console.log("✅ Dados recebidos:", dashboardStats);
 
       setStats(dashboardStats);
-      setChartKey(prev => prev + 1); // Forçar recriação dos gráficos
+      setChartKey(prev => prev + 1);
     } catch (error) {
       console.error("❌ Erro ao carregar dashboard:", error);
       setError("Erro ao carregar dados do dashboard. Tente novamente.");
@@ -111,17 +123,7 @@ export const OwnerDashboard: React.FC = () => {
     return colors[status] || "#6b7280";
   };
 
-  const getStatusIcon = (status: string) => {
-    const icons: { [key: string]: JSX.Element } = {
-      QUOTE: <FiClock size={16} />,
-      CONFIRMED: <MdCheckCircle size={16} />,
-      COMPLETED: <FiCheckCircle size={16} />,
-      CANCELLED: <MdCancel size={16} />,
-    };
-    return icons[status] || <MdEvent size={16} />;
-  };
-
-  // ✅ GRÁFICO 1: Eventos por Status (Barras Horizontais)
+  // ✅ GRÁFICO 1: Eventos por Status
   const statusChartOptions: ApexOptions = {
     chart: {
       type: 'bar',
@@ -143,7 +145,8 @@ export const OwnerDashboard: React.FC = () => {
         easing: 'easeinout',
         speed: 800
       },
-      background: 'transparent'
+      background: 'transparent',
+      foreColor: textSecondary
     },
     plotOptions: {
       bar: {
@@ -180,22 +183,31 @@ export const OwnerDashboard: React.FC = () => {
       labels: {
         style: {
           fontSize: '12px',
-          fontWeight: 500
+          fontWeight: 500,
+          colors: textSecondary
         }
       },
       title: {
         text: 'Quantidade de Eventos',
         style: {
           fontSize: '14px',
-          fontWeight: 600
+          fontWeight: 600,
+          color: textSecondary
         }
+      },
+      axisBorder: {
+        color: gridColor
+      },
+      axisTicks: {
+        color: gridColor
       }
     },
     yaxis: {
       labels: {
         style: {
           fontSize: '12px',
-          fontWeight: 500
+          fontWeight: 500,
+          colors: textSecondary
         }
       }
     },
@@ -205,11 +217,11 @@ export const OwnerDashboard: React.FC = () => {
       style: {
         fontSize: '16px',
         fontWeight: 600,
-        color: '#263238'
+        color: textColor
       }
     },
     tooltip: {
-      theme: 'dark',
+      theme: isDark ? 'dark' : 'light',
       y: {
         formatter: function(val: number) {
           return val + ' eventos';
@@ -220,8 +232,13 @@ export const OwnerDashboard: React.FC = () => {
       show: false
     },
     grid: {
-      borderColor: '#e0e0e0',
-      strokeDashArray: 4
+      borderColor: gridColor,
+      strokeDashArray: 4,
+      xaxis: {
+        lines: {
+          show: true
+        }
+      }
     }
   };
 
@@ -230,7 +247,7 @@ export const OwnerDashboard: React.FC = () => {
     data: Object.values(stats.eventsByStatus)
   }];
 
-  // ✅ GRÁFICO 2: Eventos por Mês (Barras Verticais)
+  // ✅ GRÁFICO 2: Eventos por Mês
   const monthlyEventsOptions: ApexOptions = {
     chart: {
       type: 'bar',
@@ -244,17 +261,13 @@ export const OwnerDashboard: React.FC = () => {
         speed: 800
       },
       background: 'transparent',
-      stacked: false,
-      sparkline: {
-        enabled: false
-      }
+      foreColor: textSecondary
     },
     plotOptions: {
       bar: {
         borderRadius: 8,
         horizontal: false,
         columnWidth: '55%',
-        distributed: false,
         dataLabels: {
           position: 'top'
         }
@@ -270,25 +283,32 @@ export const OwnerDashboard: React.FC = () => {
       style: {
         fontSize: '12px',
         fontWeight: 'bold',
-        colors: ['#3b82f6']
+        colors: [isDark ? '#93c5fd' : '#3b82f6']
       }
     },
     xaxis: {
       categories: Object.keys(stats.eventsByMonth),
       labels: {
         rotate: -45,
-        rotateAlways: false,
         style: {
           fontSize: '11px',
-          fontWeight: 500
+          fontWeight: 500,
+          colors: textSecondary
         }
       },
       title: {
         text: 'Mês/Ano',
         style: {
           fontSize: '14px',
-          fontWeight: 600
+          fontWeight: 600,
+          color: textSecondary
         }
+      },
+      axisBorder: {
+        color: gridColor
+      },
+      axisTicks: {
+        color: gridColor
       }
     },
     yaxis: {
@@ -296,16 +316,19 @@ export const OwnerDashboard: React.FC = () => {
         text: 'Quantidade de Eventos',
         style: {
           fontSize: '14px',
-          fontWeight: 600
+          fontWeight: 600,
+          color: textSecondary
         }
       },
       labels: {
         formatter: function(val: number) {
           return Math.floor(val).toString();
+        },
+        style: {
+          colors: textSecondary
         }
       },
-      min: 0,
-      forceNiceScale: true
+      min: 0
     },
     title: {
       text: 'Eventos Realizados por Mês',
@@ -313,11 +336,11 @@ export const OwnerDashboard: React.FC = () => {
       style: {
         fontSize: '16px',
         fontWeight: 600,
-        color: '#263238'
+        color: textColor
       }
     },
     tooltip: {
-      theme: 'dark',
+      theme: isDark ? 'dark' : 'light',
       y: {
         formatter: function(val: number) {
           return val + ' eventos';
@@ -325,7 +348,7 @@ export const OwnerDashboard: React.FC = () => {
       }
     },
     grid: {
-      borderColor: '#e0e0e0',
+      borderColor: gridColor,
       strokeDashArray: 4,
       padding: {
         top: 30,
@@ -333,9 +356,6 @@ export const OwnerDashboard: React.FC = () => {
         bottom: 20,
         left: 20
       }
-    },
-    markers: {
-      size: 0
     }
   };
 
@@ -344,11 +364,11 @@ export const OwnerDashboard: React.FC = () => {
     data: Object.values(stats.eventsByMonth)
   }];
 
-  // ✅ GRÁFICO 3: Receita por Mês (Área com gradiente)
+  // ✅ GRÁFICO 3: Receita por Mês
   const revenueOptions: ApexOptions = {
     chart: {
       type: 'area',
-      height: 350,
+      height: 400,
       toolbar: {
         show: true,
         tools: {
@@ -364,6 +384,7 @@ export const OwnerDashboard: React.FC = () => {
         speed: 800
       },
       background: 'transparent',
+      foreColor: textSecondary,
       dropShadow: {
         enabled: true,
         top: 3,
@@ -391,7 +412,7 @@ export const OwnerDashboard: React.FC = () => {
     fill: {
       type: 'gradient',
       gradient: {
-        shade: 'light',
+        shade: isDark ? 'dark' : 'light',
         type: 'vertical',
         shadeIntensity: 0.4,
         gradientToColors: ['#34d399'],
@@ -403,13 +424,12 @@ export const OwnerDashboard: React.FC = () => {
     },
     stroke: {
       curve: 'smooth',
-      width: 3,
-      lineCap: 'round'
+      width: 3
     },
     markers: {
       size: 6,
       colors: ['#10b981'],
-      strokeColors: '#fff',
+      strokeColors: isDark ? '#1e293b' : '#fff',
       strokeWidth: 2,
       hover: {
         size: 8
@@ -421,19 +441,23 @@ export const OwnerDashboard: React.FC = () => {
         rotate: -45,
         style: {
           fontSize: '11px',
-          fontWeight: 500
+          fontWeight: 500,
+          colors: textSecondary
         }
       },
       title: {
         text: 'Mês/Ano',
         style: {
           fontSize: '14px',
-          fontWeight: 600
+          fontWeight: 600,
+          color: textSecondary
         }
       },
       axisBorder: {
-        show: true,
-        color: '#e0e0e0'
+        color: gridColor
+      },
+      axisTicks: {
+        color: gridColor
       }
     },
     yaxis: {
@@ -441,12 +465,16 @@ export const OwnerDashboard: React.FC = () => {
         text: 'Receita (R$)',
         style: {
           fontSize: '14px',
-          fontWeight: 600
+          fontWeight: 600,
+          color: textSecondary
         }
       },
       labels: {
         formatter: function(val: number) {
           return formatCurrencyShort(val * 1000);
+        },
+        style: {
+          colors: textSecondary
         }
       },
       min: 0
@@ -457,11 +485,11 @@ export const OwnerDashboard: React.FC = () => {
       style: {
         fontSize: '16px',
         fontWeight: 600,
-        color: '#263238'
+        color: textColor
       }
     },
     tooltip: {
-      theme: 'dark',
+      theme: isDark ? 'dark' : 'light',
       y: {
         formatter: function(val: number) {
           return formatCurrency(val * 1000);
@@ -469,7 +497,7 @@ export const OwnerDashboard: React.FC = () => {
       }
     },
     grid: {
-      borderColor: '#e0e0e0',
+      borderColor: gridColor,
       strokeDashArray: 4,
       padding: {
         top: 30,
@@ -482,7 +510,7 @@ export const OwnerDashboard: React.FC = () => {
 
   const revenueSeries = [{
     name: 'Receita',
-    data: Object.values(stats.revenueByMonth).map(v => v / 1000) // Em milhares
+    data: Object.values(stats.revenueByMonth).map(v => v / 1000)
   }];
 
   if (loading) {
@@ -523,7 +551,7 @@ export const OwnerDashboard: React.FC = () => {
 
       {/* Cards de Estatísticas */}
       <div className={styles.statsGrid}>
-        <div className={`${styles.statCard} ${styles.card}`}>
+        <div className={styles.statCard}>
           <div className={styles.statIcon}>
             <MdEvent size={24} />
           </div>
@@ -531,17 +559,13 @@ export const OwnerDashboard: React.FC = () => {
             <h3 className={styles.statLabel}>Total de Eventos</h3>
             <p className={styles.statNumber}>{stats.totalEvents}</p>
             <div className={styles.statBreakdown}>
-              <span>
-                <MdCheckCircle size={12} /> {stats.confirmedEvents} confirmados
-              </span>
-              <span>
-                <FiClock size={12} /> {stats.quoteEvents} orçamentos
-              </span>
+              <span><MdCheckCircle size={12} /> {stats.confirmedEvents} confirmados</span>
+              <span><FiClock size={12} /> {stats.quoteEvents} orçamentos</span>
             </div>
           </div>
         </div>
 
-        <div className={`${styles.statCard} ${styles.card}`}>
+        <div className={styles.statCard}>
           <div className={styles.statIcon}>
             <FaMoneyBillWave size={24} />
           </div>
@@ -557,7 +581,7 @@ export const OwnerDashboard: React.FC = () => {
           </div>
         </div>
 
-        <div className={`${styles.statCard} ${styles.card}`}>
+        <div className={styles.statCard}>
           <div className={styles.statIcon}>
             <FiClock size={24} />
           </div>
@@ -568,17 +592,13 @@ export const OwnerDashboard: React.FC = () => {
               <span className={styles.overdue}>/{stats.overduePayments}</span>
             </p>
             <div className={styles.statBreakdown}>
-              <span>
-                <FiClock size={12} /> {stats.pendingPayments} pendentes
-              </span>
-              <span>
-                <MdWarning size={12} /> {stats.overduePayments} em atraso
-              </span>
+              <span><FiClock size={12} /> {stats.pendingPayments} pendentes</span>
+              <span><MdWarning size={12} /> {stats.overduePayments} em atraso</span>
             </div>
           </div>
         </div>
 
-        <div className={`${styles.statCard} ${styles.card}`}>
+        <div className={styles.statCard}>
           <div className={styles.statIcon}>
             <FiCheckCircle size={24} />
           </div>
@@ -589,22 +609,17 @@ export const OwnerDashboard: React.FC = () => {
               <span className={styles.cancelled}>/{stats.cancelledEvents}</span>
             </p>
             <div className={styles.statBreakdown}>
-              <span>
-                <FiCheckCircle size={12} /> {stats.completedEvents} concluídos
-              </span>
-              <span>
-                <MdCancel size={12} /> {stats.cancelledEvents} cancelados
-              </span>
+              <span><FiCheckCircle size={12} /> {stats.completedEvents} concluídos</span>
+              <span><MdCancel size={12} /> {stats.cancelledEvents} cancelados</span>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Gráficos com ApexCharts */}
+      {/* Gráficos */}
       <div className={styles.chartsGrid}>
-        {/* Linha 1: Status (esquerda) e Eventos Mensais (direita) */}
         <div className={styles.chartsRow}>
-          <div className={`${styles.chartCard} ${styles.card}`}>
+          <div className={styles.chartCard}>
             <div className={styles.chartHeader}>
               <h3 className={styles.chartTitle}>
                 <FiPieChart size={18} />
@@ -627,7 +642,7 @@ export const OwnerDashboard: React.FC = () => {
             )}
           </div>
 
-          <div className={`${styles.chartCard} ${styles.card}`}>
+          <div className={styles.chartCard}>
             <div className={styles.chartHeader}>
               <h3 className={styles.chartTitle}>
                 <FaChartBar size={18} />
@@ -651,9 +666,8 @@ export const OwnerDashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* Linha 2: Receita (largura total) */}
         <div className={styles.chartsRow}>
-          <div className={`${styles.chartCard} ${styles.card} ${styles.fullWidth}`}>
+          <div className={`${styles.chartCard} ${styles.fullWidth}`}>
             <div className={styles.chartHeader}>
               <h3 className={styles.chartTitle}>
                 <FaChartLine size={18} />
@@ -679,7 +693,7 @@ export const OwnerDashboard: React.FC = () => {
       </div>
 
       {/* Próximos Eventos */}
-      <div className={`${styles.upcomingEvents} ${styles.card}`}>
+      <div className={styles.upcomingEvents}>
         <div className={styles.sectionHeader}>
           <h2 className={styles.sectionTitle}>
             <FiCalendar size={20} />
@@ -699,7 +713,7 @@ export const OwnerDashboard: React.FC = () => {
         ) : (
           <div className={styles.eventsList}>
             {stats.upcomingEvents.map((event) => (
-              <div key={event.id} className={`${styles.eventCard} ${styles.cardHover}`}>
+              <div key={event.id} className={styles.eventCard}>
                 <div className={styles.eventDate}>
                   <span className={styles.dateDay}>
                     {new Date(event.eventDate).getDate()}

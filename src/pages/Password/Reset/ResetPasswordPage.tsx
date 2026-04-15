@@ -1,16 +1,22 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { authService } from '../../../services/auth';
+import { useTheme } from '../../../context/ThemeContext';
+import { FiEye, FiEyeOff } from 'react-icons/fi';
+import logoCompleta from '../../../assets/logo-big.png';
+import logoSemFundo from '../../../assets/logo-big-sem-fundo.png';
 import styles from './ResetPasswordPage.module.css';
-import logoEventosFaceis from '../../../assets/logo-big.png'
 
 export const ResetPasswordPage: React.FC = () => {
+  const { isDark } = useTheme();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const token = searchParams.get('token');
 
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -51,7 +57,11 @@ export const ResetPasswordPage: React.FC = () => {
       <div className={styles.resetPasswordContainer}>
         <div className={styles.resetPasswordCard}>
           <div className={styles.logoContainer}>
-            <img src={logoEventosFaceis} alt="EventosFáceis" className={styles.logo} />
+            <img 
+              src={isDark ? logoSemFundo : logoCompleta} 
+              alt="EventosFáceis" 
+              className={styles.logo} 
+            />
             <h1 className={styles.logoText}>Easy Event Management System</h1>
           </div>
           <div className={styles.invalidToken}>
@@ -76,7 +86,11 @@ export const ResetPasswordPage: React.FC = () => {
     <div className={styles.resetPasswordContainer}>
       <div className={styles.resetPasswordCard}>
         <div className={styles.logoContainer}>
-          <img src={logoEventosFaceis} alt="EventosFáceis" className={styles.logo} />
+          <img 
+            src={isDark ? logoSemFundo : logoCompleta} 
+            alt="EventosFáceis" 
+            className={styles.logo} 
+          />
           <h1 className={styles.logoText}>EventosFáceis</h1>
         </div>
 
@@ -92,32 +106,52 @@ export const ResetPasswordPage: React.FC = () => {
               <label htmlFor="password" className={styles.formLabel}>
                 Nova Senha
               </label>
-              <input
-                id="password"
-                type="password"
-                placeholder="Mínimo 6 caracteres"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className={styles.formInput}
-                required
-                disabled={loading}
-                minLength={6}
-              />
+              <div className={styles.passwordWrapper}>
+                <input
+                  id="password"
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="Mínimo 6 caracteres"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className={styles.formInput}
+                  required
+                  disabled={loading}
+                  minLength={6}
+                />
+                <button
+                  type="button"
+                  className={styles.passwordToggle}
+                  onClick={() => setShowPassword(!showPassword)}
+                  tabIndex={-1}
+                >
+                  {showPassword ? <FiEyeOff size={18} /> : <FiEye size={18} />}
+                </button>
+              </div>
             </div>
             <div className={styles.formGroup}>
               <label htmlFor="confirmPassword" className={styles.formLabel}>
                 Confirmar Nova Senha
               </label>
-              <input
-                id="confirmPassword"
-                type="password"
-                placeholder="Digite a senha novamente"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                className={styles.formInput}
-                required
-                disabled={loading}
-              />
+              <div className={styles.passwordWrapper}>
+                <input
+                  id="confirmPassword"
+                  type={showConfirmPassword ? 'text' : 'password'}
+                  placeholder="Digite a senha novamente"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className={styles.formInput}
+                  required
+                  disabled={loading}
+                />
+                <button
+                  type="button"
+                  className={styles.passwordToggle}
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  tabIndex={-1}
+                >
+                  {showConfirmPassword ? <FiEyeOff size={18} /> : <FiEye size={18} />}
+                </button>
+              </div>
             </div>
             <button type="submit" disabled={loading} className={styles.submitButton}>
               {loading ? 'Redefinindo...' : 'Redefinir senha'}
@@ -134,3 +168,5 @@ export const ResetPasswordPage: React.FC = () => {
     </div>
   );
 };
+
+export default ResetPasswordPage;

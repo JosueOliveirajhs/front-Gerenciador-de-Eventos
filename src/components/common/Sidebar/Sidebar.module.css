@@ -289,7 +289,127 @@
 .sidebarCollapsed .navItemIndicator {
   display: none;
 }
+/* Estilos para edição de nome do usuário */
+.userNameDisplay {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
 
+.userName {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.userEditBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.2s;
+  opacity: 0;
+  flex-shrink: 0;
+}
+
+.userCard:hover .userEditBtn {
+  opacity: 1;
+}
+
+.userEditBtn:hover {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+
+.userNameEditContainer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  flex-wrap: wrap;
+}
+
+.userNameInput {
+  flex: 1;
+  padding: 6px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  transition: all 0.2s;
+  min-width: 0;
+}
+
+.userNameInput:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+}
+
+.userNameInput:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.userNameActions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.userNameSaveBtn,
+.userNameCancelBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.userNameSaveBtn {
+  color: #10b981;
+}
+
+.userNameSaveBtn:hover:not(:disabled) {
+  background: #10b981;
+  color: white;
+  border-color: #10b981;
+}
+
+.userNameCancelBtn {
+  color: #ef4444;
+}
+
+.userNameCancelBtn:hover:not(:disabled) {
+  background: #ef4444;
+  color: white;
+  border-color: #ef4444;
+}
+
+.userNameSaveBtn:disabled,
+.userNameCancelBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
 /* ============================================
    OVERLAY PARA MOBILE
    ============================================ */

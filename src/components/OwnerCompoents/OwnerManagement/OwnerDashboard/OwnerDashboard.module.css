@@ -4,7 +4,7 @@
   padding: 24px;
   max-width: 1400px;
   margin: 0 auto;
-  background-color: #f8fafc;
+  background-color: var(--bg-secondary);
   min-height: 100vh;
 }
 
@@ -22,12 +22,12 @@
   gap: 12px;
   font-size: 28px;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--text-primary);
   margin: 0;
 }
 
 .pageTitle svg {
-  color: #3b82f6;
+  color: var(--primary-500);
 }
 
 .refreshButton {
@@ -35,25 +35,25 @@
   align-items: center;
   gap: 8px;
   padding: 10px 20px;
-  background: white;
-  border: 1px solid #e2e8f0;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
   border-radius: 10px;
   font-size: 14px;
   font-weight: 500;
-  color: #475569;
+  color: var(--text-secondary);
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .refreshButton:hover {
-  background: #f8fafc;
-  border-color: #94a3b8;
+  background: var(--bg-tertiary);
+  border-color: var(--gray-400);
   transform: translateY(-2px);
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-md);
 }
 
 .refreshButton svg {
-  color: #3b82f6;
+  color: var(--primary-500);
 }
 
 /* ========== CARDS DE ESTATÍSTICAS ========== */
@@ -69,17 +69,17 @@
   align-items: center;
   gap: 16px;
   padding: 20px;
-  background: white;
+  background: var(--card-bg);
   border-radius: 16px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  box-shadow: var(--shadow-sm);
   transition: all 0.3s;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--card-border);
 }
 
 .statCard:hover {
   transform: translateY(-4px);
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
-  border-color: #cbd5e1;
+  box-shadow: var(--shadow-xl);
+  border-color: var(--gray-300);
 }
 
 .statIcon {
@@ -88,7 +88,7 @@
   justify-content: center;
   width: 56px;
   height: 56px;
-  background: #00B4D8;;
+  background: #00B4D8;
   color: white;
   border-radius: 16px;
   box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.3);
@@ -101,32 +101,32 @@
 .statLabel {
   font-size: 14px;
   font-weight: 500;
-  color: #64748b;
+  color: var(--text-muted);
   margin: 0 0 4px 0;
 }
 
 .statNumber {
   font-size: 28px;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--text-primary);
   margin: 0 0 8px 0;
   line-height: 1.2;
 }
 
 .statNumber.revenue {
-  color: #059669;
+  color: var(--success-600);
 }
 
 .pending {
-  color: #f59e0b;
+  color: var(--warning-500);
 }
 
 .overdue {
-  color: #ef4444;
+  color: var(--error-500);
 }
 
 .cancelled {
-  color: #ef4444;
+  color: var(--error-500);
   font-size: 16px;
   margin-left: 4px;
 }
@@ -135,7 +135,7 @@
   display: flex;
   gap: 16px;
   font-size: 12px;
-  color: #64748b;
+  color: var(--text-muted);
 }
 
 .statBreakdown span {
@@ -145,7 +145,7 @@
 }
 
 .statBreakdown svg {
-  color: #94a3b8;
+  color: var(--gray-400);
 }
 
 .statSubtext {
@@ -153,11 +153,11 @@
   align-items: center;
   gap: 4px;
   font-size: 13px;
-  color: #94a3b8;
+  color: var(--gray-400);
 }
 
 .statSubtext svg {
-  color: #94a3b8;
+  color: var(--gray-400);
 }
 
 /* ========== GRÁFICOS ========== */
@@ -175,17 +175,17 @@
 }
 
 .chartCard {
-  background: white;
+  background: var(--card-bg);
   border-radius: 16px;
   padding: 20px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-  border: 1px solid #e2e8f0;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--card-border);
   transition: all 0.3s;
 }
 
 .chartCard:hover {
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
-  border-color: #cbd5e1;
+  box-shadow: var(--shadow-xl);
+  border-color: var(--gray-300);
 }
 
 .fullWidth {
@@ -195,7 +195,7 @@
 .chartHeader {
   margin-bottom: 16px;
   padding-bottom: 12px;
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid var(--border-color);
 }
 
 .chartTitle {
@@ -204,12 +204,12 @@
   gap: 8px;
   font-size: 16px;
   font-weight: 600;
-  color: #0f172a;
+  color: var(--text-primary);
   margin: 0;
 }
 
 .chartTitle svg {
-  color: #3b82f6;
+  color: var(--primary-500);
 }
 
 .noData {
@@ -219,23 +219,23 @@
   align-items: center;
   justify-content: center;
   gap: 12px;
-  color: #94a3b8;
+  color: var(--gray-400);
   font-size: 14px;
-  background: #f8fafc;
+  background: var(--bg-tertiary);
   border-radius: 12px;
 }
 
 .noData svg {
-  color: #cbd5e1;
+  color: var(--gray-300);
 }
 
 /* ========== PRÓXIMOS EVENTOS ========== */
 .upcomingEvents {
-  background: white;
+  background: var(--card-bg) !important;
   border-radius: 16px;
   padding: 20px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-  border: 1px solid #e2e8f0;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--card-border) !important;
 }
 
 .sectionHeader {
@@ -244,7 +244,7 @@
   align-items: center;
   margin-bottom: 20px;
   padding-bottom: 12px;
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid var(--border-color) !important;
 }
 
 .sectionTitle {
@@ -253,22 +253,22 @@
   gap: 8px;
   font-size: 18px;
   font-weight: 600;
-  color: #0f172a;
+  color: var(--text-primary) !important;
   margin: 0;
 }
 
 .sectionTitle svg {
-  color: #3b82f6;
+  color: var(--primary-500) !important;
 }
 
 .sectionBadge {
   padding: 4px 12px;
-  background: #f1f5f9;
-  color: #475569;
+  background: var(--bg-tertiary) !important;
+  color: var(--text-secondary) !important;
   border-radius: 9999px;
   font-size: 14px;
   font-weight: 600;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--border-color) !important;
 }
 
 .eventsList {
@@ -282,18 +282,18 @@
   align-items: center;
   gap: 16px;
   padding: 16px;
-  background: #f8fafc;
+  background: var(--bg-tertiary) !important;
   border-radius: 12px;
   transition: all 0.2s;
   cursor: pointer;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--border-color) !important;
 }
 
 .eventCard:hover {
-  background: white;
+  background: var(--card-bg) !important;
   transform: translateX(4px);
-  border-color: #3b82f6;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  border-color: var(--primary-500) !important;
+  box-shadow: var(--shadow-md);
 }
 
 .eventDate {
@@ -306,7 +306,7 @@
   background: #00B4D8;
   color: white;
   border-radius: 12px;
-  box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.3);
+  box-shadow: 0 4px 6px -1px rgba(0, 180, 216, 0.3);
 }
 
 .dateDay {
@@ -328,7 +328,7 @@
 .eventTitle {
   font-size: 16px;
   font-weight: 600;
-  color: #0f172a;
+  color: var(--text-primary) !important;
   margin: 0 0 4px 0;
 }
 
@@ -337,12 +337,12 @@
   align-items: center;
   gap: 4px;
   font-size: 13px;
-  color: #64748b;
+  color: var(--text-muted) !important;
   margin: 0 0 4px 0;
 }
 
 .eventDetails svg {
-  color: #94a3b8;
+  color: var(--text-muted) !important;
 }
 
 .clientName {
@@ -350,12 +350,16 @@
   align-items: center;
   gap: 4px;
   font-size: 13px;
-  color: #475569;
+  color: var(--text-secondary) !important;
   margin: 0;
 }
 
 .clientName svg {
-  color: #94a3b8;
+  color: var(--text-muted) !important;
+}
+
+.clientName strong {
+  color: var(--text-primary) !important;
 }
 
 .eventValue {
@@ -370,12 +374,13 @@
   gap: 4px;
   font-size: 18px;
   font-weight: 600;
-  color: #059669;
+  color: var(--success-600) !important;
 }
 
 .valueAmount svg {
-  color: #10b981;
+  color: var(--success-500) !important;
 }
+
 
 /* ========== LOADING E ERROR STATES ========== */
 .loading {
@@ -389,8 +394,8 @@
 .spinner {
   width: 50px;
   height: 50px;
-  border: 4px solid #e2e8f0;
-  border-top: 4px solid #3b82f6;
+  border: 4px solid var(--border-color);
+  border-top: 4px solid var(--primary-500);
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin-bottom: 16px;
@@ -404,26 +409,26 @@
 .error {
   text-align: center;
   padding: 60px;
-  background: white;
+  background: var(--card-bg);
   border-radius: 16px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-  border: 1px solid #e2e8f0;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--card-border);
 }
 
 .errorIcon {
-  color: #ef4444;
+  color: var(--error-500);
   margin-bottom: 16px;
 }
 
 .error h3 {
   font-size: 18px;
   font-weight: 600;
-  color: #0f172a;
+  color: var(--text-primary);
   margin: 0 0 8px 0;
 }
 
 .error p {
-  color: #64748b;
+  color: var(--text-muted);
   margin: 0 0 24px 0;
 }
 
@@ -432,7 +437,7 @@
   align-items: center;
   gap: 8px;
   padding: 12px 24px;
-  background: #3b82f6;
+  background: var(--primary-500);
   color: white;
   border: none;
   border-radius: 10px;
@@ -443,16 +448,16 @@
 }
 
 .retryButton:hover {
-  background: #2563eb;
+  background: var(--primary-600);
   transform: translateY(-2px);
   box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.3);
 }
 
 /* ========== CARD BASE ========== */
 .card {
-  background: white;
+  background: var(--card-bg);
   border-radius: 16px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--card-border);
   transition: all 0.3s;
 }
 
@@ -462,7 +467,7 @@
 
 .cardHover:hover {
   transform: translateY(-2px);
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-lg);
 }
 
 /* ========== RESPONSIVIDADE ========== */

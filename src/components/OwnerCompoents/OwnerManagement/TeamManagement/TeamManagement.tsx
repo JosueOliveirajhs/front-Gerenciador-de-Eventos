@@ -1,5 +1,5 @@
 // src/components/DeveloperCompents/TeamManagement/TeamManagement.tsx
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { 
   FiSearch,  
   FiFilter,
@@ -13,10 +13,6 @@ import {
 } from 'react-icons/fi';
 import { 
   MdPeople, 
-  MdPersonAdd,
-  MdEdit,
-  MdDelete,
-  MdPowerSettingsNew
 } from 'react-icons/md';
 import { teamService, CreateMemberDTO, UpdateMemberDTO } from '../../../../services/teamService';
 import { User } from '../../../../types/developer';
@@ -39,6 +35,10 @@ interface Filters {
 }
 
 export const TeamManagement: React.FC<TeamManagementProps> = ({ organizationId }) => {
+  // ✅ Flag para controlar se o componente está visível
+  const [isVisible, setIsVisible] = useState(false);
+  const hasLoadedRef = useRef(false);
+  
   // Estados principais
   const [members, setMembers] = useState<User[]>([]);
   const [filteredMembers, setFilteredMembers] = useState<User[]>([]);
@@ -52,10 +52,10 @@ export const TeamManagement: React.FC<TeamManagementProps> = ({ organizationId }
   const [memberToDelete, setMemberToDelete] = useState<User | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   
-  // Estados para modal de ativação/desativação
+  // Estados para modal de ativação/desativação (bloquear/ativar)
   const [showStatusModal, setShowStatusModal] = useState(false);
   const [memberToToggle, setMemberToToggle] = useState<User | null>(null);
-  const [statusAction, setStatusAction] = useState<'activate' | 'deactivate'>('activate');
+  const [statusAction, setStatusAction] = useState<'activate' | 'block'>('activate');
   const [isToggling, setIsToggling] = useState(false);
   
   // Estados para modal de sucesso
@@ -91,24 +91,58 @@ export const TeamManagement: React.FC<TeamManagementProps> = ({ organizationId }
     { value: 'ADMIN', label: 'Administrador' },
     { value: 'DIRECTOR', label: 'Diretor' },
     { value: 'MANAGER', label: 'Gerente' },
-    { value: 'ANALYST', label: 'Analista' }
+    { value: 'ANALYST', label: 'Analista' },
+    { value: 'OWNER', label: 'Proprietário' }
   ];
 
-  // Status disponíveis
+  // ✅ Status disponíveis para filtro (CORRIGIDO)
   const statusOptions = [
     { value: '', label: 'Todos' },
     { value: 'ACTIVE', label: 'Ativo' },
-    { value: 'INACTIVE', label: 'Inativo' }
+    { value: 'BLOCKED', label: 'Bloqueado' },
+    { value: 'TERMINATED', label: 'Desligado' }
   ];
 
-  // Carregar membros
+  // ✅ Só carrega dados quando o componente estiver visível
+  useEffect(() => {
+    setIsVisible(true);
+    return () => setIsVisible(false);
+  }, []);
+
+  // ✅ Carregar membros - SÓ quando visível e ainda não carregou
   const loadMembers = useCallback(async () => {
+    if (!isVisible || hasLoadedRef.current) return;
+    
     try {
       setLoading(true);
       const data = await teamService.getTeamMembers();
       setMembers(data);
       setFilteredMembers(data);
+      hasLoadedRef.current = true;
       console.log('✅ Membros carregados:', data.length);
+    } catch (error) {
+      console.error('Erro ao carregar membros:', error);
+      setErrorMessage('Erro ao carregar membros da equipe. Tente novamente.');
+      setShowError(true);
+    } finally {
+      setLoading(false);
+    }
+  }, [isVisible]);
+
+  // ✅ useEffect para carregar dados APENAS quando visível
+  useEffect(() => {
+    if (isVisible && !hasLoadedRef.current) {
+      loadMembers();
+    }
+  }, [isVisible, loadMembers]);
+
+  // ✅ Recarregar membros (quando necessário)
+  const reloadMembers = useCallback(async () => {
+    try {
+      setLoading(true);
+      const data = await teamService.getTeamMembers();
+      setMembers(data);
+      setFilteredMembers(data);
     } catch (error) {
       console.error('Erro ao carregar membros:', error);
       setErrorMessage('Erro ao carregar membros da equipe. Tente novamente.');
@@ -118,16 +152,10 @@ export const TeamManagement: React.FC<TeamManagementProps> = ({ organizationId }
     }
   }, []);
 
-  useEffect(() => {
-    loadMembers();
-  }, [loadMembers]);
-
-  // Aplicar filtros
-  useEffect(() => {
-    applyFilters();
-  }, [filters, members]);
-
+  // ✅ Aplicar filtros - MEMOIZADO
   const applyFilters = useCallback(() => {
+    if (!members.length) return;
+    
     let result = [...members];
 
     if (filters.name) {
@@ -159,6 +187,13 @@ export const TeamManagement: React.FC<TeamManagementProps> = ({ organizationId }
 
     setFilteredMembers(result);
   }, [filters, members]);
+
+  // ✅ useEffect para filtros - só quando há dados
+  useEffect(() => {
+    if (members.length > 0) {
+      applyFilters();
+    }
+  }, [applyFilters, members.length]);
 
   // Handlers de filtro
   const handleFilterChange = useCallback((field: keyof Filters, value: string) => {
@@ -217,7 +252,7 @@ export const TeamManagement: React.FC<TeamManagementProps> = ({ organizationId }
     
     try {
       await teamService.createTeamMember(formData);
-      await loadMembers();
+      await reloadMembers();
       setSuccessMessage('Membro criado com sucesso!');
       setSuccessType('create');
       setShowSuccessModal(true);
@@ -274,7 +309,7 @@ export const TeamManagement: React.FC<TeamManagementProps> = ({ organizationId }
       };
       
       await teamService.updateTeamMember(editingMember.id, updateData);
-      await loadMembers();
+      await reloadMembers();
       setSuccessMessage('Membro atualizado com sucesso!');
       setSuccessType('update');
       setShowSuccessModal(true);
@@ -295,7 +330,6 @@ export const TeamManagement: React.FC<TeamManagementProps> = ({ organizationId }
     }
   };
 
-  // Função para abrir modal de exclusão
   const openDeleteModal = (member: User) => {
     if (!member || !member.id) {
       setErrorMessage('Membro inválido');
@@ -307,7 +341,6 @@ export const TeamManagement: React.FC<TeamManagementProps> = ({ organizationId }
     setShowDeleteModal(true);
   };
 
-  // Função para excluir membro
   const handleDeleteMember = async () => {
     if (!memberToDelete || !memberToDelete.id) {
       setErrorMessage('Membro não encontrado');
@@ -319,7 +352,7 @@ export const TeamManagement: React.FC<TeamManagementProps> = ({ organizationId }
     
     try {
       await teamService.deleteTeamMember(memberToDelete.id);
-      await loadMembers();
+      await reloadMembers();
       
       setShowDeleteModal(false);
       setSuccessMessage(`Membro ${memberToDelete.name} removido com sucesso!`);
@@ -341,7 +374,7 @@ export const TeamManagement: React.FC<TeamManagementProps> = ({ organizationId }
     }
   };
 
-  // Função para abrir modal de ativação/desativação
+  // ✅ CORRIGIDO: Abrir modal de status com mapeamento correto
   const openStatusModal = (member: User) => {
     if (!member || !member.id) {
       setErrorMessage('Membro inválido');
@@ -350,11 +383,12 @@ export const TeamManagement: React.FC<TeamManagementProps> = ({ organizationId }
     }
     
     setMemberToToggle(member);
-    setStatusAction(member.status === 'ACTIVE' ? 'deactivate' : 'activate');
+    // Se estiver ATIVO, ação será BLOQUEAR; se BLOQUEADO, ação será ATIVAR
+    setStatusAction(member.status === 'ACTIVE' ? 'block' : 'activate');
     setShowStatusModal(true);
   };
 
-  // Função para alterar status
+  // ✅ CORRIGIDO: Alternar status com mapeamento correto
   const handleToggleStatus = async () => {
     if (!memberToToggle || !memberToToggle.id) {
       setErrorMessage('Membro não encontrado');
@@ -362,23 +396,36 @@ export const TeamManagement: React.FC<TeamManagementProps> = ({ organizationId }
       return;
     }
     
-    const newStatus = memberToToggle.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
+    const currentStatus = memberToToggle.status;
+    let newStatus: string;
+    let actionText: string;
+    
+    if (currentStatus === 'ACTIVE') {
+      newStatus = 'BLOCKED';
+      actionText = 'bloqueado';
+    } else if (currentStatus === 'BLOCKED') {
+      newStatus = 'ACTIVE';
+      actionText = 'ativado';
+    } else {
+      newStatus = 'ACTIVE';
+      actionText = 'ativado';
+    }
     
     setIsToggling(true);
     
     try {
       await teamService.updateMemberStatus(memberToToggle.id, newStatus);
-      await loadMembers();
+      await reloadMembers();
       
       setShowStatusModal(false);
-      setSuccessMessage(`Membro ${newStatus === 'ACTIVE' ? 'ativado' : 'desativado'} com sucesso!`);
+      setSuccessMessage(`Membro ${actionText} com sucesso!`);
       setSuccessType('status');
       setShowSuccessModal(true);
       
     } catch (error: any) {
       console.error('Erro ao alterar status:', error);
       
-      let message = 'Erro ao alterar status do membro. Tente novamente.';
+      let message = 'Erro ao alterar status do membro.';
       if (error.message) {
         message = error.message;
       }
@@ -455,16 +502,35 @@ export const TeamManagement: React.FC<TeamManagementProps> = ({ organizationId }
     setFormData(prev => ({ ...prev, phone: formatted }));
   };
 
-  // Estatísticas
-  const activeCount = members.filter(m => m.status === 'ACTIVE').length;
-  const inactiveCount = members.filter(m => m.status !== 'ACTIVE').length;
+  // ✅ Estatísticas memoizadas
+  const activeCount = useMemo(() => members.filter(m => m.status === 'ACTIVE').length, [members]);
+  const blockedCount = useMemo(() => members.filter(m => m.status === 'BLOCKED').length, [members]);
 
-  if (loading) {
-    return <LoadingSpinner text="Carregando membros da equipe..." fullScreen />;
-  }
+  // ✅ Valores memoizados
+  const hasActiveFilters = useMemo(() => {
+    return Object.values(filters).some(v => v.trim() !== '');
+  }, [filters]);
 
-  const hasActiveFilters = Object.values(filters).some(v => v.trim() !== '');
   const showEmptyState = filteredMembers.length === 0;
+
+  // ✅ Se não estiver visível ou carregando inicialmente
+  if (!isVisible || (loading && !hasLoadedRef.current)) {
+    return (
+      <div className={styles.container}>
+        <div className={styles.header}>
+          <div className={styles.headerLeft}>
+            <h1 className={styles.title}>
+              <MdPeople size={28} />
+              Gestão de Equipe
+            </h1>
+          </div>
+        </div>
+        <div className={styles.loadingPlaceholder}>
+          <LoadingSpinner text="Carregando membros..." />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={styles.container}>
@@ -530,12 +596,12 @@ export const TeamManagement: React.FC<TeamManagementProps> = ({ organizationId }
           </div>
         </div>
         <div className={styles.statCard}>
-          <div className={styles.statIcon} style={{ background: '#ef4444' }}>
+          <div className={styles.statIcon} style={{ background: '#f59e0b' }}>
             <FiX size={24} />
           </div>
           <div className={styles.statInfo}>
-            <span className={styles.statValue}>{inactiveCount}</span>
-            <span className={styles.statLabel}>Inativos</span>
+            <span className={styles.statValue}>{blockedCount}</span>
+            <span className={styles.statLabel}>Bloqueados</span>
           </div>
         </div>
       </div>
@@ -767,14 +833,14 @@ export const TeamManagement: React.FC<TeamManagementProps> = ({ organizationId }
         </div>
       )}
 
-      {/* Modal de Ativação/Desativação */}
+      {/* Modal de Ativação/Bloqueio */}
       {showStatusModal && memberToToggle && (
         <div className={styles.modalOverlay} onClick={() => setShowStatusModal(false)}>
           <div className={styles.modal} onClick={e => e.stopPropagation()}>
             <div className={styles.modalHeader}>
               <h3 style={{ color: statusAction === 'activate' ? '#10b981' : '#f59e0b' }}>
                 <FiPower size={20} />
-                {statusAction === 'activate' ? 'Ativar Membro' : 'Desativar Membro'}
+                {statusAction === 'activate' ? 'Ativar Membro' : 'Bloquear Membro'}
               </h3>
               <button className={styles.closeButton} onClick={() => setShowStatusModal(false)}>
                 <FiX size={20} />
@@ -782,12 +848,12 @@ export const TeamManagement: React.FC<TeamManagementProps> = ({ organizationId }
             </div>
             <div className={styles.modalBody}>
               <p>
-                Tem certeza que deseja {statusAction === 'activate' ? 'ativar' : 'desativar'} o membro 
+                Tem certeza que deseja {statusAction === 'activate' ? 'ativar' : 'bloquear'} o membro 
                 <strong> {memberToToggle.name}</strong>?
               </p>
-              {statusAction === 'deactivate' && (
+              {statusAction === 'block' && (
                 <p style={{ color: '#f59e0b', marginTop: '8px' }}>
-                  O membro não poderá acessar o sistema enquanto estiver desativado.
+                  O membro não poderá acessar o sistema enquanto estiver bloqueado.
                 </p>
               )}
             </div>
@@ -805,7 +871,7 @@ export const TeamManagement: React.FC<TeamManagementProps> = ({ organizationId }
                 disabled={isToggling}
                 style={{ background: statusAction === 'activate' ? '#10b981' : '#f59e0b' }}
               >
-                {isToggling ? 'Processando...' : (statusAction === 'activate' ? 'Sim, Ativar' : 'Sim, Desativar')}
+                {isToggling ? 'Processando...' : (statusAction === 'activate' ? 'Sim, Ativar' : 'Sim, Bloquear')}
               </button>
             </div>
           </div>
@@ -895,10 +961,11 @@ export const TeamManagement: React.FC<TeamManagementProps> = ({ organizationId }
                     </span>
                   </td>
                   <td>
-                    <span className={`${styles.statusBadge} ${
-                      member.status === 'ACTIVE' ? styles.statusActive : styles.statusInactive
-                    }`}>
-                      {member.status === 'ACTIVE' ? 'Ativo' : 'Inativo'}
+                    <span 
+                      className={styles.statusBadge}
+                      style={{ backgroundColor: teamService.getStatusColor(member.status) }}
+                    >
+                      {teamService.getStatusLabel(member.status)}
                     </span>
                   </td>
                   <td>
@@ -915,7 +982,7 @@ export const TeamManagement: React.FC<TeamManagementProps> = ({ organizationId }
                           member.status === 'ACTIVE' ? styles.warningButton : styles.successButton
                         }`}
                         onClick={() => openStatusModal(member)}
-                        title={member.status === 'ACTIVE' ? 'Desativar' : 'Ativar'}
+                        title={member.status === 'ACTIVE' ? 'Bloquear' : 'Ativar'}
                       >
                         <FiPower size={16} />
                       </button>
@@ -937,3 +1004,5 @@ export const TeamManagement: React.FC<TeamManagementProps> = ({ organizationId }
     </div>
   );
 };
+
+export default TeamManagement;

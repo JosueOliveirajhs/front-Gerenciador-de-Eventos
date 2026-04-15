@@ -1,7 +1,7 @@
 /* src/components/admin/clients/components/ClientFilters.module.css */
 
 .container {
-    background: white;
+    background: var(--card-bg);
     border-radius: 16px;
     margin-bottom: 24px;
     overflow: hidden;
@@ -9,8 +9,8 @@
 }
 
 .card {
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-    border: 1px solid #f1f5f9;
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--card-border);
 }
 
 .header {
@@ -18,8 +18,8 @@
     justify-content: space-between;
     align-items: center;
     padding: 16px 24px;
-    background: linear-gradient(to right, #ffffff, #fafafa);
-    border-bottom: 1px solid #f1f5f9;
+    background: linear-gradient(to right, var(--card-bg), var(--bg-tertiary));
+    border-bottom: 1px solid var(--border-color);
 }
 
 .headerLeft {
@@ -44,15 +44,16 @@
     border-radius: 8px;
     cursor: pointer;
     transition: all 0.2s ease;
+    color: var(--text-secondary);
 }
 
 .toggleButton:hover {
-    background: #f1f5f9;
+    background: var(--bg-tertiary);
 }
 
 .toggleIcon {
     font-size: 12px;
-    color: #64748b;
+    color: var(--text-muted);
 }
 
 .filterIcon {
@@ -62,12 +63,12 @@
 .title {
     font-size: 16px;
     font-weight: 600;
-    color: #1e293b;
+    color: var(--text-primary);
     margin: 0;
 }
 
 .activeBadge {
-    background: #4f46e5;
+    background: #00B4D8;
     color: white;
     padding: 4px 10px;
     border-radius: 20px;
@@ -76,7 +77,7 @@
 }
 
 .resultCount {
-    color: #475569;
+    color: var(--text-secondary);
     font-size: 14px;
     font-weight: 500;
 }
@@ -86,10 +87,10 @@
     align-items: center;
     gap: 6px;
     background: none;
-    border: 1px solid #e2e8f0;
+    border: 1px solid var(--border-color);
     padding: 6px 12px;
     border-radius: 8px;
-    color: #ef4444;
+    color: var(--error-500);
     font-size: 13px;
     font-weight: 500;
     cursor: pointer;
@@ -97,8 +98,8 @@
 }
 
 .clearButton:hover {
-    background: #fee2e2;
-    border-color: #ef4444;
+    background: var(--error-100);
+    border-color: var(--error-500);
 }
 
 .clearIcon {
@@ -110,7 +111,7 @@
     grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
     gap: 20px;
     padding: 24px;
-    background: white;
+    background: var(--card-bg);
 }
 
 .filterGroup {
@@ -125,7 +126,7 @@
     gap: 6px;
     font-size: 13px;
     font-weight: 600;
-    color: #475569;
+    color: var(--text-secondary);
     text-transform: uppercase;
     letter-spacing: 0.5px;
 }
@@ -143,21 +144,22 @@
     width: 100%;
     padding: 12px 16px;
     padding-right: 40px;
-    border: 1px solid #e2e8f0;
+    border: 1px solid var(--input-border);
     border-radius: 10px;
     font-size: 14px;
     transition: all 0.2s ease;
-    background: white;
+    background: var(--input-bg);
+    color: var(--text-primary);
 }
 
 .filterInput:focus {
     outline: none;
-    border-color: #4f46e5;
-    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+    border-color: #00B4D8;
+    box-shadow: 0 0 0 3px rgba(0, 180, 216, 0.1);
 }
 
 .filterInput:hover {
-    border-color: #94a3b8;
+    border-color: var(--gray-400);
 }
 
 .clearInput {
@@ -167,7 +169,7 @@
     transform: translateY(-50%);
     background: none;
     border: none;
-    color: #94a3b8;
+    color: var(--gray-400);
     font-size: 14px;
     cursor: pointer;
     padding: 4px;
@@ -178,8 +180,8 @@
 }
 
 .clearInput:hover {
-    color: #ef4444;
-    background: #f1f5f9;
+    color: var(--error-500);
+    background: var(--bg-tertiary);
 }
 
 /* Responsive */

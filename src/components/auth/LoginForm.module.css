@@ -10,24 +10,66 @@
   display: block;
   margin-bottom: 0.5rem;
   font-weight: 600;
-  color: #374151;
+  color: var(--text-secondary);
   font-size: 0.875rem;
+}
+
+.passwordWrapper {
+  position: relative;
+  width: 100%;
 }
 
 .formInput {
   width: 100%;
   padding: 0.875rem;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--input-border);
   border-radius: 8px;
   font-size: 0.875rem;
   transition: all 0.2s ease;
-  background: white;
+  background: var(--input-bg);
+  color: var(--text-primary);
+}
+
+.passwordWrapper .formInput {
+  padding-right: 2.5rem;
 }
 
 .formInput:focus {
   outline: none;
-  border-color: #6366f1;
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+  border-color: #00B4D8;
+  box-shadow: 0 0 0 3px rgba(0, 180, 216, 0.1);
+}
+
+.formInput:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background: var(--bg-tertiary);
+}
+
+.formInput::placeholder {
+  color: var(--text-muted);
+}
+
+.passwordToggle {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.passwordToggle:hover {
+  color: var(--text-primary);
+  background: var(--bg-tertiary);
 }
 
 .forgotPassword {
@@ -48,12 +90,12 @@
 }
 
 .errorMessage {
-  background: #fef2f2;
-  color: #dc2626;
+  background: var(--error-50);
+  color: var(--error-600);
   padding: 0.75rem;
   border-radius: 8px;
   margin-bottom: 1rem;
-  border: 1px solid #fecaca;
+  border: 1px solid var(--error-100);
   font-size: 0.875rem;
   text-align: center;
 }
@@ -73,8 +115,9 @@
 }
 
 .submitButton:hover:not(:disabled) {
+  background: #0096b4;
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+  box-shadow: 0 4px 12px rgba(0, 180, 216, 0.3);
 }
 
 .submitButton:active {
