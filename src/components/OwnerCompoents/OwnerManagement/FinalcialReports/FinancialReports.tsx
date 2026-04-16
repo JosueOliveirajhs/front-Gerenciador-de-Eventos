@@ -48,6 +48,7 @@ import {
 import { Event } from '../../../../types/Event';
 import { eventService } from '../../../../services/events';
 import { expenseService, Expense, CreateExpenseDTO, EXPENSE_CATEGORIES } from '../../../../services/expense';
+import { Pagination } from '../../../common/Pagination/Pagination';
 import { ConfirmationModal } from '../../../common/Alerts/ConfirmationModal';
 import { ErrorModal } from '../../../common/Alerts/ErrorModal';
 import styles from './FinancialReports.module.css';
@@ -239,6 +240,10 @@ export const FinancialReports: React.FC = () => {
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [preSelectedEventId, setPreSelectedEventId] = useState<number | null>(null);
   
+  // ✅ ESTADOS DE PAGINAÇÃO
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+  
   // Estados dos filtros
   const [showExpenseFilters, setShowExpenseFilters] = useState(false);
   const [showEventFilters, setShowEventFilters] = useState(false);
@@ -282,17 +287,6 @@ export const FinancialReports: React.FC = () => {
         despesas: expensesData.length
       });
       
-      console.log('📋 Lista completa de despesas:');
-      expensesData.forEach((exp: Expense) => {
-        console.log(`  💵 Despesa ID ${exp.id}: Evento ${exp.eventId} - ${exp.descricao} - R$ ${exp.valor} - Status: ${exp.status}`);
-      });
-      
-      console.log('📋 Lista completa de eventos:');
-      eventsData.forEach((ev: Event) => {
-        const eventExpenses = expensesData.filter((exp: Expense) => Number(exp.eventId) === Number(ev.id));
-        console.log(`  📅 Evento ID ${ev.id}: "${ev.title}" - ${eventExpenses.length} despesas - Total: R$ ${eventExpenses.reduce((s, e) => s + Number(e.valor), 0)}`);
-      });
-      
       setEvents(eventsData);
       setExpenses(expensesData);
       
@@ -307,6 +301,11 @@ export const FinancialReports: React.FC = () => {
   useEffect(() => {
     loadData();
   }, [loadData, refreshTrigger]);
+
+  // ✅ Resetar página quando filtros mudarem
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [eventFilters, expenseFilters, selectedMonth, selectedPeriod]);
 
   // CRUD de despesas
   const handleAddExpense = async (expenseData: CreateExpenseDTO) => {
@@ -694,6 +693,13 @@ export const FinancialReports: React.FC = () => {
       };
     }).sort((a, b) => new Date(b.eventDate).getTime() - new Date(a.eventDate).getTime());
   }, [filteredEvents, filteredExpenses]);
+
+  // ✅ Eventos paginados
+  const paginatedEvents = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return eventFinancials.slice(startIndex, endIndex);
+  }, [eventFinancials, currentPage, itemsPerPage]);
 
   // Handlers
   const handleOpenExpenseModal = useCallback((expense?: Expense, eventId?: number) => {
@@ -1276,7 +1282,7 @@ export const FinancialReports: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              {eventFinancials.map(event => (
+              {paginatedEvents.map(event => (
                 <React.Fragment key={event.eventId}>
                   <tr className={styles.eventRow}>
                     <td className={styles.eventTitleCell}>
@@ -1436,6 +1442,22 @@ export const FinancialReports: React.FC = () => {
             </tbody>
           </table>
         </div>
+
+        {/* ✅ PAGINAÇÃO */}
+        {eventFinancials.length > 0 && (
+          <div className={styles.paginationWrapper}>
+            <span className={styles.paginationInfo}>
+              <MdEvent size={14} />
+              Total: {eventFinancials.length} {eventFinancials.length === 1 ? 'evento' : 'eventos'}
+            </span>
+            <Pagination 
+              currentPage={currentPage}
+              totalItems={eventFinancials.length}
+              itemsPerPage={itemsPerPage}
+              onPageChange={setCurrentPage}
+            />
+          </div>
+        )}
       </div>
 
       {/* Modal de Despesas */}

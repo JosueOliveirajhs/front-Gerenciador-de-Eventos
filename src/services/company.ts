@@ -1,3 +1,4 @@
+// src/services/companyService.ts
 import { api } from './api';
 import { 
   Company, 
@@ -46,12 +47,8 @@ export const companyService = {
     } catch (error: any) {
       console.error('❌ Erro ao buscar empresas:', error);
       
-      // Em desenvolvimento, retorna dados mockados
-      if (import.meta.env.DEV) {
-        console.log('🔧 Usando dados mockados');
-        return getMockEmpresas();
-      }
-      
+      // REMOVIDO O FALLBACK PARA MOCK
+      // Agora sempre lança o erro para ser tratado pelo componente
       throw error;
     }
   },
@@ -187,6 +184,13 @@ export const companyService = {
         return acc;
       }, {} as Record<CategoriaEmpresa, number>);
       
+      // Inicializa categorias vazias com 0
+      ['Buffet', 'Decoracao', 'Fotografia', 'Outros'].forEach(cat => {
+        if (!porCategoria[cat as CategoriaEmpresa]) {
+          porCategoria[cat as CategoriaEmpresa] = 0;
+        }
+      });
+      
       // Média das avaliações
       const avaliacoes = empresas
         .filter(e => e.avaliacao !== undefined && e.avaliacao !== null)
@@ -207,11 +211,7 @@ export const companyService = {
     } catch (error) {
       console.error('❌ Erro ao calcular estatísticas:', error);
       
-      // Retorna stats mockados em desenvolvimento
-      if (import.meta.env.DEV) {
-        return getMockStats();
-      }
-      
+      // Retorna stats vazios em caso de erro
       return {
         total: 0,
         porCategoria: { Buffet: 0, Decoracao: 0, Fotografia: 0, Outros: 0 },
@@ -415,98 +415,5 @@ function isValidPhone(phone: string): boolean {
   return cleaned.length === 10 || cleaned.length === 11;
 }
 
-/**
- * ==================== DADOS MOCKADOS ====================
- */
-
-// Gera empresas mockadas para desenvolvimento
-function getMockEmpresas(): EmpresaResponse[] {
-  return [
-    {
-      id: 1,
-      nome: 'Buffet Festas e Eventos',
-      descricao: 'Buffet especializado em casamentos e eventos corporativos com mais de 10 anos de experiência. Oferecemos menu personalizado e equipe dedicada.',
-      categoria: 'Buffet',
-      avaliacao: 4.8,
-      observacao: 'Cliente solicitou orçamento para casamento em dezembro. Interessado no menu premium.',
-      localizacao: 'São Paulo, SP',
-      telefone: '11999990000',
-      email: 'contato@buffetfestas.com',
-      verificado: true
-    },
-    {
-      id: 2,
-      nome: 'Decorações Luxo',
-      descricao: 'Decoração de eventos com design exclusivo e personalizado. Especialistas em casamentos e formaturas.',
-      categoria: 'Decoracao',
-      avaliacao: 4.5,
-      observacao: 'Fez a decoração do evento da Maria em janeiro. Cliente elogiou muito.',
-      localizacao: 'Rio de Janeiro, RJ',
-      telefone: '21988887777',
-      email: 'contato@decoracoesluxo.com',
-      verificado: true
-    },
-    {
-      id: 3,
-      nome: 'FotoStudio Profissional',
-      descricao: 'Fotografia e filmagem de eventos com equipamentos de última geração. Entrega rápida e qualidade garantida.',
-      categoria: 'Fotografia',
-      avaliacao: 4.2,
-      localizacao: 'Belo Horizonte, MG',
-      telefone: '31977776666',
-      email: 'contato@fotostudio.com',
-      verificado: false
-    },
-    {
-      id: 4,
-      nome: 'Espaço Villa Eventos',
-      descricao: 'Espaço para eventos com estrutura completa, estacionamento e área verde. Capacidade para 500 pessoas.',
-      categoria: 'Outros',
-      avaliacao: 4.7,
-      observacao: 'Ótimo espaço para eventos corporativos. Tem parceria com buffets da região.',
-      localizacao: 'Campinas, SP',
-      telefone: '19966665555',
-      email: 'contato@villaspace.com',
-      verificado: true
-    },
-    {
-      id: 5,
-      nome: 'DJ Mix Eventos',
-      descricao: 'Serviço de DJ e som profissional para todos os tipos de evento. Equipamentos de alta qualidade.',
-      categoria: 'Outros',
-      avaliacao: 4.3,
-      localizacao: 'Curitiba, PR',
-      telefone: '41955554444',
-      email: 'contato@djmix.com',
-      verificado: false
-    },
-    {
-      id: 6,
-      nome: 'Cerimonial Perfeito',
-      descricao: 'Assessoria completa para eventos, desde o planejamento até a execução. Organização e tranquilidade para seu evento.',
-      categoria: 'Outros',
-      avaliacao: 4.9,
-      observacao: 'Excelente profissional. Recomendada por vários clientes.',
-      localizacao: 'Brasília, DF',
-      telefone: '61944443333',
-      email: 'contato@cerimonial.com',
-      verificado: true
-    }
-  ];
-}
-
-// Gera estatísticas mockadas
-function getMockStats(): CompanyStats {
-  return {
-    total: 6,
-    porCategoria: {
-      Buffet: 1,
-      Decoracao: 1,
-      Fotografia: 1,
-      Outros: 3
-    },
-    verificadas: 4,
-    naoVerificadas: 2,
-    mediaAvaliacoes: 4.6
-  };
-}
+// TODOS OS DADOS MOCKADOS FORAM REMOVIDOS
+// Agora o serviço sempre usa a API real

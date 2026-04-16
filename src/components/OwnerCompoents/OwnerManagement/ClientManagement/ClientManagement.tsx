@@ -22,6 +22,7 @@ import { userService } from '../../../../services/users';
 import { receiptService } from '../../../../services/receipts';
 import { boletoService } from '../../../../services/boletos';
 import { eventService } from '../../../../services/events';
+import { Pagination } from '../../../common/Pagination/Pagination';
 
 import { LoadingSpinner } from '../../../common/Loading/LoadingSpinner';
 import { EmptyState } from '../../../common/EmptyState/EmptyState';
@@ -115,38 +116,51 @@ export const ClientManagement: React.FC = () => {
     withoutEvents: 0
   });
 
-  // Carregar clientes e eventos
+  // ✅ ESTADOS DE PAGINAÇÃO
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+
+  // ✅ CARREGAMENTO OTIMIZADO - Busca todos os eventos de uma vez
   const loadClients = useCallback(async () => {
     if (!isVisible || hasLoadedRef.current) return;
     
     try {
       setLoading(true);
-      console.log('🔍 Carregando clientes...');
+      console.log('🔍 Carregando clientes e eventos...');
       
-      const clientsData = await userService.getAllClients();
-      console.log('✅ Clientes carregados:', clientsData.length);
+      // ✅ Buscar clientes e TODOS os eventos em PARALELO (apenas 2 chamadas)
+      const [clientsData, allEvents] = await Promise.all([
+        userService.getAllClients(),
+        eventService.getAllEvents()
+      ]);
       
-      // Carregar contagem de eventos para cada cliente
+      console.log(`✅ ${clientsData.length} clientes carregados`);
+      console.log(`✅ ${allEvents.length} eventos carregados`);
+      
+      // ✅ Mapear eventos por cliente (processamento local, sem chamadas adicionais)
       const eventsMap = new Map<number, number>();
       let activeCount = 0;
       let blockedCount = 0;
       let terminatedCount = 0;
       let withEventsCount = 0;
       
-      for (const client of clientsData) {
-        try {
-          const events = await eventService.getEventsByClientId(client.id);
-          eventsMap.set(client.id, events.length);
-          if (events.length > 0) withEventsCount++;
-          
-          // Contar por status
-          if (client.status === 'ACTIVE') activeCount++;
-          else if (client.status === 'BLOCKED') blockedCount++;
-          else if (client.status === 'TERMINATED') terminatedCount++;
-        } catch (error) {
-          eventsMap.set(client.id, 0);
+      // Contar eventos por cliente
+      allEvents.forEach(event => {
+        if (event.clientId) {
+          const currentCount = eventsMap.get(event.clientId) || 0;
+          eventsMap.set(event.clientId, currentCount + 1);
         }
-      }
+      });
+      
+      // Processar estatísticas
+      clientsData.forEach(client => {
+        const eventCount = eventsMap.get(client.id) || 0;
+        if (eventCount > 0) withEventsCount++;
+        
+        if (client.status === 'ACTIVE') activeCount++;
+        else if (client.status === 'BLOCKED') blockedCount++;
+        else if (client.status === 'TERMINATED') terminatedCount++;
+      });
       
       setClientEventsMap(eventsMap);
       setClients(clientsData);
@@ -182,30 +196,44 @@ export const ClientManagement: React.FC = () => {
     }
   }, [isVisible, loadClients]);
 
+  // ✅ Resetar página quando filtros mudarem
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filters, advancedFilters]);
+
+  // ✅ Recarregar clientes (OTIMIZADO)
   const reloadClients = useCallback(async () => {
     try {
       setLoading(true);
-      const clientsData = await userService.getAllClients();
       
+      // ✅ Buscar clientes e eventos em paralelo
+      const [clientsData, allEvents] = await Promise.all([
+        userService.getAllClients(),
+        eventService.getAllEvents()
+      ]);
+      
+      // Mapear eventos por cliente
       const eventsMap = new Map<number, number>();
       let activeCount = 0;
       let blockedCount = 0;
       let terminatedCount = 0;
       let withEventsCount = 0;
       
-      for (const client of clientsData) {
-        try {
-          const events = await eventService.getEventsByClientId(client.id);
-          eventsMap.set(client.id, events.length);
-          if (events.length > 0) withEventsCount++;
-          
-          if (client.status === 'ACTIVE') activeCount++;
-          else if (client.status === 'BLOCKED') blockedCount++;
-          else if (client.status === 'TERMINATED') terminatedCount++;
-        } catch (error) {
-          eventsMap.set(client.id, 0);
+      allEvents.forEach(event => {
+        if (event.clientId) {
+          const currentCount = eventsMap.get(event.clientId) || 0;
+          eventsMap.set(event.clientId, currentCount + 1);
         }
-      }
+      });
+      
+      clientsData.forEach(client => {
+        const eventCount = eventsMap.get(client.id) || 0;
+        if (eventCount > 0) withEventsCount++;
+        
+        if (client.status === 'ACTIVE') activeCount++;
+        else if (client.status === 'BLOCKED') blockedCount++;
+        else if (client.status === 'TERMINATED') terminatedCount++;
+      });
       
       setClientEventsMap(eventsMap);
       setClients(clientsData);
@@ -219,6 +247,8 @@ export const ClientManagement: React.FC = () => {
         withEvents: withEventsCount,
         withoutEvents: clientsData.length - withEventsCount
       });
+      
+      setCurrentPage(1);
     } catch (error) {
       console.error('Erro ao recarregar clientes:', error);
       setErrorMessage('Erro ao carregar clientes. Tente novamente.');
@@ -295,6 +325,13 @@ export const ClientManagement: React.FC = () => {
       applyFilters();
     }
   }, [applyFilters, clients.length]);
+
+  // ✅ Clientes paginados
+  const paginatedClients = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return filteredClients.slice(startIndex, endIndex);
+  }, [filteredClients, currentPage, itemsPerPage]);
 
   // Handlers de filtro
   const handleFilterChange = useCallback((field: keyof Filters, value: string) => {
@@ -387,12 +424,19 @@ export const ClientManagement: React.FC = () => {
     }
     
     try {
-      const clientEvents = await eventService.getEventsByClientId(client.id);
-      const hasEvents = clientEvents.length > 0;
+      // ✅ Usar o mapa de eventos que já temos (mais rápido)
+      const eventCount = clientEventsMap.get(client.id) || 0;
+      const hasEvents = eventCount > 0;
+      
+      // Se precisar dos detalhes dos eventos, buscar apenas quando necessário
+      let clientEvents: any[] = [];
+      if (hasEvents) {
+        clientEvents = await eventService.getEventsByClientId(client.id);
+      }
       
       setLinkedItemsInfo({
         hasEvents,
-        eventsCount: clientEvents.length,
+        eventsCount: eventCount,
         events: clientEvents,
         hasReceipts: false,
         hasBoletos: false
@@ -429,6 +473,13 @@ export const ClientManagement: React.FC = () => {
       
       setClients(prev => prev.filter(c => c.id !== clientToDelete.id));
       setFilteredClients(prev => prev.filter(c => c.id !== clientToDelete.id));
+      
+      // Atualizar mapa de eventos
+      setClientEventsMap(prev => {
+        const newMap = new Map(prev);
+        newMap.delete(clientToDelete.id);
+        return newMap;
+      });
       
       setShowDeleteModal(false);
       setSuccessMessage(`Cliente ${clientToDelete.name} excluído com sucesso!`);
@@ -669,7 +720,6 @@ export const ClientManagement: React.FC = () => {
           {showAdvancedFilters && (
             <div className={styles.advancedFilters}>
               <div className={styles.advancedFiltersGrid}>
-                {/* Filtro por Status */}
                 <div className={styles.filterGroup}>
                   <label className={styles.filterLabel}>
                     <FiCheckCircle size={14} />
@@ -690,7 +740,6 @@ export const ClientManagement: React.FC = () => {
                   </select>
                 </div>
 
-                {/* Filtro por Eventos */}
                 <div className={styles.filterGroup}>
                   <label className={styles.filterLabel}>
                     <FiCalendar size={14} />
@@ -710,7 +759,6 @@ export const ClientManagement: React.FC = () => {
                   </select>
                 </div>
 
-                {/* Filtro por Data de Cadastro */}
                 <div className={styles.filterGroup}>
                   <label className={styles.filterLabel}>
                     <FiCalendar size={14} />
@@ -742,7 +790,6 @@ export const ClientManagement: React.FC = () => {
                 </div>
               </div>
 
-              {/* Ações dos filtros avançados */}
               <div className={styles.advancedFiltersActions}>
                 <button 
                   onClick={handleClearAdvancedFilters}
@@ -860,13 +907,31 @@ export const ClientManagement: React.FC = () => {
           />
         </div>
       ) : (
-        <ClientTable
-          clients={filteredClients}
-          onEdit={setEditingClient}
-          onDelete={openDeleteModal}
-          onViewReceipts={handleViewReceipts}
-          onViewBoletos={handleViewBoletos}
-        />
+        <>
+          <ClientTable
+            clients={paginatedClients}
+            onEdit={setEditingClient}
+            onDelete={openDeleteModal}
+            onViewReceipts={handleViewReceipts}
+            onViewBoletos={handleViewBoletos}
+          />
+          
+          {/* ✅ PAGINAÇÃO */}
+          {filteredClients.length > 0 && (
+            <div className={styles.paginationWrapper}>
+              <span className={styles.paginationInfo}>
+                <FiUsers size={14} />
+                Total: {filteredClients.length} {filteredClients.length === 1 ? 'cliente' : 'clientes'}
+              </span>
+              <Pagination 
+                currentPage={currentPage}
+                totalItems={filteredClients.length}
+                itemsPerPage={itemsPerPage}
+                onPageChange={setCurrentPage}
+              />
+            </div>
+          )}
+        </>
       )}
     </div>
   );

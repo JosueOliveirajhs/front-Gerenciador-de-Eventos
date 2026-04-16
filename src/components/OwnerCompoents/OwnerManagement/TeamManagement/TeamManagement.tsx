@@ -16,6 +16,7 @@ import {
 } from 'react-icons/md';
 import { teamService, CreateMemberDTO, UpdateMemberDTO } from '../../../../services/teamService';
 import { User } from '../../../../types/developer';
+import { Pagination } from '../../../common/Pagination/Pagination';
 import { LoadingSpinner } from '../../../common/Loading/LoadingSpinner';
 import { EmptyState } from '../../../common/EmptyState/EmptyState';
 import { ConfirmationModal } from '../../../common/Alerts/ConfirmationModal';
@@ -35,11 +36,9 @@ interface Filters {
 }
 
 export const TeamManagement: React.FC<TeamManagementProps> = ({ organizationId }) => {
-  // ✅ Flag para controlar se o componente está visível
   const [isVisible, setIsVisible] = useState(false);
   const hasLoadedRef = useRef(false);
   
-  // Estados principais
   const [members, setMembers] = useState<User[]>([]);
   const [filteredMembers, setFilteredMembers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
@@ -47,27 +46,22 @@ export const TeamManagement: React.FC<TeamManagementProps> = ({ organizationId }
   const [editingMember, setEditingMember] = useState<User | null>(null);
   const [showFilters, setShowFilters] = useState(true);
   
-  // Estados para o modal de exclusão
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [memberToDelete, setMemberToDelete] = useState<User | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   
-  // Estados para modal de ativação/desativação (bloquear/ativar)
   const [showStatusModal, setShowStatusModal] = useState(false);
   const [memberToToggle, setMemberToToggle] = useState<User | null>(null);
   const [statusAction, setStatusAction] = useState<'activate' | 'block'>('activate');
   const [isToggling, setIsToggling] = useState(false);
   
-  // Estados para modal de sucesso
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   const [successType, setSuccessType] = useState<'create' | 'update' | 'delete' | 'status'>('create');
   
-  // Estados para modal de erro
   const [showError, setShowError] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   
-  // Estados para formulário
   const [formData, setFormData] = useState<CreateMemberDTO>({
     name: '',
     email: '',
@@ -77,7 +71,6 @@ export const TeamManagement: React.FC<TeamManagementProps> = ({ organizationId }
     password: ''
   });
   
-  // Filtros
   const [filters, setFilters] = useState<Filters>({
     name: '',
     email: '',
@@ -86,7 +79,10 @@ export const TeamManagement: React.FC<TeamManagementProps> = ({ organizationId }
     status: ''
   });
 
-  // Roles disponíveis
+  // ✅ ESTADOS DE PAGINAÇÃO
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+
   const roles = [
     { value: 'ADMIN', label: 'Administrador' },
     { value: 'DIRECTOR', label: 'Diretor' },
@@ -95,7 +91,6 @@ export const TeamManagement: React.FC<TeamManagementProps> = ({ organizationId }
     { value: 'OWNER', label: 'Proprietário' }
   ];
 
-  // ✅ Status disponíveis para filtro (CORRIGIDO)
   const statusOptions = [
     { value: '', label: 'Todos' },
     { value: 'ACTIVE', label: 'Ativo' },
@@ -103,13 +98,11 @@ export const TeamManagement: React.FC<TeamManagementProps> = ({ organizationId }
     { value: 'TERMINATED', label: 'Desligado' }
   ];
 
-  // ✅ Só carrega dados quando o componente estiver visível
   useEffect(() => {
     setIsVisible(true);
     return () => setIsVisible(false);
   }, []);
 
-  // ✅ Carregar membros - SÓ quando visível e ainda não carregou
   const loadMembers = useCallback(async () => {
     if (!isVisible || hasLoadedRef.current) return;
     
@@ -129,20 +122,24 @@ export const TeamManagement: React.FC<TeamManagementProps> = ({ organizationId }
     }
   }, [isVisible]);
 
-  // ✅ useEffect para carregar dados APENAS quando visível
   useEffect(() => {
     if (isVisible && !hasLoadedRef.current) {
       loadMembers();
     }
   }, [isVisible, loadMembers]);
 
-  // ✅ Recarregar membros (quando necessário)
+  // ✅ Resetar página quando filtros mudarem
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filters, members.length]);
+
   const reloadMembers = useCallback(async () => {
     try {
       setLoading(true);
       const data = await teamService.getTeamMembers();
       setMembers(data);
       setFilteredMembers(data);
+      setCurrentPage(1);
     } catch (error) {
       console.error('Erro ao carregar membros:', error);
       setErrorMessage('Erro ao carregar membros da equipe. Tente novamente.');
@@ -152,7 +149,6 @@ export const TeamManagement: React.FC<TeamManagementProps> = ({ organizationId }
     }
   }, []);
 
-  // ✅ Aplicar filtros - MEMOIZADO
   const applyFilters = useCallback(() => {
     if (!members.length) return;
     
@@ -188,14 +184,19 @@ export const TeamManagement: React.FC<TeamManagementProps> = ({ organizationId }
     setFilteredMembers(result);
   }, [filters, members]);
 
-  // ✅ useEffect para filtros - só quando há dados
   useEffect(() => {
     if (members.length > 0) {
       applyFilters();
     }
   }, [applyFilters, members.length]);
 
-  // Handlers de filtro
+  // ✅ Membros paginados
+  const paginatedMembers = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return filteredMembers.slice(startIndex, endIndex);
+  }, [filteredMembers, currentPage, itemsPerPage]);
+
   const handleFilterChange = useCallback((field: keyof Filters, value: string) => {
     setFilters(prev => ({ ...prev, [field]: value }));
   }, []);
@@ -210,7 +211,6 @@ export const TeamManagement: React.FC<TeamManagementProps> = ({ organizationId }
     });
   }, []);
 
-  // Handlers de membro
   const handleCreateMember = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -374,7 +374,6 @@ export const TeamManagement: React.FC<TeamManagementProps> = ({ organizationId }
     }
   };
 
-  // ✅ CORRIGIDO: Abrir modal de status com mapeamento correto
   const openStatusModal = (member: User) => {
     if (!member || !member.id) {
       setErrorMessage('Membro inválido');
@@ -383,12 +382,10 @@ export const TeamManagement: React.FC<TeamManagementProps> = ({ organizationId }
     }
     
     setMemberToToggle(member);
-    // Se estiver ATIVO, ação será BLOQUEAR; se BLOQUEADO, ação será ATIVAR
     setStatusAction(member.status === 'ACTIVE' ? 'block' : 'activate');
     setShowStatusModal(true);
   };
 
-  // ✅ CORRIGIDO: Alternar status com mapeamento correto
   const handleToggleStatus = async () => {
     if (!memberToToggle || !memberToToggle.id) {
       setErrorMessage('Membro não encontrado');
@@ -502,18 +499,15 @@ export const TeamManagement: React.FC<TeamManagementProps> = ({ organizationId }
     setFormData(prev => ({ ...prev, phone: formatted }));
   };
 
-  // ✅ Estatísticas memoizadas
   const activeCount = useMemo(() => members.filter(m => m.status === 'ACTIVE').length, [members]);
   const blockedCount = useMemo(() => members.filter(m => m.status === 'BLOCKED').length, [members]);
 
-  // ✅ Valores memoizados
   const hasActiveFilters = useMemo(() => {
     return Object.values(filters).some(v => v.trim() !== '');
   }, [filters]);
 
   const showEmptyState = filteredMembers.length === 0;
 
-  // ✅ Se não estiver visível ou carregando inicialmente
   if (!isVisible || (loading && !hasLoadedRef.current)) {
     return (
       <div className={styles.container}>
@@ -925,81 +919,99 @@ export const TeamManagement: React.FC<TeamManagementProps> = ({ organizationId }
           />
         </div>
       ) : (
-        <div className={styles.tableContainer}>
-          <table className={styles.table}>
-            <thead>
-              <tr>
-                <th>Nome</th>
-                <th>E-mail</th>
-                <th>CPF</th>
-                <th>Telefone</th>
-                <th>Função</th>
-                <th>Status</th>
-                <th>Ações</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredMembers.map(member => (
-                <tr key={member.id}>
-                  <td>
-                    <div className={styles.memberName}>
-                      <div className={styles.memberAvatar}>
-                        <FiUser size={18} />
-                      </div>
-                      <span>{member.name}</span>
-                    </div>
-                  </td>
-                  <td>{member.email}</td>
-                  <td>{teamService.formatCPF(member.cpf)}</td>
-                  <td>{teamService.formatPhone(member.phone) || '-'}</td>
-                  <td>
-                    <span 
-                      className={styles.roleBadge}
-                      style={{ backgroundColor: teamService.getRoleColor(member.role) }}
-                    >
-                      {teamService.getRoleLabel(member.role)}
-                    </span>
-                  </td>
-                  <td>
-                    <span 
-                      className={styles.statusBadge}
-                      style={{ backgroundColor: teamService.getStatusColor(member.status) }}
-                    >
-                      {teamService.getStatusLabel(member.status)}
-                    </span>
-                  </td>
-                  <td>
-                    <div className={styles.actionButtons}>
-                      <button 
-                        className={styles.actionButton}
-                        onClick={() => handleEditMember(member)}
-                        title="Editar"
-                      >
-                        <FiEdit2 size={16} />
-                      </button>
-                      <button 
-                        className={`${styles.actionButton} ${
-                          member.status === 'ACTIVE' ? styles.warningButton : styles.successButton
-                        }`}
-                        onClick={() => openStatusModal(member)}
-                        title={member.status === 'ACTIVE' ? 'Bloquear' : 'Ativar'}
-                      >
-                        <FiPower size={16} />
-                      </button>
-                      <button 
-                        className={`${styles.actionButton} ${styles.dangerButton}`}
-                        onClick={() => openDeleteModal(member)}
-                        title="Remover"
-                      >
-                        <FiTrash2 size={16} />
-                      </button>
-                    </div>
-                  </td>
+        <>
+          <div className={styles.tableContainer}>
+            <table className={styles.table}>
+              <thead>
+                <tr>
+                  <th>Nome</th>
+                  <th>E-mail</th>
+                  <th>CPF</th>
+                  <th>Telefone</th>
+                  <th>Função</th>
+                  <th>Status</th>
+                  <th>Ações</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {paginatedMembers.map(member => (
+                  <tr key={member.id}>
+                    <td>
+                      <div className={styles.memberName}>
+                        <div className={styles.memberAvatar}>
+                          <FiUser size={18} />
+                        </div>
+                        <span>{member.name}</span>
+                      </div>
+                    </td>
+                    <td>{member.email}</td>
+                    <td>{teamService.formatCPF(member.cpf)}</td>
+                    <td>{teamService.formatPhone(member.phone) || '-'}</td>
+                    <td>
+                      <span 
+                        className={styles.roleBadge}
+                        style={{ backgroundColor: teamService.getRoleColor(member.role) }}
+                      >
+                        {teamService.getRoleLabel(member.role)}
+                      </span>
+                    </td>
+                    <td>
+                      <span 
+                        className={styles.statusBadge}
+                        style={{ backgroundColor: teamService.getStatusColor(member.status) }}
+                      >
+                        {teamService.getStatusLabel(member.status)}
+                      </span>
+                    </td>
+                    <td>
+                      <div className={styles.actionButtons}>
+                        <button 
+                          className={styles.actionButton}
+                          onClick={() => handleEditMember(member)}
+                          title="Editar"
+                        >
+                          <FiEdit2 size={16} />
+                        </button>
+                        <button 
+                          className={`${styles.actionButton} ${
+                            member.status === 'ACTIVE' ? styles.warningButton : styles.successButton
+                          }`}
+                          onClick={() => openStatusModal(member)}
+                          title={member.status === 'ACTIVE' ? 'Bloquear' : 'Ativar'}
+                        >
+                          <FiPower size={16} />
+                        </button>
+                        <button 
+                          className={`${styles.actionButton} ${styles.dangerButton}`}
+                          onClick={() => openDeleteModal(member)}
+                          title="Remover"
+                        >
+                          <FiTrash2 size={16} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          
+          {/* ✅ PAGINAÇÃO */}
+          {filteredMembers.length > 0 && (
+            <div className={styles.paginationWrapper}>
+              <span className={styles.paginationInfo}>
+                <FiUsers size={14} />
+                Total: {filteredMembers.length} {filteredMembers.length === 1 ? 'membro' : 'membros'}
+              </span>
+              <Pagination 
+                currentPage={currentPage}
+                totalItems={filteredMembers.length}
+                itemsPerPage={itemsPerPage}
+                onPageChange={setCurrentPage}
+              />
+            </div>
+          )}
+        </>
       )}
     </div>
   );

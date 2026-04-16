@@ -31,6 +31,7 @@ import {
   FaBoxes
 } from 'react-icons/fa';
 import { dashboardService, DashboardStats } from "../../../../services/dashboard";
+import { Pagination } from "../../../common/Pagination/Pagination";
 import { EmptyState } from "../../../common/EmptyState/EmptyState";
 import { useTheme } from "../../../../context/ThemeContext";
 import Chart from 'react-apexcharts';
@@ -108,6 +109,10 @@ export const OwnerDashboard: React.FC = () => {
     searchTerm: ''
   });
 
+  // ✅ ESTADOS DE PAGINAÇÃO
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
+
   const textColor = isDark ? '#f1f5f9' : '#263238';
   const textSecondary = isDark ? '#cbd5e1' : '#64748b';
   const gridColor = isDark ? '#334155' : '#e0e0e0';
@@ -119,6 +124,11 @@ export const OwnerDashboard: React.FC = () => {
   useEffect(() => {
     setChartKey(prev => prev + 1);
   }, [isDark]);
+
+  // ✅ Resetar página quando filtros mudarem
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filters]);
 
   const loadDashboardData = async () => {
     try {
@@ -212,6 +222,13 @@ export const OwnerDashboard: React.FC = () => {
       return true;
     });
   }, [stats.upcomingEvents, filters]);
+
+  // ✅ Eventos paginados
+  const paginatedEvents = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return filteredUpcomingEvents.slice(startIndex, endIndex);
+  }, [filteredUpcomingEvents, currentPage, itemsPerPage]);
 
   const hasActiveFilters = useMemo(() => {
     return filters.searchTerm !== '' ||
@@ -843,7 +860,6 @@ export const OwnerDashboard: React.FC = () => {
 
         {showFilters && (
           <div className={styles.filtersPanel}>
-            {/* Barra de busca */}
             <div className={styles.searchBox}>
               <FiSearch size={16} />
               <input
@@ -864,7 +880,6 @@ export const OwnerDashboard: React.FC = () => {
             </div>
 
             <div className={styles.filtersGrid}>
-              {/* Período */}
               <div className={styles.filterGroup}>
                 <label><FiCalendar size={14} /> Período</label>
                 <select
@@ -879,7 +894,6 @@ export const OwnerDashboard: React.FC = () => {
                 </select>
               </div>
 
-              {/* Período Personalizado */}
               {filters.period === 'CUSTOM' && (
                 <div className={styles.filterGroup}>
                   <label><FiCalendar size={14} /> Intervalo</label>
@@ -901,7 +915,6 @@ export const OwnerDashboard: React.FC = () => {
                 </div>
               )}
 
-              {/* Tipo de Evento */}
               <div className={styles.filterGroup}>
                 <label><MdEvent size={14} /> Tipo de Evento</label>
                 <select
@@ -915,7 +928,6 @@ export const OwnerDashboard: React.FC = () => {
                 </select>
               </div>
 
-              {/* Status */}
               <div className={styles.filterGroup}>
                 <label><FiCheckCircle size={14} /> Status</label>
                 <select
@@ -929,7 +941,6 @@ export const OwnerDashboard: React.FC = () => {
                 </select>
               </div>
 
-              {/* Faixa de Valor */}
               <div className={styles.filterGroup}>
                 <label><MdAttachMoney size={14} /> Valor do Evento</label>
                 <div className={styles.valueRangeInputs}>
@@ -956,7 +967,6 @@ export const OwnerDashboard: React.FC = () => {
               </div>
             </div>
 
-            {/* Ações dos filtros */}
             <div className={styles.filtersActions}>
               <span className={styles.filterResults}>
                 <strong>{filteredUpcomingEvents.length}</strong> evento(s) encontrado(s)
@@ -1003,36 +1013,54 @@ export const OwnerDashboard: React.FC = () => {
             } : undefined}
           />
         ) : (
-          <div className={styles.eventsList}>
-            {filteredUpcomingEvents.map((event) => (
-              <div key={event.id} className={styles.eventCard}>
-                <div className={styles.eventDate}>
-                  <span className={styles.dateDay}>
-                    {new Date(event.eventDate).getDate()}
-                  </span>
-                  <span className={styles.dateMonth}>
-                    {new Date(event.eventDate).toLocaleDateString("pt-BR", { month: "short" })}
-                  </span>
+          <>
+            <div className={styles.eventsList}>
+              {paginatedEvents.map((event) => (
+                <div key={event.id} className={styles.eventCard}>
+                  <div className={styles.eventDate}>
+                    <span className={styles.dateDay}>
+                      {new Date(event.eventDate).getDate()}
+                    </span>
+                    <span className={styles.dateMonth}>
+                      {new Date(event.eventDate).toLocaleDateString("pt-BR", { month: "short" })}
+                    </span>
+                  </div>
+                  <div className={styles.eventInfo}>
+                    <h4 className={styles.eventTitle}>{event.title}</h4>
+                    <p className={styles.eventDetails}>
+                      <FaBoxes size={12} /> {event.guestCount} convidados • {event.eventType}
+                    </p>
+                    <p className={styles.clientName}>
+                      <MdPeople size={12} />
+                      <strong>Cliente:</strong> {event.client?.name || "N/A"}
+                    </p>
+                  </div>
+                  <div className={styles.eventValue}>
+                    <span className={styles.valueAmount}>
+                      <MdAttachMoney size={14} />
+                      {formatCurrency(event.totalValue)}
+                    </span>
+                  </div>
                 </div>
-                <div className={styles.eventInfo}>
-                  <h4 className={styles.eventTitle}>{event.title}</h4>
-                  <p className={styles.eventDetails}>
-                    <FaBoxes size={12} /> {event.guestCount} convidados • {event.eventType}
-                  </p>
-                  <p className={styles.clientName}>
-                    <MdPeople size={12} />
-                    <strong>Cliente:</strong> {event.client?.name || "N/A"}
-                  </p>
-                </div>
-                <div className={styles.eventValue}>
-                  <span className={styles.valueAmount}>
-                    <MdAttachMoney size={14} />
-                    {formatCurrency(event.totalValue)}
-                  </span>
-                </div>
+              ))}
+            </div>
+            
+            {/* ✅ PAGINAÇÃO */}
+            {filteredUpcomingEvents.length > itemsPerPage && (
+              <div className={styles.paginationWrapper}>
+                <span className={styles.paginationInfo}>
+                  <FiCalendar size={14} />
+                  Total: {filteredUpcomingEvents.length} {filteredUpcomingEvents.length === 1 ? 'evento' : 'eventos'}
+                </span>
+                <Pagination 
+                  currentPage={currentPage}
+                  totalItems={filteredUpcomingEvents.length}
+                  itemsPerPage={itemsPerPage}
+                  onPageChange={setCurrentPage}
+                />
               </div>
-            ))}
-          </div>
+            )}
+          </>
         )}
       </div>
     </div>

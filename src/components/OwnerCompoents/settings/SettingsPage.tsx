@@ -20,7 +20,8 @@ import {
   FiExternalLink,
   FiCheck,
   FiX,
-  FiRefreshCw
+  FiRefreshCw,
+  FiMapPin
 } from 'react-icons/fi';
 import { 
   MdBusiness, 
@@ -321,6 +322,7 @@ export const SettingsPage: React.FC = () => {
 
   return (
     <div className={styles.settingsPage}>
+      {/* Cabeçalho */}
       <div className={styles.pageHeader}>
         <div>
           <h1 className={styles.pageTitle}>
@@ -366,7 +368,9 @@ export const SettingsPage: React.FC = () => {
         </div>
       </div>
 
+      {/* Container Principal */}
       <div className={styles.settingsContainer}>
+        {/* Sidebar */}
         <div className={styles.settingsSidebar}>
           {tabs.map(tab => (
             <button
@@ -380,13 +384,18 @@ export const SettingsPage: React.FC = () => {
           ))}
         </div>
 
+        {/* Conteúdo */}
         <div className={styles.settingsContent}>
-          {/* Aba Empresa */}
+          
+          {/* ============================================ */}
+          {/* ABA EMPRESA                                   */}
+          {/* ============================================ */}
           {activeTab === 'empresa' && (
             <div className={styles.settingsSection}>
               <h2 className={styles.sectionTitle}>Informações da Empresa</h2>
               
               <div className={styles.formGrid}>
+                {/* Nome da Empresa */}
                 <div className={styles.formGroup}>
                   <label className={styles.formLabel}>
                     <MdBusiness size={14} />
@@ -401,6 +410,7 @@ export const SettingsPage: React.FC = () => {
                   />
                 </div>
 
+                {/* CNPJ/CPF */}
                 <div className={styles.formGroup}>
                   <label className={styles.formLabel}>
                     CNPJ/CPF *
@@ -414,6 +424,7 @@ export const SettingsPage: React.FC = () => {
                   />
                 </div>
 
+                {/* Telefone */}
                 <div className={styles.formGroup}>
                   <label className={styles.formLabel}>
                     <FiPhone size={14} />
@@ -428,6 +439,7 @@ export const SettingsPage: React.FC = () => {
                   />
                 </div>
 
+                {/* E-mail */}
                 <div className={styles.formGroup}>
                   <label className={styles.formLabel}>
                     <FiMail size={14} />
@@ -442,8 +454,10 @@ export const SettingsPage: React.FC = () => {
                   />
                 </div>
 
+                {/* Endereço - Linha completa */}
                 <div className={styles.formGroupFull}>
                   <label className={styles.formLabel}>
+                    <FiMapPin size={14} />
                     Endereço
                   </label>
                   <input
@@ -455,6 +469,7 @@ export const SettingsPage: React.FC = () => {
                   />
                 </div>
 
+                {/* Cidade */}
                 <div className={styles.formGroup}>
                   <label className={styles.formLabel}>
                     Cidade
@@ -468,6 +483,7 @@ export const SettingsPage: React.FC = () => {
                   />
                 </div>
 
+                {/* Estado */}
                 <div className={styles.formGroup}>
                   <label className={styles.formLabel}>
                     Estado
@@ -508,6 +524,7 @@ export const SettingsPage: React.FC = () => {
                   </select>
                 </div>
 
+                {/* CEP */}
                 <div className={styles.formGroup}>
                   <label className={styles.formLabel}>
                     CEP
@@ -522,6 +539,7 @@ export const SettingsPage: React.FC = () => {
                 </div>
               </div>
 
+              {/* Info Box - Logo */}
               <div className={styles.infoBox}>
                 <FiInfo size={20} />
                 <div>
@@ -535,7 +553,9 @@ export const SettingsPage: React.FC = () => {
             </div>
           )}
 
-          {/* Aba Aparência */}
+          {/* ============================================ */}
+          {/* ABA APARÊNCIA                                 */}
+          {/* ============================================ */}
           {activeTab === 'aparencia' && (
             <div className={styles.settingsSection}>
               <h2 className={styles.sectionTitle}>Personalização Visual</h2>
@@ -546,6 +566,7 @@ export const SettingsPage: React.FC = () => {
                 </p>
                 
                 <div className={styles.themeOptions}>
+                  {/* Tema Claro */}
                   <div className={styles.themeOption}>
                     <label className={styles.radioLabel}>
                       <input
@@ -562,6 +583,7 @@ export const SettingsPage: React.FC = () => {
                     </label>
                   </div>
 
+                  {/* Tema Escuro */}
                   <div className={styles.themeOption}>
                     <label className={styles.radioLabel}>
                       <input
@@ -578,6 +600,7 @@ export const SettingsPage: React.FC = () => {
                     </label>
                   </div>
 
+                  {/* Tema Sistema */}
                   <div className={styles.themeOption}>
                     <label className={styles.radioLabel}>
                       <input
@@ -603,11 +626,14 @@ export const SettingsPage: React.FC = () => {
             </div>
           )}
 
-          {/* Aba Notificações */}
+          {/* ============================================ */}
+          {/* ABA NOTIFICAÇÕES                              */}
+          {/* ============================================ */}
           {activeTab === 'notificacoes' && (
             <div className={styles.settingsSection}>
               <h2 className={styles.sectionTitle}>Configurações de Notificações</h2>
               
+              {/* Canais de Notificação */}
               <div className={styles.notificationsSection}>
                 <h3>Canais de Notificação</h3>
                 
@@ -644,6 +670,7 @@ export const SettingsPage: React.FC = () => {
                 </label>
               </div>
 
+              {/* Alertas do Sistema */}
               <div className={styles.notificationsSection}>
                 <h3>Alertas do Sistema</h3>
                 
@@ -688,6 +715,7 @@ export const SettingsPage: React.FC = () => {
                 </label>
               </div>
 
+              {/* Configurações de Lembrete */}
               <div className={styles.notificationsSection}>
                 <h3>Configurações de Lembrete</h3>
                 
@@ -709,12 +737,15 @@ export const SettingsPage: React.FC = () => {
             </div>
           )}
 
-          {/* Aba Financeiro */}
+          {/* ============================================ */}
+          {/* ABA FINANCEIRO                                */}
+          {/* ============================================ */}
           {activeTab === 'financeiro' && (
             <div className={styles.settingsSection}>
               <h2 className={styles.sectionTitle}>Configurações Financeiras</h2>
               
               <div className={styles.formGrid}>
+                {/* Moeda Padrão */}
                 <div className={styles.formGroup}>
                   <label className={styles.formLabel}>
                     <FiDollarSign size={14} />
@@ -731,6 +762,7 @@ export const SettingsPage: React.FC = () => {
                   </select>
                 </div>
 
+                {/* Prazo de Pagamento */}
                 <div className={styles.formGroup}>
                   <label className={styles.formLabel}>
                     Prazo de Pagamento Padrão (dias)
@@ -745,6 +777,7 @@ export const SettingsPage: React.FC = () => {
                 </div>
               </div>
 
+              {/* Configurações de Sinal */}
               <div className={styles.notificationsSection}>
                 <h3>Configurações de Sinal</h3>
                 
@@ -778,6 +811,7 @@ export const SettingsPage: React.FC = () => {
                 )}
               </div>
 
+              {/* Gerar notas automaticamente */}
               <label className={styles.switchLabel}>
                 <div className={styles.switchInfo}>
                   <strong>Gerar notas automaticamente</strong>
@@ -793,12 +827,15 @@ export const SettingsPage: React.FC = () => {
             </div>
           )}
 
-          {/* Aba Segurança */}
+          {/* ============================================ */}
+          {/* ABA SEGURANÇA                                 */}
+          {/* ============================================ */}
           {activeTab === 'seguranca' && (
             <div className={styles.settingsSection}>
               <h2 className={styles.sectionTitle}>Configurações de Segurança</h2>
               
               <div className={styles.formGrid}>
+                {/* Tempo de Sessão */}
                 <div className={styles.formGroup}>
                   <label className={styles.formLabel}>
                     <FiLock size={14} />
@@ -814,6 +851,7 @@ export const SettingsPage: React.FC = () => {
                   />
                 </div>
 
+                {/* Expiração de Senha */}
                 <div className={styles.formGroup}>
                   <label className={styles.formLabel}>
                     Expiração de Senha (dias)
@@ -828,6 +866,7 @@ export const SettingsPage: React.FC = () => {
                   <small className={styles.helpText}>0 = nunca expira</small>
                 </div>
 
+                {/* Tentativas de Login */}
                 <div className={styles.formGroup}>
                   <label className={styles.formLabel}>
                     Tentativas de Login
@@ -843,6 +882,7 @@ export const SettingsPage: React.FC = () => {
                 </div>
               </div>
 
+              {/* 2FA */}
               <label className={styles.switchLabel}>
                 <div className={styles.switchInfo}>
                   <strong>Autenticação de dois fatores (2FA)</strong>
@@ -856,6 +896,7 @@ export const SettingsPage: React.FC = () => {
                 <span className={styles.switchSlider}></span>
               </label>
 
+              {/* Aviso de Segurança */}
               <div className={styles.securityNotice}>
                 <MdWarning size={20} />
                 <p>
@@ -866,7 +907,9 @@ export const SettingsPage: React.FC = () => {
             </div>
           )}
 
-          {/* Aba Integrações */}
+          {/* ============================================ */}
+          {/* ABA INTEGRAÇÕES                               */}
+          {/* ============================================ */}
           {activeTab === 'integracoes' && (
             <div className={styles.settingsSection}>
               <h2 className={styles.sectionTitle}>Integrações</h2>
@@ -1051,6 +1094,7 @@ export const SettingsPage: React.FC = () => {
                 </div>
               </div>
 
+              {/* Nota sobre Integrações */}
               <div className={styles.integrationNote}>
                 <FiInfo size={16} />
                 <span>As integrações permitem sincronizar dados automaticamente. Configure cada serviço individualmente.</span>
@@ -1070,6 +1114,7 @@ export const SettingsPage: React.FC = () => {
                 <FiX size={20} />
               </button>
             </div>
+            
             <div className={styles.modalContent}>
               <div className={styles.formGroup}>
                 <label className={styles.formLabel}>Phone Number ID</label>
@@ -1081,6 +1126,7 @@ export const SettingsPage: React.FC = () => {
                   placeholder="ID do número de telefone"
                 />
               </div>
+              
               <div className={styles.formGroup}>
                 <label className={styles.formLabel}>Business Account ID</label>
                 <input
@@ -1091,6 +1137,7 @@ export const SettingsPage: React.FC = () => {
                   placeholder="ID da conta business"
                 />
               </div>
+              
               <div className={styles.formGroup}>
                 <label className={styles.formLabel}>Access Token</label>
                 <input
@@ -1102,6 +1149,7 @@ export const SettingsPage: React.FC = () => {
                 />
               </div>
             </div>
+            
             <div className={styles.modalActions}>
               <button className={styles.secondaryButton} onClick={() => setShowWhatsAppModal(false)}>
                 Cancelar

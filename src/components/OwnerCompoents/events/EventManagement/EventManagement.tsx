@@ -1,10 +1,12 @@
-import React, { useState, useEffect } from 'react';
+// src/components/admin/events/EventManagement.tsx
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
   FiCalendar, 
   FiList, 
   FiPlus,
   FiCheckCircle,
-  FiAlertCircle
+  FiAlertCircle,
+  FiUsers
 } from 'react-icons/fi';
 import { 
   MdEvent, 
@@ -15,6 +17,7 @@ import { Event } from '../../../../types/Event';
 import { User } from '../../../../types/User';
 import { eventService } from '../../../../services/events';
 import { userService } from '../../../../services/users';
+import { Pagination } from '../../../common/Pagination/Pagination';
 import { EventStats } from '../EventStats';
 import { EventToolbar } from '../EventToolbar';
 import { EventCalendar } from '../EventCalendar';
@@ -31,7 +34,6 @@ export const EventManagement: React.FC = () => {
   const [showForm, setShowForm] = useState(false);
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState<Event | null>(null);
-  // ALTERADO: calendário como visualização padrão
   const [viewMode, setViewMode] = useState<'list' | 'calendar'>('calendar');
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [selectedMonth, setSelectedMonth] = useState<string>(
@@ -40,6 +42,10 @@ export const EventManagement: React.FC = () => {
   const [filterStatus, setFilterStatus] = useState<string>('ALL');
   const [filterClient, setFilterClient] = useState<number | 'ALL'>('ALL');
   const [searchTerm, setSearchTerm] = useState('');
+  
+  // ✅ ESTADOS DE PAGINAÇÃO
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
   
   // Estados para modal de sucesso
   const [showSuccessModal, setShowSuccessModal] = useState(false);
@@ -69,6 +75,11 @@ export const EventManagement: React.FC = () => {
   useEffect(() => {
     loadData();
   }, []);
+
+  // ✅ Resetar página quando filtros mudarem
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filterStatus, filterClient, searchTerm]);
 
   const loadClients = async () => {
     try {
@@ -134,6 +145,13 @@ export const EventManagement: React.FC = () => {
   };
 
   const filteredEvents = getFilteredEvents(filterStatus, filterClient, searchTerm);
+  
+  // ✅ Eventos paginados (apenas para visualização em lista)
+  const paginatedEvents = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return filteredEvents.slice(startIndex, endIndex);
+  }, [filteredEvents, currentPage, itemsPerPage]);
 
   if (loading) {
     return (
@@ -206,26 +224,44 @@ export const EventManagement: React.FC = () => {
           />
         </div>
       ) : (
-        <EventList
-          events={filteredEvents}
-          onEdit={handleEditClick}
-          onDelete={(event) => setShowDeleteModal(event)}
-          onStatusChange={handleUpdateEventStatus}
-          formatDateForDisplay={formatDateForDisplay}
-          formatCurrency={formatCurrency}
-          getStatusVariant={(status) => ({
-            QUOTE: 'quote',
-            CONFIRMED: 'confirmed',
-            COMPLETED: 'completed',
-            CANCELLED: 'cancelled'
-          }[status])}
-          getStatusIcon={(status) => ({
-            QUOTE: <FiAlertCircle size={16} />,
-            CONFIRMED: <FiCheckCircle size={16} />,
-            COMPLETED: <FiCheckCircle size={16} />,
-            CANCELLED: <FiAlertCircle size={16} />
-          }[status])}
-        />
+        <>
+          <EventList
+            events={paginatedEvents}
+            onEdit={handleEditClick}
+            onDelete={(event) => setShowDeleteModal(event)}
+            onStatusChange={handleUpdateEventStatus}
+            formatDateForDisplay={formatDateForDisplay}
+            formatCurrency={formatCurrency}
+            getStatusVariant={(status) => ({
+              QUOTE: 'quote',
+              CONFIRMED: 'confirmed',
+              COMPLETED: 'completed',
+              CANCELLED: 'cancelled'
+            }[status])}
+            getStatusIcon={(status) => ({
+              QUOTE: <FiAlertCircle size={16} />,
+              CONFIRMED: <FiCheckCircle size={16} />,
+              COMPLETED: <FiCheckCircle size={16} />,
+              CANCELLED: <FiAlertCircle size={16} />
+            }[status])}
+          />
+          
+          {/* ✅ PAGINAÇÃO */}
+          {filteredEvents.length > 0 && (
+            <div className={styles.paginationWrapper}>
+              <span className={styles.paginationInfo}>
+                <MdEvent size={14} />
+                Total: {filteredEvents.length} {filteredEvents.length === 1 ? 'evento' : 'eventos'}
+              </span>
+              <Pagination 
+                currentPage={currentPage}
+                totalItems={filteredEvents.length}
+                itemsPerPage={itemsPerPage}
+                onPageChange={setCurrentPage}
+              />
+            </div>
+          )}
+        </>
       )}
     </div>
   );

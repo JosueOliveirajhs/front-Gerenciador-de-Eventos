@@ -148,7 +148,7 @@ function mergeWithDefaults(settings: Partial<SystemSettings>): SystemSettings {
 function getDefaultSettings(): SystemSettings {
     return {
         company: {
-            name: "",
+            name: "Eventos Fáceis",
             document: "",
             phone: "",
             email: "",
