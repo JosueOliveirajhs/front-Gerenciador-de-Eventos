@@ -52,7 +52,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
   
   const isCollapsed = externalCollapsed !== undefined ? externalCollapsed : internalCollapsed;
 
-  // Carregar nome personalizado do sistema das configurações
+  // ✅ DEBUG - Verificar tipo de usuário
+  useEffect(() => {
+    console.log('🎯 SIDEBAR - Usuário atual:', {
+      name: user?.name,
+      userType: user?.userType,
+      role: user?.role,
+      cargo: getUserRoleText()
+    });
+  }, [user]);
+
   useEffect(() => {
     const loadSystemName = async () => {
       try {
@@ -78,26 +87,24 @@ export const Sidebar: React.FC<SidebarProps> = ({
     loadSystemName();
   }, []);
 
-  // Inicializar valor de edição com o nome atual do usuário
   useEffect(() => {
     if (user?.name) {
       setEditNameValue(user.name);
     }
   }, [user?.name]);
 
-  // ✅ FUNÇÃO CORRIGIDA baseada em userType e role
-  const getUserRoleText = () => {
-    // DESENVOLVEDOR
+  // ✅ FUNÇÃO CORRIGIDA - Baseada no userType
+  const getUserRoleText = (): string => {
+    console.log('📌 Sidebar - getUserRoleText - userType:', user?.userType, 'role:', user?.role);
+    
     if (user?.userType === 'DEVELOPER') {
       return 'Desenvolvedor';
     }
     
-    // CLIENTE
     if (user?.userType === 'CLIENT') {
       return 'Cliente';
     }
     
-    // OWNER (Funcionário/Diretor) - baseado na role
     if (user?.userType === 'OWNER') {
       const roleMap: Record<string, string> = {
         'ADMIN': 'Administrador',
@@ -111,7 +118,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
     return 'Usuário';
   };
 
-  // Função para salvar o nome editado
   const handleSaveName = async () => {
     if (!editNameValue.trim()) {
       alert("O nome não pode estar vazio");
@@ -125,19 +131,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
     setIsSaving(true);
     try {
-      // Chamar API para atualizar o nome do usuário
       await userService.updateProfile(user.id, {
         name: editNameValue.trim()
       });
       
-      // Atualizar o contexto do usuário
       if (updateUser) {
         updateUser({ ...user, name: editNameValue.trim() });
       }
       
-      // Fechar o modo de edição
       setIsEditingName(false);
-      
       console.log("✅ Nome atualizado com sucesso!");
     } catch (error) {
       console.error("Erro ao atualizar nome:", error);
@@ -147,19 +149,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
     }
   };
 
-  // Função para cancelar edição
   const handleCancelEdit = () => {
     setEditNameValue(user?.name || "");
     setIsEditingName(false);
   };
 
-  // Função para iniciar edição
   const handleStartEdit = () => {
     setEditNameValue(user?.name || "");
     setIsEditingName(true);
   };
 
-  // Função para lidar com tecla Enter
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       handleSaveName();
@@ -168,7 +167,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     }
   };
 
-  // Menu baseado no userType
+  // ✅ Menu para OWNER/DEVELOPER
   const ownerMenu = [
     { id: "dashboard", label: "Dashboard", icon: <MdDashboard size={20} /> },
     { id: "events", label: "Todos os Eventos", icon: <MdEvent size={20} /> },
@@ -179,33 +178,43 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: "financial", label: "Financeiro", icon: <MdAttachMoney size={20} /> },
   ];
 
+  // ✅ Menu para CLIENT
   const clientMenu = [
-    { id: "events", label: "Visualizar Eventos", icon: <MdEvent size={20} /> },
+    { id: "dashboard", label: "Dashboard", icon: <MdDashboard size={20} /> },
+    { id: "events", label: "Meus Eventos", icon: <MdEvent size={20} /> },
     { id: "payments", label: "Pagamentos", icon: <MdAttachMoney size={20} /> },
+    { id: "documents", label: "Documentos", icon: <FiFile size={20} /> },
+    { id: "messages", label: "Mensagens", icon: <FiUsers size={20} /> },
     { id: "community", label: "Comunidade", icon: <FiUsers size={20} /> },
     { id: "company-search", label: "Pesquisar Empresas", icon: <FiSearch size={20} /> },
-    { id: "documents", label: "Documentos", icon: <FiFile size={20} /> },
   ];
 
-  // Menu baseado no userType
+  // ✅ Seleção do menu baseada no userType
   let menuItems = clientMenu;
   if (user?.userType === 'DEVELOPER' || user?.userType === 'OWNER') {
     menuItems = ownerMenu;
   }
+
+  console.log('📋 Sidebar - Menu selecionado:', menuItems.map(m => m.id));
 
   const toggleCollapse = () => {
     const newState = !isCollapsed;
     if (externalCollapsed === undefined) {
       setInternalCollapsed(newState);
     }
-    if (onCollapseChange) {
-      onCollapseChange(newState);
+    onCollapseChange?.(newState);
+  };
+
+  // ✅ Texto da seção baseado no userType
+  const getSectionLabel = (): string => {
+    if (user?.userType === 'CLIENT') {
+      return "MEU ESPAÇO";
     }
+    return "MENU PRINCIPAL";
   };
 
   return (
     <>
-      {/* Overlay para mobile */}
       {isMobileOpen && (
         <div className={styles.sidebarOverlay} onClick={onMobileToggle} />
       )}
@@ -213,7 +222,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
       <aside
         className={`${styles.sidebar} ${isCollapsed ? styles.sidebarCollapsed : ""} ${isMobileOpen ? styles.sidebarMobileOpen : ""}`}
       >
-        {/* Header do Sidebar */}
         <div className={styles.sidebarHeader}>
           <div className={styles.sidebarLogo}>
             <div className={styles.logoIcon}>
@@ -225,13 +233,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </div>
             {!isCollapsed && (
               <div className={styles.logoText}>
-                <span className={styles.logoTitle}>EEMS</span>
-                <span className={styles.logoSubtitle}>Gestão</span>
+                <span className={styles.logoTitle}>{systemName}</span>
+                <span className={styles.logoSubtitle}>{systemSubtitle}</span>
               </div>
             )}
           </div>
 
-          {/* Botão de toggle */}
           <button 
             className={styles.sidebarToggleBtn}
             onClick={toggleCollapse}
@@ -241,12 +248,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </button>
         </div>
 
-        {/* Menu Navigation */}
         <nav className={styles.sidebarNav}>
           <div className={styles.navSection}>
             {!isCollapsed && (
               <span className={styles.sectionLabel}>
-                {user?.userType === 'CLIENT' ? "MEU ESPAÇO" : "MENU PRINCIPAL"}
+                {getSectionLabel()}
               </span>
             )}
             <div className={styles.navItems}>
@@ -255,7 +261,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   key={item.id}
                   className={`${styles.navItem} ${activeView === item.id ? styles.navItemActive : ""}`}
                   onClick={() => {
-                    console.log('🔀 Navegando para:', item.id);
+                    console.log('🔀 Sidebar - Navegando para:', item.id);
                     onViewChange(item.id);
                     onMobileToggle?.();
                   }}
@@ -271,7 +277,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </div>
         </nav>
 
-        {/* Footer do Sidebar - COM EDIÇÃO DE NOME */}
         <div className={styles.sidebarFooter}>
           <div className={styles.userCard}>
             <div className={styles.userAvatar}>

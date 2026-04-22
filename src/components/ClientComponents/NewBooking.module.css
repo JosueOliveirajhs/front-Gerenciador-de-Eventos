@@ -1,180 +1,381 @@
-/* NewBooking.module.css */
+/* src/components/ClientComponents/NewBooking.module.css */
+
 .newBooking {
   max-width: 800px;
   margin: 0 auto;
-  padding: 2rem;
 }
 
-.title {
-  font-size: 1.875rem;
+/* Page Header */
+.pageHeader {
+  margin-bottom: 32px;
+}
+
+.headerLeft {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.titleIcon {
+  width: 56px;
+  height: 56px;
+  background: linear-gradient(135deg, #00B4D8 0%, #0077b6 100%);
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+}
+
+.pageTitle {
+  font-size: 28px;
   font-weight: 700;
   color: #1e293b;
-  margin: 0 0 0.5rem 0;
+  margin: 0 0 4px 0;
 }
 
-.description {
+.pageSubtitle {
+  font-size: 14px;
   color: #64748b;
-  margin: 0 0 2rem 0;
-  font-size: 1rem;
-  line-height: 1.5;
+  margin: 0;
 }
 
-/* Form Styles */
+/* Form */
 .bookingForm {
   background: white;
-  border-radius: 12px;
-  border: 1px solid #e2e8f0;
-  padding: 2rem;
+  border-radius: 24px;
+  padding: 32px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
 }
 
-.formGroup {
+.formSection {
+  margin-bottom: 24px;
+}
+
+.formLabel {
   display: flex;
-  flex-direction: column;
-  margin-bottom: 1.5rem;
-}
-
-.formGroup label {
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
   font-weight: 600;
-  color: #374151;
-  font-size: 0.875rem;
-  margin-bottom: 0.5rem;
+  color: #1e293b;
+  margin-bottom: 8px;
 }
 
-.formGroup input,
-.formGroup select,
-.formGroup textarea {
-  padding: 0.75rem;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
-  font-size: 0.875rem;
+.required {
+  color: #ef4444;
+  margin-left: 4px;
+}
+
+.formInput,
+.formSelect,
+.formTextarea {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 12px;
+  font-size: 15px;
+  color: #1e293b;
+  background: white;
   transition: all 0.2s;
   font-family: inherit;
 }
 
-.formGroup input:focus,
-.formGroup select:focus,
-.formGroup textarea:focus {
+.formInput:focus,
+.formSelect:focus,
+.formTextarea:focus {
   outline: none;
-  border-color: #6366f1;
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+  border-color: #00B4D8;
+  box-shadow: 0 0 0 3px rgba(0, 180, 216, 0.1);
 }
 
-.formGroup textarea {
-  resize: vertical;
-  min-height: 100px;
+.formInput::placeholder,
+.formTextarea::placeholder {
+  color: #94a3b8;
 }
 
-/* Form Row Layout */
 .formRow {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1rem;
-  margin-bottom: 1.5rem;
+  gap: 20px;
 }
 
-/* Button Styles */
+/* Guest Count */
+.guestCountContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.guestCountPresets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.presetButton {
+  padding: 8px 16px;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #475569;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.presetButton:hover {
+  background: #e2e8f0;
+}
+
+.presetButton.active {
+  background: #00B4D8;
+  border-color: #00B4D8;
+  color: white;
+}
+
+/* Currency Input */
+.currencyInput {
+  display: flex;
+  align-items: center;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 12px;
+  overflow: hidden;
+  transition: all 0.2s;
+}
+
+.currencyInput:focus-within {
+  border-color: #00B4D8;
+  box-shadow: 0 0 0 3px rgba(0, 180, 216, 0.1);
+}
+
+.currencySymbol {
+  padding: 12px 0 12px 16px;
+  font-weight: 500;
+  color: #64748b;
+  background: #fafafa;
+}
+
+.currencyInput .formInput {
+  border: none;
+  padding-left: 8px;
+}
+
+.currencyInput .formInput:focus {
+  box-shadow: none;
+}
+
+/* Availability Messages */
+.checkingMessage {
+  display: block;
+  font-size: 12px;
+  color: #64748b;
+  margin-top: 6px;
+}
+
+.availableMessage {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  color: #10b981;
+  margin-top: 6px;
+}
+
+.unavailableMessage {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  color: #ef4444;
+  margin-top: 6px;
+}
+
+/* Info Box */
+.infoBox {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px;
+  background: #f0f9ff;
+  border: 1px solid #bae6fd;
+  border-radius: 12px;
+  margin: 24px 0;
+}
+
+.infoBox svg {
+  color: #0284c7;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.infoBox span {
+  font-size: 14px;
+  color: #0369a1;
+  line-height: 1.5;
+}
+
+/* Form Actions */
 .formActions {
   display: flex;
   justify-content: flex-end;
-  margin-top: 2rem;
-  padding-top: 1.5rem;
-  border-top: 1px solid #f1f5f9;
+  gap: 16px;
+  margin-top: 32px;
+  padding-top: 24px;
+  border-top: 1px solid #e2e8f0;
 }
 
-.btnPrimary {
-  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-  color: white;
-  border: none;
-  padding: 0.75rem 2rem;
-  border-radius: 8px;
-  font-weight: 600;
-  font-size: 0.875rem;
+.cancelButton {
+  padding: 12px 24px;
+  background: white;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 500;
+  color: #64748b;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.2s;
+}
+
+.cancelButton:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+}
+
+.submitButton {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 32px;
+  background: #00B4D8;
+  border: none;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 600;
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.submitButton:hover:not(:disabled) {
+  background: #0077b6;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 180, 216, 0.3);
+}
+
+.submitButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.buttonSpinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+/* Success */
+.successContainer {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-width: 160px;
+  min-height: 500px;
 }
 
-.btnPrimary:hover:not(:disabled) {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
-}
-
-.btnPrimary:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-  transform: none;
-}
-
-/* Success State */
-.bookingSuccess {
+.successCard {
   background: white;
-  border-radius: 12px;
-  border: 1px solid #e2e8f0;
-  padding: 3rem 2rem;
+  border-radius: 24px;
+  padding: 48px;
   text-align: center;
   max-width: 500px;
-  margin: 2rem auto;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+}
+
+.successIcon {
+  margin-bottom: 24px;
 }
 
 .successTitle {
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: #059669;
-  margin: 0 0 1rem 0;
+  font-size: 24px;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0 0 12px 0;
 }
 
 .successText {
+  font-size: 16px;
+  color: #1e293b;
+  margin: 0 0 8px 0;
+}
+
+.successSubtext {
+  font-size: 14px;
   color: #64748b;
-  margin: 0 0 1rem 0;
-  line-height: 1.6;
+  margin: 0 0 32px 0;
 }
 
-.successText:last-of-type {
-  margin-bottom: 0;
+.successActions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
-/* Responsive Design */
-@media (max-width: 768px) {
-  .newBooking {
-    padding: 1rem;
-  }
-  
+.primaryButton {
+  padding: 14px 24px;
+  background: #00B4D8;
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.primaryButton:hover {
+  background: #0077b6;
+}
+
+.secondaryButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 24px;
+  background: white;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.secondaryButton:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Responsive */
+@media (max-width: 640px) {
   .bookingForm {
-    padding: 1.5rem;
+    padding: 20px;
   }
   
   .formRow {
     grid-template-columns: 1fr;
-    gap: 0;
   }
   
-  .formRow .formGroup {
-    margin-bottom: 1rem;
-  }
-  
-  .formActions {
-    justify-content: stretch;
-  }
-  
-  .btnPrimary {
-    width: 100%;
-  }
-  
-  .bookingSuccess {
-    margin: 1rem;
-    padding: 2rem 1.5rem;
-  }
-}
-
-@media (max-width: 480px) {
-  .title {
-    font-size: 1.5rem;
-  }
-  
-  .bookingForm {
-    padding: 1rem;
+  .successCard {
+    padding: 32px 24px;
   }
 }

@@ -5,59 +5,79 @@ import { api } from './api';
 
 export const paymentService = {
   /**
-   * Busca pagamentos por evento
+   * Busca todos os pagamentos
    */
-  getEventPayments: async (eventId: number): Promise<Payment[]> => {
+  getAllPayments: async (): Promise<Payment[]> => {
     try {
-      console.log(`💰 Buscando pagamentos do evento ${eventId}...`);
-      const response = await api.get(`/payments/event/${eventId}`);
+      console.log('💰 Buscando todos os pagamentos...');
+      const response = await api.get('/payments');
       return response.data;
     } catch (error) {
-      console.error(`❌ Erro ao buscar pagamentos do evento ${eventId}:`, error);
+      console.error('❌ Erro ao buscar pagamentos:', error);
       return [];
     }
   },
 
   /**
-   * ✅ NOVO: Busca pagamentos por ID do cliente
-   * Usa getAllPayments e filtra no frontend
+   * Busca pagamentos por evento
    */
-  getPaymentsByClientId: async (clientId: number): Promise<Payment[]> => {
+  getPaymentsByEventId: async (eventId: string | number): Promise<Payment[]> => {
+    try {
+      console.log(`💰 Buscando pagamentos do evento ${eventId}...`);
+      const response = await api.get(`/payments/event/${eventId}`);
+      return response.data;
+    } catch (error) {
+      console.log(`ℹ️ Pagamentos não encontrados para evento ${eventId}`);
+      return [];
+    }
+  },
+
+  /**
+   * Alias para compatibilidade
+   */
+  getEventPayments: async (eventId: number): Promise<Payment[]> => {
+    return paymentService.getPaymentsByEventId(eventId);
+  },
+
+  /**
+   * Busca pagamentos por ID do cliente
+   */
+  getPaymentsByClientId: async (clientId: string | number): Promise<Payment[]> => {
     try {
       console.log(`💰 Buscando pagamentos do cliente ${clientId}...`);
-      
-      // Primeiro busca todos os pagamentos
-      // Nota: Se não existir endpoint para todos os pagamentos, 
-      // você precisará buscar eventos primeiro e depois os pagamentos de cada evento
-      
-      // Opção 1: Se existir endpoint de todos os pagamentos
-      try {
-        const response = await api.get('/payments');
-        const allPayments = response.data;
-        
-        // Filtrar pagamentos do cliente (precisa relacionar com eventos)
-        // Esta lógica depende de como seus dados estão estruturados
-        return allPayments;
-      } catch (error) {
-        // Opção 2: Buscar eventos do cliente e depois os pagamentos de cada evento
-        console.log('⚠️ Buscando pagamentos via eventos...');
-        const { eventService } = await import('./events');
-        const clientEvents = await eventService.getEventsByClientId(clientId);
-        
-        const allPayments: Payment[] = [];
-        
-        for (const event of clientEvents) {
-          const eventPayments = await paymentService.getEventPayments(event.id);
-          allPayments.push(...eventPayments);
-        }
-        
-        console.log(`✅ Pagamentos do cliente ${clientId} encontrados:`, allPayments.length);
-        return allPayments;
-      }
-      
+      const response = await api.get(`/payments/client/${clientId}`);
+      return response.data;
     } catch (error) {
-      console.error(`❌ Erro ao buscar pagamentos do cliente ${clientId}:`, error);
+      console.log(`ℹ️ Pagamentos não encontrados para cliente ${clientId}`);
       return [];
+    }
+  },
+
+  /**
+   * Busca pagamentos do cliente atual
+   */
+  getMyPayments: async (): Promise<Payment[]> => {
+    try {
+      console.log('💰 Buscando meus pagamentos...');
+      const response = await api.get('/payments/my-payments');
+      return response.data;
+    } catch (error) {
+      console.error('❌ Erro ao buscar meus pagamentos:', error);
+      return [];
+    }
+  },
+
+  /**
+   * Busca pagamento por ID
+   */
+  getPaymentById: async (id: number): Promise<Payment> => {
+    try {
+      console.log(`💰 Buscando pagamento ${id}...`);
+      const response = await api.get(`/payments/${id}`);
+      return response.data;
+    } catch (error) {
+      console.error(`❌ Erro ao buscar pagamento ${id}:`, error);
+      throw error;
     }
   },
 
@@ -107,12 +127,36 @@ export const paymentService = {
   },
 
   /**
-   * ✅ NOVO: Busca pagamentos pendentes do cliente
+   * Faz upload de comprovante
    */
-  getPendingPaymentsByClientId: async (clientId: number): Promise<Payment[]> => {
+  uploadReceipt: async (id: number, file: File): Promise<Payment> => {
     try {
-      const allPayments = await paymentService.getPaymentsByClientId(clientId);
-      return allPayments.filter(p => p.status === 'PENDING');
+      console.log(`📎 Upload de comprovante para pagamento ${id}...`);
+      const formData = new FormData();
+      formData.append('receipt', file);
+      
+      const response = await api.post(`/payments/${id}/receipt`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+      
+      console.log('✅ Comprovante enviado');
+      return response.data;
+    } catch (error) {
+      console.error('❌ Erro ao enviar comprovante:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Busca pagamentos pendentes do cliente
+   */
+  getPendingPayments: async (): Promise<Payment[]> => {
+    try {
+      console.log('💰 Buscando pagamentos pendentes...');
+      const response = await api.get('/payments/pending');
+      return response.data;
     } catch (error) {
       console.error('❌ Erro ao buscar pagamentos pendentes:', error);
       return [];
@@ -120,20 +164,34 @@ export const paymentService = {
   },
 
   /**
-   * ✅ NOVO: Busca pagamentos em atraso do cliente
+   * Busca pagamentos em atraso do cliente
    */
-  getOverduePaymentsByClientId: async (clientId: number): Promise<Payment[]> => {
+  getOverduePayments: async (): Promise<Payment[]> => {
     try {
-      const allPayments = await paymentService.getPaymentsByClientId(clientId);
-      const today = new Date();
-      
-      return allPayments.filter(p => 
-        p.status === 'PENDING' && 
-        new Date(p.dueDate) < today
-      );
+      console.log('⚠️ Buscando pagamentos em atraso...');
+      const response = await api.get('/payments/overdue');
+      return response.data;
     } catch (error) {
       console.error('❌ Erro ao buscar pagamentos em atraso:', error);
       return [];
+    }
+  },
+
+  /**
+   * Busca resumo financeiro
+   */
+  getFinancialSummary: async (): Promise<any> => {
+    try {
+      console.log('📊 Buscando resumo financeiro...');
+      const response = await api.get('/payments/summary');
+      return response.data;
+    } catch (error) {
+      console.error('❌ Erro ao buscar resumo financeiro:', error);
+      return {
+        totalPaid: 0,
+        totalPending: 0,
+        totalOverdue: 0
+      };
     }
   }
 };

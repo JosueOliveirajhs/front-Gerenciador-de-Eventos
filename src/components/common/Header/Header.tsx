@@ -14,8 +14,7 @@ import {
   FiCalendar,
   FiDollarSign,
   FiPackage,
-  FiAlertCircle,
-  FiInfo
+  FiAlertCircle
 } from 'react-icons/fi';
 import { MdEvent, MdGroup } from 'react-icons/md';
 import { FaBox } from 'react-icons/fa';
@@ -26,9 +25,15 @@ interface HeaderProps {
   onMenuToggle?: () => void;
   onViewChange?: (view: string) => void;
   onSearch?: (query: string) => void;
+  activeView?: string;
 }
 
-export const Header: React.FC<HeaderProps> = ({ onMenuToggle, onViewChange, onSearch }) => {
+export const Header: React.FC<HeaderProps> = ({ 
+  onMenuToggle, 
+  onViewChange, 
+  onSearch,
+  activeView 
+}) => {
   const { user, logout } = useAuth();
   const [showUserDropdown, setShowUserDropdown] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
@@ -41,16 +46,22 @@ export const Header: React.FC<HeaderProps> = ({ onMenuToggle, onViewChange, onSe
   const userDropdownRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLDivElement>(null);
 
-  // Formatacao de tempo relativo
+  // ✅ DEBUG - Verificar tipo de usuário
+  useEffect(() => {
+    console.log('🎯 HEADER - Usuário atual:', {
+      name: user?.name,
+      userType: user?.userType,
+      role: user?.role,
+      cargo: getUserRoleText()
+    });
+  }, [user]);
+
   const formatTimeAgo = (timestamp: string): string => {
     if (!timestamp) return 'Agora mesmo';
     
     try {
       const date = new Date(timestamp);
-      
-      if (isNaN(date.getTime())) {
-        return 'Agora mesmo';
-      }
+      if (isNaN(date.getTime())) return 'Agora mesmo';
       
       const now = new Date();
       const diffMs = now.getTime() - date.getTime();
@@ -60,24 +71,25 @@ export const Header: React.FC<HeaderProps> = ({ onMenuToggle, onViewChange, onSe
       const diffDay = Math.floor(diffHr / 24);
       
       if (diffSec < 60) return 'Agora mesmo';
-      if (diffMin < 60) return `Ha ${diffMin} ${diffMin === 1 ? 'minuto' : 'minutos'}`;
-      if (diffHr < 24) return `Ha ${diffHr} ${diffHr === 1 ? 'hora' : 'horas'}`;
+      if (diffMin < 60) return `Há ${diffMin} ${diffMin === 1 ? 'minuto' : 'minutos'}`;
+      if (diffHr < 24) return `Há ${diffHr} ${diffHr === 1 ? 'hora' : 'horas'}`;
       if (diffDay === 1) return 'Ontem';
-      if (diffDay < 7) return `Ha ${diffDay} dias`;
+      if (diffDay < 7) return `Há ${diffDay} dias`;
       
       return date.toLocaleDateString('pt-BR', {
         day: '2-digit',
         month: '2-digit',
         year: 'numeric'
       });
-      
-    } catch (error) {
-      console.error('Erro ao formatar data:', error);
+    } catch {
       return 'Agora mesmo';
     }
   };
 
-  const getUserRoleText = () => {
+  // ✅ FUNÇÃO CORRIGIDA - Baseada no userType
+  const getUserRoleText = (): string => {
+    console.log('📌 getUserRoleText - userType:', user?.userType, 'role:', user?.role);
+    
     if (user?.userType === 'DEVELOPER') {
       return 'Desenvolvedor';
     }
@@ -93,13 +105,13 @@ export const Header: React.FC<HeaderProps> = ({ onMenuToggle, onViewChange, onSe
         'MANAGER': 'Gerente',
         'ANALYST': 'Analista'
       };
-      return roleMap[user?.role || ''] || 'Funcionario';
+      return roleMap[user?.role || ''] || 'Funcionário';
     }
     
-    return 'Usuario';
+    return 'Usuário';
   };
 
-  const getUserInitials = () => {
+  const getUserInitials = (): string => {
     return user?.name
       ?.split(' ')
       .map(n => n[0])
@@ -112,10 +124,9 @@ export const Header: React.FC<HeaderProps> = ({ onMenuToggle, onViewChange, onSe
     try {
       setLoading(true);
       const data = await notificationService.getAllNotifications();
-      console.log('Notificacoes carregadas:', data);
       setNotifications(data);
     } catch (error) {
-      console.error('Erro ao carregar notificacoes:', error);
+      console.error('Erro ao carregar notificações:', error);
     } finally {
       setLoading(false);
     }
@@ -150,14 +161,10 @@ export const Header: React.FC<HeaderProps> = ({ onMenuToggle, onViewChange, onSe
     
     if (query.trim().length >= 2) {
       setShowSearchResults(true);
-      if (onSearch) {
-        onSearch(query);
-      }
+      onSearch?.(query);
     } else {
       setShowSearchResults(false);
-      if (onSearch) {
-        onSearch('');
-      }
+      onSearch?.('');
     }
   };
 
@@ -170,25 +177,21 @@ export const Header: React.FC<HeaderProps> = ({ onMenuToggle, onViewChange, onSe
   const clearSearch = () => {
     setSearchQuery('');
     setShowSearchResults(false);
-    if (onSearch) {
-      onSearch('');
-    }
+    onSearch?.('');
   };
 
   const unreadNotifications = notifications.filter(n => !n.lida);
   const unreadCount = unreadNotifications.length;
 
   const handleNavigation = (view: string) => {
-    console.log('Mudando para view:', view);
-    if (onViewChange) {
-      onViewChange(view);
-    }
+    console.log('🔀 HEADER - Navegando para:', view);
+    onViewChange?.(view);
     setShowUserDropdown(false);
     setShowNotifications(false);
   };
 
   const handleLogout = async () => {
-    console.log('Fazendo logout');
+    console.log('🚪 HEADER - Fazendo logout');
     await logout();
   };
 
@@ -221,8 +224,8 @@ export const Header: React.FC<HeaderProps> = ({ onMenuToggle, onViewChange, onSe
     
     if (notification.urlAcao) {
       window.location.href = notification.urlAcao;
-    } else if (onViewChange) {
-      onViewChange('notificacoes');
+    } else {
+      onViewChange?.('notifications');
     }
     setShowNotifications(false);
   };
@@ -270,6 +273,86 @@ export const Header: React.FC<HeaderProps> = ({ onMenuToggle, onViewChange, onSe
     }
   };
 
+  // ✅ Menu de busca adaptado por tipo de usuário
+  const getSearchResults = () => {
+    if (user?.userType === 'CLIENT') {
+      return (
+        <>
+          <div className={styles.searchResultItem} onClick={() => handleSearchResultClick('events')}>
+            <MdEvent size={16} />
+            <div>
+              <strong>Meus Eventos</strong>
+              <p>Visualizar eventos agendados</p>
+            </div>
+          </div>
+          <div className={styles.searchResultItem} onClick={() => handleSearchResultClick('payments')}>
+            <FiDollarSign size={16} />
+            <div>
+              <strong>Pagamentos</strong>
+              <p>Ver histórico de pagamentos</p>
+            </div>
+          </div>
+          <div className={styles.searchResultItem} onClick={() => handleSearchResultClick('company-search')}>
+            <FiSearch size={16} />
+            <div>
+              <strong>Pesquisar Empresas</strong>
+              <p>Encontrar empresas de eventos</p>
+            </div>
+          </div>
+          <div className={styles.searchResultItem} onClick={() => handleSearchResultClick('documents')}>
+            <FiPackage size={16} />
+            <div>
+              <strong>Documentos</strong>
+              <p>Acessar contratos e comprovantes</p>
+            </div>
+          </div>
+        </>
+      );
+    }
+    
+    // OWNER e DEVELOPER
+    return (
+      <>
+        <div className={styles.searchResultItem} onClick={() => handleSearchResultClick('events')}>
+          <MdEvent size={16} />
+          <div>
+            <strong>Eventos</strong>
+            <p>Gerenciar todos os eventos</p>
+          </div>
+        </div>
+        <div className={styles.searchResultItem} onClick={() => handleSearchResultClick('clients')}>
+          <FiUser size={16} />
+          <div>
+            <strong>Clientes</strong>
+            <p>Visualizar e gerenciar clientes</p>
+          </div>
+        </div>
+        <div className={styles.searchResultItem} onClick={() => handleSearchResultClick('team')}>
+          <MdGroup size={16} />
+          <div>
+            <strong>Equipe</strong>
+            <p>Gerenciar membros da equipe</p>
+          </div>
+        </div>
+        <div className={styles.searchResultItem} onClick={() => handleSearchResultClick('itens')}>
+          <FaBox size={16} />
+          <div>
+            <strong>Itens</strong>
+            <p>Gerenciar itens e estoque</p>
+          </div>
+        </div>
+      </>
+    );
+  };
+
+  // ✅ Placeholder de busca adaptado
+  const getSearchPlaceholder = (): string => {
+    if (user?.userType === 'CLIENT') {
+      return 'Pesquisar eventos, pagamentos...';
+    }
+    return 'Pesquisar eventos, clientes, equipe...';
+  };
+
   return (
     <header className={styles.header}>
       <div className={styles.headerContent}>
@@ -283,7 +366,7 @@ export const Header: React.FC<HeaderProps> = ({ onMenuToggle, onViewChange, onSe
             <FiMenu size={20} />
           </button>
           
-          <div className={styles.headerLogo} onClick={() => handleNavigation('dashboard')}>
+          <div className={styles.headerLogo} onClick={() => handleNavigation(user?.userType === 'CLIENT' ? 'dashboard' : 'dashboard')}>
             <div className={styles.headerLogoIcon}>
               <MdEvent size={24} />
             </div>
@@ -299,7 +382,7 @@ export const Header: React.FC<HeaderProps> = ({ onMenuToggle, onViewChange, onSe
             <FiSearch className={styles.searchIcon} size={18} />
             <input 
               type="text" 
-              placeholder="Pesquisar eventos, clientes..."
+              placeholder={getSearchPlaceholder()}
               className={styles.searchInput}
               value={searchQuery}
               onChange={handleSearchChange}
@@ -320,34 +403,7 @@ export const Header: React.FC<HeaderProps> = ({ onMenuToggle, onViewChange, onSe
                 </button>
               </div>
               <div className={styles.searchResultsList}>
-                <div className={styles.searchResultItem} onClick={() => handleSearchResultClick('events')}>
-                  <MdEvent size={16} />
-                  <div>
-                    <strong>Eventos</strong>
-                    <p>Gerenciar todos os eventos</p>
-                  </div>
-                </div>
-                <div className={styles.searchResultItem} onClick={() => handleSearchResultClick('clients')}>
-                  <FiUser size={16} />
-                  <div>
-                    <strong>Clientes</strong>
-                    <p>Visualizar e gerenciar clientes</p>
-                  </div>
-                </div>
-                <div className={styles.searchResultItem} onClick={() => handleSearchResultClick('team')}>
-                  <MdGroup size={16} />
-                  <div>
-                    <strong>Equipe</strong>
-                    <p>Gerenciar membros da equipe</p>
-                  </div>
-                </div>
-                <div className={styles.searchResultItem} onClick={() => handleSearchResultClick('itens')}>
-                  <FaBox size={16} />
-                  <div>
-                    <strong>Itens</strong>
-                    <p>Gerenciar itens e estoque</p>
-                  </div>
-                </div>
+                {getSearchResults()}
               </div>
             </div>
           )}
@@ -370,10 +426,10 @@ export const Header: React.FC<HeaderProps> = ({ onMenuToggle, onViewChange, onSe
             {showNotifications && (
               <div className={styles.notificationMenu}>
                 <div className={styles.notificationHeader}>
-                  <h3>Notificacoes</h3>
+                  <h3>Notificações</h3>
                   <button 
                     className={styles.viewAllBtn}
-                    onClick={() => handleNavigation('notificacoes')}
+                    onClick={() => handleNavigation('notifications')}
                   >
                     Ver todas
                   </button>
@@ -425,14 +481,14 @@ export const Header: React.FC<HeaderProps> = ({ onMenuToggle, onViewChange, onSe
                   ) : (
                     <div className={styles.notificationEmpty}>
                       <FiBell size={32} />
-                      <p>Nenhuma notificacao nova</p>
+                      <p>Nenhuma notificação nova</p>
                     </div>
                   )}
 
                   {unreadNotifications.length > 5 && (
                     <div className={styles.notificationMore}>
-                      <button onClick={() => handleNavigation('notificacoes')}>
-                        Ver mais {unreadNotifications.length - 5} notificacoes
+                      <button onClick={() => handleNavigation('notifications')}>
+                        Ver mais {unreadNotifications.length - 5} notificações
                       </button>
                     </div>
                   )}
@@ -456,8 +512,8 @@ export const Header: React.FC<HeaderProps> = ({ onMenuToggle, onViewChange, onSe
           {/* Settings */}
           <button 
             className={styles.headerBtn}
-            onClick={() => handleNavigation('configuracoes')}
-            title="Configuracoes"
+            onClick={() => handleNavigation('settings')}
+            title="Configurações"
           >
             <FiSettings size={20} />
           </button>
@@ -498,7 +554,7 @@ export const Header: React.FC<HeaderProps> = ({ onMenuToggle, onViewChange, onSe
                 
                 <button 
                   className={styles.dropdownItem}
-                  onClick={() => handleNavigation('perfil')}
+                  onClick={() => handleNavigation('profile')}
                 >
                   <FiUser size={16} />
                   <span>Meu Perfil</span>
@@ -506,10 +562,10 @@ export const Header: React.FC<HeaderProps> = ({ onMenuToggle, onViewChange, onSe
                 
                 <button 
                   className={styles.dropdownItem}
-                  onClick={() => handleNavigation('configuracoes')}
+                  onClick={() => handleNavigation('settings')}
                 >
                   <FiSettings size={16} />
-                  <span>Configuracoes</span>
+                  <span>Configurações</span>
                 </button>
                 
                 <div className={styles.dropdownDivider} />

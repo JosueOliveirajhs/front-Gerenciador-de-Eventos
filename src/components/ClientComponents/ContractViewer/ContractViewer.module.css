@@ -1,0 +1,572 @@
+/* src/components/client/ContractViewer.module.css */
+
+.contractViewer {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+/* ========== HEADER ========== */
+.contractHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 24px;
+  padding-bottom: 20px;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.headerLeft {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.contractTitle {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.contractTitle svg {
+  color: #00B4D8;
+}
+
+.contractTitle h1 {
+  font-size: 28px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+}
+
+.contractNumber {
+  font-size: 14px;
+  color: #64748b;
+  margin: 0;
+}
+
+.statusBadge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 30px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* ========== EVENT INFO ========== */
+.eventInfoCard {
+  background: linear-gradient(135deg, #00B4D8 0%, #0096b0 100%);
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 24px;
+  color: white;
+}
+
+.eventInfoCard h3 {
+  font-size: 20px;
+  font-weight: 700;
+  margin: 0 0 8px 0;
+}
+
+.contractDates {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  font-size: 13px;
+  opacity: 0.9;
+}
+
+/* ========== SIGNATURE STATUS ========== */
+.signatureStatus {
+  background: white;
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 24px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+}
+
+.signatureStatus h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #0f172a;
+  margin: 0 0 20px 0;
+}
+
+.signatureGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.signatureCard {
+  padding: 20px;
+  background: #f8fafc;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+}
+
+.signatureHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.signatureLabel {
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.signedBadge {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  background: #d1fae5;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #065f46;
+}
+
+.pendingBadge {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  background: #fef3c7;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #92400e;
+}
+
+.signatureDetails {
+  font-size: 13px;
+  color: #475569;
+}
+
+.signatureDetails p {
+  margin: 6px 0;
+}
+
+/* ========== CONTRACT PREVIEW ========== */
+.contractPreview {
+  background: white;
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 24px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+}
+
+.previewHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.previewHeader h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #0f172a;
+  margin: 0;
+}
+
+.downloadButton {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.downloadButton:hover {
+  background: #00B4D8;
+  border-color: #00B4D8;
+  color: white;
+}
+
+.previewContent {
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+}
+
+.documentViewer {
+  height: 400px;
+  background: #f8fafc;
+}
+
+.contractIframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
+/* ========== CONTRACT CONTENT ========== */
+.contractContent {
+  background: white;
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 24px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+}
+
+.contractContent h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #0f172a;
+  margin: 0 0 16px 0;
+}
+
+.contentText {
+  max-height: 300px;
+  overflow-y: auto;
+  padding: 16px;
+  background: #f8fafc;
+  border-radius: 8px;
+  font-size: 14px;
+  line-height: 1.7;
+  color: #475569;
+}
+
+.contentText p {
+  margin: 12px 0;
+}
+
+/* ========== VALIDITY ========== */
+.validityInfo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 16px;
+  background: #fef3c7;
+  border-radius: 10px;
+  margin-bottom: 24px;
+  color: #92400e;
+  font-size: 14px;
+}
+
+/* ========== ACTIONS ========== */
+.contractActions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 24px;
+  background: white;
+  border-radius: 16px;
+  border: 1px solid #e2e8f0;
+}
+
+.outlineButton {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #475569;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.outlineButton:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+.signButton {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  background: #00B4D8;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-left: auto;
+}
+
+.signButton:hover {
+  background: #0096b0;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 180, 216, 0.3);
+}
+
+.signedMessage {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  background: #d1fae5;
+  border-radius: 10px;
+  color: #065f46;
+  width: 100%;
+}
+
+.expiredMessage {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  background: #fee2e2;
+  border-radius: 10px;
+  color: #991b1b;
+  width: 100%;
+}
+
+/* ========== MODAL ========== */
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modalContent {
+  background: white;
+  border-radius: 16px;
+  padding: 32px;
+  max-width: 500px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.modalContent h3 {
+  font-size: 20px;
+  font-weight: 600;
+  color: #0f172a;
+  margin: 0 0 20px 0;
+}
+
+.signatureInfo {
+  padding: 16px;
+  background: #f8fafc;
+  border-radius: 10px;
+  margin-bottom: 20px;
+}
+
+.signatureInfo p {
+  margin: 8px 0;
+  font-size: 14px;
+  color: #475569;
+}
+
+.checkboxLabel {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px;
+  background: #fef3c7;
+  border-radius: 10px;
+  margin-bottom: 20px;
+  cursor: pointer;
+}
+
+.checkboxLabel input {
+  margin-top: 2px;
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+}
+
+.checkboxLabel span {
+  font-size: 14px;
+  color: #92400e;
+  line-height: 1.5;
+}
+
+.signaturePlaceholder {
+  padding: 20px;
+  background: #f8fafc;
+  border-radius: 10px;
+  margin-bottom: 24px;
+  text-align: center;
+}
+
+.signaturePlaceholder p {
+  margin: 0 0 12px 0;
+  font-size: 14px;
+  color: #64748b;
+}
+
+.signaturePreview {
+  padding: 16px;
+  background: white;
+  border: 2px dashed #cbd5e1;
+  border-radius: 8px;
+}
+
+.signaturePreview strong {
+  display: block;
+  font-size: 16px;
+  color: #0f172a;
+  margin-bottom: 4px;
+}
+
+.signaturePreview span {
+  font-size: 13px;
+  color: #64748b;
+}
+
+.modalActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.modalActions button {
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.modalActions button:first-child {
+  background: white;
+  border: 1px solid #e2e8f0;
+  color: #64748b;
+}
+
+.modalActions button:first-child:hover {
+  background: #f8fafc;
+}
+
+.confirmSignButton {
+  background: #10b981;
+  border: none;
+  color: white;
+}
+
+.confirmSignButton:hover:not(:disabled) {
+  background: #059669;
+}
+
+.confirmSignButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ========== LOADING & EMPTY ========== */
+.loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+}
+
+.spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid #e2e8f0;
+  border-top-color: #00B4D8;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 16px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.emptyState {
+  text-align: center;
+  padding: 64px;
+  background: white;
+  border-radius: 16px;
+  border: 1px solid #e2e8f0;
+}
+
+.emptyState svg {
+  color: #cbd5e1;
+  margin-bottom: 16px;
+}
+
+.emptyState h3 {
+  font-size: 20px;
+  color: #0f172a;
+  margin: 0 0 8px 0;
+}
+
+.emptyState p {
+  color: #64748b;
+  margin: 0 0 24px 0;
+}
+
+.backButton {
+  padding: 10px 24px;
+  background: #00B4D8;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* ========== RESPONSIVIDADE ========== */
+@media (max-width: 768px) {
+  .contractHeader {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .contractTitle h1 {
+    font-size: 22px;
+  }
+
+  .signatureGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .documentViewer {
+    height: 300px;
+  }
+
+  .contractActions {
+    flex-direction: column;
+  }
+
+  .outlineButton,
+  .signButton {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .signButton {
+    margin-left: 0;
+  }
+
+  .modalContent {
+    padding: 20px;
+  }
+}

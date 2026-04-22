@@ -1,0 +1,888 @@
+/* src/components/ClientComponents/EventTracking/EventTracking.module.css */
+.eventTracking {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* Loading */
+.loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid #e2e8f0;
+  border-top-color: #00B4D8;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 16px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Empty State */
+.emptyState {
+  text-align: center;
+  padding: 60px 20px;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.emptyState svg {
+  color: #94a3b8;
+  margin-bottom: 20px;
+}
+
+.emptyState h3 {
+  font-size: 20px;
+  color: #1e293b;
+  margin-bottom: 8px;
+}
+
+.emptyState p {
+  color: #64748b;
+  margin-bottom: 20px;
+}
+
+.backButton {
+  padding: 10px 24px;
+  background: #00B4D8;
+  border: none;
+  border-radius: 8px;
+  color: white;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+/* Event Header */
+.eventHeader {
+  background: linear-gradient(135deg, #00B4D8 0%, #0077b6 100%);
+  border-radius: 20px;
+  padding: 24px;
+  margin-bottom: 24px;
+  color: white;
+}
+
+.eventHeaderContent {
+  max-width: 100%;
+}
+
+.eventTitleSection {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.eventTitle {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 24px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.eventStatus {
+  padding: 6px 14px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.eventMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+  margin-bottom: 12px;
+}
+
+.metaItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  opacity: 0.95;
+}
+
+.eventAddress {
+  font-size: 14px;
+  opacity: 0.85;
+  margin: 0;
+}
+
+/* Tabs */
+.tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 24px;
+  background: white;
+  padding: 8px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.tab {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  background: none;
+  border: none;
+  color: #64748b;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+
+.tab:hover {
+  background: #f1f5f9;
+  color: #1e293b;
+}
+
+.tab.active {
+  background: #00B4D8;
+  color: white;
+}
+
+.tabContent {
+  background: white;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+/* Overview Tab */
+.overviewTab {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.infoCard, .notesCard {
+  background: #f8fafc;
+  border-radius: 12px;
+  padding: 20px;
+}
+
+.infoCard h3, .notesCard h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 16px;
+  color: #1e293b;
+  margin-bottom: 16px;
+}
+
+.infoGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.infoItem {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.infoLabel {
+  font-size: 12px;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.infoValue {
+  font-size: 16px;
+  font-weight: 500;
+  color: #1e293b;
+}
+
+.notesCard p {
+  color: #475569;
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* Progress Section */
+.progressSection {
+  margin-bottom: 8px;
+}
+
+.progressHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.progressHeader h3 {
+  font-size: 16px;
+  color: #1e293b;
+  margin: 0;
+}
+
+.progressPercentage {
+  font-size: 24px;
+  font-weight: 700;
+  color: #00B4D8;
+}
+
+.progressBar {
+  height: 8px;
+  background: #e2e8f0;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.progressFill {
+  height: 100%;
+  background: linear-gradient(90deg, #00B4D8 0%, #0077b6 100%);
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.progressText {
+  font-size: 14px;
+  color: #64748b;
+  margin: 0;
+}
+
+.nextDeadline {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  background: #fef3c7;
+  border-radius: 8px;
+  color: #d97706;
+  font-size: 14px;
+}
+
+/* Preview Sections */
+.checklistPreview, .servicesPreview, .financialPreview {
+  background: #f8fafc;
+  border-radius: 12px;
+  padding: 20px;
+}
+
+.previewHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.previewHeader h3 {
+  font-size: 16px;
+  color: #1e293b;
+  margin: 0;
+}
+
+.previewHeader button {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  color: #00B4D8;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.previewList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.previewItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+  color: #475569;
+}
+
+.completedText {
+  text-decoration: line-through;
+  color: #94a3b8;
+}
+
+.moreItems {
+  color: #64748b;
+  font-size: 13px;
+  padding-top: 4px;
+}
+
+.servicesList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.serviceItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.serviceItem:last-child {
+  border-bottom: none;
+}
+
+.serviceInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.serviceName {
+  font-weight: 500;
+  color: #1e293b;
+}
+
+.serviceProvider {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.serviceStatus {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.statusBadge {
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.servicePrice {
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.financialSummary {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.summaryRow {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.summaryRow:last-child {
+  border-bottom: none;
+}
+
+.nextPayment {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+  background: #f1f5f9;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #475569;
+  margin-top: 8px;
+}
+
+/* Checklist Tab */
+.checklistTab {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.categoryTabs {
+  display: flex;
+  gap: 8px;
+  border-bottom: 1px solid #e2e8f0;
+  padding-bottom: 16px;
+}
+
+.categoryTab {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: none;
+  border: none;
+  color: #64748b;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  border-radius: 20px;
+  transition: all 0.2s;
+}
+
+.categoryTab:hover {
+  background: #f1f5f9;
+}
+
+.categoryTab.active {
+  background: #00B4D8;
+  color: white;
+}
+
+.categoryCount {
+  padding: 2px 8px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  font-size: 12px;
+}
+
+.checklistSection {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.checklistHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.checklistHeader h3 {
+  font-size: 18px;
+  color: #1e293b;
+  margin: 0;
+}
+
+.downloadButton {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: #f1f5f9;
+  border: none;
+  border-radius: 8px;
+  color: #475569;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.downloadButton:hover {
+  background: #e2e8f0;
+}
+
+.checklist {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.checklistItem {
+  background: #f8fafc;
+  border-radius: 12px;
+  padding: 16px;
+  transition: all 0.2s;
+}
+
+.checklistItem.completed {
+  opacity: 0.8;
+}
+
+.checklistItemHeader {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.checkboxButton {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.checkedIcon {
+  color: #10b981;
+}
+
+.uncheckedIcon {
+  color: #cbd5e1;
+  transition: color 0.2s;
+}
+
+.uncheckedIcon:hover {
+  color: #00B4D8;
+}
+
+.itemContent {
+  flex: 1;
+}
+
+.itemTitle {
+  font-size: 16px;
+  font-weight: 500;
+  color: #1e293b;
+  margin: 0 0 8px 0;
+}
+
+.completed .itemTitle {
+  text-decoration: line-through;
+  color: #94a3b8;
+}
+
+.itemMeta {
+  display: flex;
+  gap: 16px;
+  font-size: 12px;
+}
+
+.itemDueDate, .itemResponsible {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: #64748b;
+}
+
+.expandButton {
+  background: none;
+  border: none;
+  color: #64748b;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.expandButton:hover {
+  background: #e2e8f0;
+  color: #1e293b;
+}
+
+.checklistItemDetails {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.itemDescription {
+  color: #475569;
+  line-height: 1.6;
+  margin: 0 0 12px 0;
+}
+
+.itemNotes {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 12px;
+  background: #f1f5f9;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #475569;
+  margin: 0 0 12px 0;
+}
+
+.itemActions {
+  display: flex;
+  gap: 16px;
+}
+
+.actionButton {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  color: #64748b;
+  font-size: 13px;
+  cursor: pointer;
+  padding: 6px 12px;
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+
+.actionButton:hover {
+  background: #e2e8f0;
+  color: #1e293b;
+}
+
+/* Services Tab */
+.servicesTab h3 {
+  font-size: 18px;
+  color: #1e293b;
+  margin: 0 0 20px 0;
+}
+
+.servicesSummary {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.summaryCard {
+  background: #f8fafc;
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.summaryLabel {
+  font-size: 14px;
+  color: #64748b;
+}
+
+.summaryValue {
+  font-size: 28px;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.servicesGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+.serviceCard {
+  background: #f8fafc;
+  border-radius: 12px;
+  padding: 20px;
+}
+
+.serviceCardHeader {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.serviceIcon {
+  width: 40px;
+  height: 40px;
+  background: white;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #00B4D8;
+}
+
+.serviceCardInfo {
+  flex: 1;
+}
+
+.serviceCardInfo h4 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0 0 8px 0;
+}
+
+.serviceStatusBadge {
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  display: inline-block;
+}
+
+.serviceDescription {
+  color: #64748b;
+  font-size: 14px;
+  line-height: 1.5;
+  margin: 0 0 16px 0;
+}
+
+.serviceDetails {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.detailRow {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+  color: #475569;
+}
+
+/* Financial Tab */
+.financialTab h3 {
+  font-size: 18px;
+  color: #1e293b;
+  margin: 0 0 20px 0;
+}
+
+.financialCards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+  margin-bottom: 24px;
+}
+
+.financialCard {
+  background: #f8fafc;
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  border-top: 3px solid #00B4D8;
+}
+
+.financialCardContent {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.financialLabel {
+  font-size: 13px;
+  color: #64748b;
+  text-transform: uppercase;
+}
+
+.financialValue {
+  font-size: 24px;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.nextPaymentCard {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: #fef3c7;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 24px;
+}
+
+.nextPaymentCard svg {
+  color: #d97706;
+}
+
+.nextPaymentCard > div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.nextPaymentCard span {
+  font-size: 14px;
+  color: #92400e;
+}
+
+.nextPaymentCard strong {
+  font-size: 18px;
+  color: #92400e;
+}
+
+.nextPaymentAmount {
+  font-size: 20px !important;
+  font-weight: 700;
+}
+
+.paymentHistory h4 {
+  font-size: 16px;
+  color: #1e293b;
+  margin: 0 0 16px 0;
+}
+
+.paymentList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.paymentItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px;
+  background: #f8fafc;
+  border-radius: 10px;
+}
+
+.paymentItem.pending {
+  background: #fffbeb;
+}
+
+.paymentInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.paymentDescription {
+  font-weight: 500;
+  color: #1e293b;
+}
+
+.paymentDate {
+  font-size: 13px;
+  color: #64748b;
+}
+
+.paymentAmount {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.paymentAmount .amount {
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.paymentStatus {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+}
+
+.receiptButton {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  color: #64748b;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.receiptButton:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}

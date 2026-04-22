@@ -1,14 +1,13 @@
 // src/context/AuthContext.tsx
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { User } from '../types/User';
-import { authService } from '../services/auth';
 import { api } from '../services/api';
 
 interface AuthContextType {
   user: User | null;
   login: (user: User, token: string) => void;
   logout: () => void;
-  updateUser: (updatedUser: User) => void;  // ✅ ADICIONADO
+  updateUser: (updatedUser: User) => void;
   loading: boolean;
 }
 
@@ -25,11 +24,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     if (token && savedUser) {
       try {
         const parsedUser = JSON.parse(savedUser);
-        console.log('✅ Usuário carregado do localStorage:', parsedUser);
+        console.log('✅ Usuário carregado do localStorage:', {
+          id: parsedUser.id,
+          name: parsedUser.name,
+          userType: parsedUser.userType,
+          role: parsedUser.role
+        });
         setUser(parsedUser);
         api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
       } catch (error) {
-        console.error('Erro ao recuperar usuário:', error);
+        console.error('❌ Erro ao recuperar usuário:', error);
         localStorage.removeItem('token');
         localStorage.removeItem('user');
       }
@@ -38,9 +42,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   }, []);
 
   const login = (userData: User, token: string) => {
-    console.log('✅ AuthContext - Login:', userData);
+    console.log('🔐 AuthContext - Login:', {
+      id: userData.id,
+      name: userData.name,
+      userType: userData.userType,
+      role: userData.role
+    });
     
-    // Garantir que o usuário tenha organizationId
     const userWithOrg = {
       ...userData,
       organizationId: userData.organizationId || null
@@ -50,18 +58,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     localStorage.setItem('token', token);
     localStorage.setItem('user', JSON.stringify(userWithOrg));
     api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-    
-    console.log('✅ Usuário salvo no localStorage:', userWithOrg);
   };
 
   const logout = () => {
+    console.log('🚪 Logout realizado');
     setUser(null);
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     delete api.defaults.headers.common['Authorization'];
   };
 
-  // ✅ FUNÇÃO updateUser ADICIONADA
   const updateUser = (updatedUser: User) => {
     console.log('🔄 Atualizando usuário no contexto:', updatedUser);
     setUser(updatedUser);

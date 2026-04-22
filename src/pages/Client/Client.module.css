@@ -1,40 +1,50 @@
-/* Client.module.css - Versão completa */
+/* src/pages/Client/Client.module.css */
+
 .clientLayout {
   display: flex;
   min-height: 100vh;
   background-color: #f8fafc;
+  position: relative;
 }
 
 /* Main Wrapper */
 .mainWrapper {
   flex: 1;
-  margin-left: 280px;
-  transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  margin-left: 260px;
+  width: calc(100% - 260px);
+  transition: margin-left 0.3s ease, width 0.3s ease;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  padding-top: 0 !important;
+  margin-top: 0 !important;
 }
 
 .mainWrapperExpanded {
-  margin-left: 80px;
+  margin-left: 72px;
+  width: calc(100% - 72px);
 }
 
-/* Main Content */
-.mainContent {
+/* Content Area */
+.contentArea {
   flex: 1;
-  padding: 88px 32px 32px 32px;
-  max-width: 1600px;
-  margin: 0 auto;
-  width: 100%;
+  display: flex;
+  flex-direction: column;
+  background: #f8fafc;
+  padding-top: 0 !important;
 }
 
 /* Page Header */
 .pageHeader {
+  background: white;
+  border-bottom: 1px solid #e2e8f0;
+  padding: 0 2rem;
+  height: 72px;
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  margin-bottom: 32px;
-  animation: fadeInUp 0.5s ease;
+  justify-content: space-between;
+  flex-shrink: 0;
+  margin: 0 !important;
 }
 
 .pageTitleSection {
@@ -44,78 +54,88 @@
 }
 
 .pageIcon {
-  width: 48px;
-  height: 48px;
+  width: 40px;
+  height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-radius: 14px;
+  background: linear-gradient(135deg, #00B4D8 0%, #0096b0 100%);
+  border-radius: 10px;
   color: white;
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
 }
 
 .pageTitle {
-  font-size: 32px;
-  font-weight: 700;
+  font-size: 1.25rem;
+  font-weight: 600;
   color: #1e293b;
   margin: 0;
-  letter-spacing: -0.5px;
 }
 
 .pageActions {
   display: flex;
-  align-items: center;
   gap: 12px;
 }
 
+/* Page Content */
 .pageContent {
-  animation: fadeIn 0.5s ease;
+  flex: 1;
+  padding: 1.5rem 2rem;
+  overflow-y: auto;
+  margin: 0 !important;
 }
 
 /* Dashboard Styles */
 .dashboard {
   display: flex;
   flex-direction: column;
-  gap: 32px;
+  gap: 24px;
 }
 
 .welcomeSection {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 32px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 24px 32px;
+  background: linear-gradient(135deg, #00B4D8 0%, #0096b0 100%);
   border-radius: 20px;
   color: white;
 }
 
+.welcomeContent {
+  flex: 1;
+}
+
 .welcomeTitle {
-  font-size: 28px;
+  font-size: 24px;
   font-weight: 700;
   margin: 0 0 8px 0;
 }
 
 .welcomeSubtitle {
-  font-size: 16px;
+  font-size: 15px;
   opacity: 0.95;
   margin: 0;
+}
+
+.welcomeSubtitle strong {
+  font-weight: 700;
 }
 
 .primaryAction {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 14px 28px;
+  padding: 12px 24px;
   background: white;
-  color: #667eea;
+  color: #00B4D8;
   border: none;
   border-radius: 12px;
   font-weight: 600;
-  font-size: 16px;
+  font-size: 15px;
   cursor: pointer;
   transition: all 0.2s;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  white-space: nowrap;
 }
 
 .primaryAction:hover {
@@ -134,7 +154,7 @@
   display: flex;
   align-items: center;
   gap: 16px;
-  padding: 24px;
+  padding: 20px;
   background: white;
   border-radius: 16px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
@@ -146,13 +166,13 @@
 .statCard:hover {
   transform: translateY(-4px);
   box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1);
-  border-color: #667eea;
+  border-color: #00B4D8;
 }
 
 .statIcon {
-  width: 56px;
-  height: 56px;
-  border-radius: 16px;
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -166,14 +186,14 @@
 
 .statLabel {
   display: block;
-  font-size: 14px;
+  font-size: 13px;
   color: #64748b;
   margin-bottom: 4px;
 }
 
 .statValue {
   display: block;
-  font-size: 28px;
+  font-size: 26px;
   font-weight: 700;
   color: #1e293b;
   margin-bottom: 4px;
@@ -181,7 +201,7 @@
 }
 
 .statSubtext {
-  font-size: 13px;
+  font-size: 12px;
   color: #64748b;
 }
 
@@ -189,14 +209,14 @@
 .quickActions {
   background: white;
   border-radius: 16px;
-  padding: 24px;
+  padding: 20px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
   border: 1px solid #e2e8f0;
 }
 
 .quickActions h3 {
-  margin: 0 0 20px 0;
-  font-size: 18px;
+  margin: 0 0 16px 0;
+  font-size: 16px;
   font-weight: 600;
   color: #1e293b;
 }
@@ -204,15 +224,15 @@
 .actionsGrid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 16px;
+  gap: 12px;
 }
 
 .actionCard {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 12px;
-  padding: 24px;
+  gap: 10px;
+  padding: 20px;
   background: #f8fafc;
   border: 1px solid #e2e8f0;
   border-radius: 12px;
@@ -223,25 +243,25 @@
 
 .actionCard:hover {
   background: white;
-  border-color: #667eea;
+  border-color: #00B4D8;
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
 .actionCard svg {
-  color: #667eea;
+  color: #00B4D8;
 }
 
 .actionCard span {
   font-weight: 500;
-  font-size: 14px;
+  font-size: 13px;
 }
 
 /* Insights Section */
 .insightsSection {
   background: white;
   border-radius: 16px;
-  padding: 24px;
+  padding: 20px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
   border: 1px solid #e2e8f0;
 }
@@ -250,8 +270,8 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  margin: 0 0 20px 0;
-  font-size: 18px;
+  margin: 0 0 16px 0;
+  font-size: 16px;
   font-weight: 600;
   color: #1e293b;
 }
@@ -273,13 +293,13 @@
 }
 
 .insightEmoji {
-  font-size: 24px;
+  font-size: 22px;
   line-height: 1;
 }
 
 .insightCard p {
   margin: 0;
-  font-size: 14px;
+  font-size: 13px;
   color: #475569;
   line-height: 1.5;
 }
@@ -289,32 +309,32 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 12px 24px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 10px 20px;
+  background: linear-gradient(135deg, #00B4D8 0%, #0096b0 100%);
   color: white;
   border: none;
-  border-radius: 12px;
+  border-radius: 10px;
   font-weight: 600;
   font-size: 14px;
   cursor: pointer;
   transition: all 0.2s;
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+  box-shadow: 0 4px 12px rgba(0, 180, 216, 0.2);
 }
 
 .primaryButton:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 8px 20px rgba(0, 180, 216, 0.3);
 }
 
 .secondaryButton {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 12px 24px;
+  padding: 10px 20px;
   background: white;
   color: #64748b;
   border: 1px solid #e2e8f0;
-  border-radius: 12px;
+  border-radius: 10px;
   font-weight: 600;
   font-size: 14px;
   cursor: pointer;
@@ -325,6 +345,41 @@
   background: #f8fafc;
   border-color: #cbd5e1;
   color: #1e293b;
+}
+
+/* Placeholder Page */
+.placeholderPage {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+}
+
+.placeholderContent {
+  text-align: center;
+  padding: 3rem;
+}
+
+.placeholderIcon {
+  font-size: 4rem;
+  margin-bottom: 1.5rem;
+}
+
+.placeholderTitle {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 0.5rem;
+}
+
+.placeholderDescription {
+  color: #64748b;
+  font-size: 1rem;
+  max-width: 400px;
+  line-height: 1.5;
 }
 
 /* Animações */
@@ -360,62 +415,63 @@
 }
 
 @media (max-width: 1024px) {
-  .mainContent {
-    padding: 88px 24px 24px 24px;
+  .pageContent {
+    padding: 1.5rem;
   }
   
   .actionsGrid {
     grid-template-columns: repeat(2, 1fr);
-  }
-  
-  .pageTitle {
-    font-size: 28px;
   }
 }
 
 @media (max-width: 768px) {
   .mainWrapper {
     margin-left: 0 !important;
+    width: 100% !important;
   }
   
-  .mainContent {
-    padding: 80px 16px 16px 16px;
-  }
-  
-  .welcomeSection {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 20px;
-    padding: 24px;
-  }
-  
-  .welcomeTitle {
-    font-size: 24px;
+  .mainWrapperExpanded {
+    margin-left: 0 !important;
+    width: 100% !important;
   }
   
   .pageHeader {
+    padding: 0 1.5rem;
+    height: auto;
+    min-height: 72px;
     flex-direction: column;
+    gap: 1rem;
     align-items: flex-start;
-    gap: 16px;
+    padding-top: 1rem;
+    padding-bottom: 1rem;
   }
   
   .pageActions {
     width: 100%;
   }
   
-  .primaryButton,
-  .secondaryButton {
-    flex: 1;
-    justify-content: center;
+  .pageContent {
+    padding: 1rem;
+  }
+  
+  .welcomeSection {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 20px;
+  }
+  
+  .welcomeTitle {
+    font-size: 20px;
   }
   
   .pageTitle {
-    font-size: 24px;
+    font-size: 1.125rem;
   }
   
   .pageIcon {
-    width: 40px;
-    height: 40px;
+    width: 36px;
+    height: 36px;
   }
   
   .statsGrid {
@@ -435,6 +491,7 @@
   .primaryButton,
   .secondaryButton {
     width: 100%;
+    justify-content: center;
   }
   
   .actionsGrid {
@@ -442,10 +499,19 @@
   }
   
   .statCard {
-    padding: 20px;
+    padding: 16px;
   }
   
   .statValue {
-    font-size: 24px;
+    font-size: 22px;
+  }
+  
+  .primaryAction {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .pageContent {
+    padding: 0.75rem;
   }
 }

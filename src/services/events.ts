@@ -3,6 +3,30 @@
 import { Event, CreateEventData } from '../types/Event';
 import { api } from './api';
 
+export interface ChecklistItem {
+  id: string;
+  title: string;
+  description: string;
+  completed: boolean;
+  dueDate?: string;
+  category: 'PRE_EVENT' | 'EVENT_DAY' | 'POST_EVENT';
+  order: number;
+  responsiblePerson?: string;
+  notes?: string;
+}
+
+export interface ContractedService {
+  id: string;
+  name: string;
+  description: string;
+  quantity: number;
+  unitPrice: number;
+  totalPrice: number;
+  status: 'CONFIRMED' | 'PENDING' | 'CANCELLED';
+  provider?: string;
+  providerContact?: string;
+}
+
 export const eventService = {
   /**
    * Busca todos os eventos
@@ -26,17 +50,18 @@ export const eventService = {
     try {
       console.log('📅 Buscando meus eventos...');
       const response = await api.get('/events/my-events');
+      console.log('✅ Meus eventos:', response.data.length);
       return response.data;
     } catch (error) {
       console.error('❌ Erro ao buscar meus eventos:', error);
-      throw error;
+      return []; // Retorna array vazio para não quebrar a UI
     }
   },
 
   /**
    * Busca evento por ID
    */
-  getEventById: async (id: number): Promise<Event> => {
+  getEventById: async (id: string | number): Promise<Event> => {
     try {
       console.log(`📅 Buscando evento ${id}...`);
       const response = await api.get(`/events/${id}`);
@@ -48,46 +73,87 @@ export const eventService = {
   },
 
   /**
-   * ✅ NOVO: Busca eventos por ID do cliente
-   * Usa getAllEvents e filtra no frontend (SOLUÇÃO 1)
+   * Busca eventos por ID do cliente
    */
-  getEventsByClientId: async (clientId: number): Promise<Event[]> => {
+  getEventsByClientId: async (clientId: string | number): Promise<Event[]> => {
     try {
       console.log(`📅 Buscando eventos do cliente ${clientId}...`);
-      
-      // Primeiro busca todos os eventos
-      const allEvents = await eventService.getAllEvents();
-      console.log(`📊 Total de eventos no sistema: ${allEvents.length}`);
-      
-      // Depois filtra pelo clientId
-      const clientEvents = allEvents.filter(event => {
-        // Verifica se o evento pertence ao cliente
-        // Pode ser tanto event.clientId quanto event.client?.id
-        return event.clientId === clientId || event.client?.id === clientId;
-      });
-      
-      console.log(`✅ Eventos do cliente ${clientId} encontrados:`, clientEvents.length);
-      
-      // Log para debug dos eventos encontrados
-      if (clientEvents.length > 0) {
-        console.log('📋 Eventos encontrados:', clientEvents.map(e => ({
-          id: e.id,
-          title: e.title,
-          status: e.status
-        })));
-      } else {
-        console.log('⚠️ Nenhum evento encontrado para este cliente');
-        
-        // Log de todos os clientId presentes nos eventos para debug
-        const allClientIds = [...new Set(allEvents.map(e => e.clientId))];
-        console.log('🔍 Clientes com eventos:', allClientIds);
-      }
-      
-      return clientEvents;
+      const response = await api.get(`/events/client/${clientId}`);
+      console.log('✅ Eventos do cliente:', response.data.length);
+      return response.data;
     } catch (error) {
       console.error(`❌ Erro ao buscar eventos do cliente ${clientId}:`, error);
-      // Retorna array vazio em caso de erro para não quebrar a UI
       return [];
+    }
+  },
+
+  /**
+   * ✅ NOVO: Busca checklist do evento
+   */
+  getEventChecklist: async (eventId: string | number): Promise<ChecklistItem[]> => {
+    try {
+      console.log(`📋 Buscando checklist do evento ${eventId}...`);
+      const response = await api.get(`/events/${eventId}/checklist`);
+      return response.data;
+    } catch (error) {
+      console.log(`ℹ️ Checklist não encontrado para evento ${eventId}`);
+      return [];
+    }
+  },
+
+  /**
+   * ✅ NOVO: Atualiza item do checklist
+   */
+  updateChecklistItem: async (eventId: string | number, itemId: string, completed: boolean): Promise<void> => {
+    try {
+      console.log(`📋 Atualizando item ${itemId} do checklist...`);
+      await api.patch(`/events/${eventId}/checklist/${itemId}`, { completed });
+      console.log('✅ Item atualizado');
+    } catch (error) {
+      console.error('❌ Erro ao atualizar item:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * ✅ NOVO: Busca serviços do evento
+   */
+  getEventServices: async (eventId: string | number): Promise<ContractedService[]> => {
+    try {
+      console.log(`📦 Buscando serviços do evento ${eventId}...`);
+      const response = await api.get(`/events/${eventId}/services`);
+      return response.data;
+    } catch (error) {
+      console.log(`ℹ️ Serviços não encontrados para evento ${eventId}`);
+      return [];
+    }
+  },
+
+  /**
+   * ✅ NOVO: Busca progresso do evento (dados consolidados)
+   */
+  getEventProgress: async (eventId: string | number): Promise<any> => {
+    try {
+      console.log(`📊 Buscando progresso do evento ${eventId}...`);
+      const response = await api.get(`/events/${eventId}/progress`);
+      return response.data;
+    } catch (error) {
+      console.log(`ℹ️ Progresso não disponível para evento ${eventId}`);
+      
+      // Fallback: buscar dados separadamente
+      const [event, checklist, services] = await Promise.all([
+        eventService.getEventById(eventId),
+        eventService.getEventChecklist(eventId),
+        eventService.getEventServices(eventId)
+      ]);
+      
+      return {
+        event,
+        checklist,
+        services,
+        completedSteps: checklist.filter((i: ChecklistItem) => i.completed).length,
+        totalSteps: checklist.length
+      };
     }
   },
 
@@ -127,48 +193,11 @@ export const eventService = {
   updateEventStatus: async (id: number, status: Event['status']): Promise<Event> => {
     try {
       console.log('🔄 Atualizando status do evento:', { id, status });
-      
-      const requestBody = { status };
-      console.log('📦 Request Body:', requestBody);
-      
-      const response = await api.patch(`/events/${id}/status`, requestBody, {
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      });
-      
+      const response = await api.patch(`/events/${id}/status`, { status });
       console.log('✅ Status atualizado com sucesso');
       return response.data;
-    } catch (error: any) {
+    } catch (error) {
       console.error('❌ Erro ao atualizar status:', error);
-      
-      if (error.response) {
-        console.error('📋 Detalhes do erro:', {
-          status: error.response.status,
-          data: error.response.data,
-          headers: error.response.headers
-        });
-      }
-      
-      throw error;
-    }
-  },
-
-  /**
-   * Método alternativo de teste para atualizar status
-   */
-  updateEventStatusTest: async (id: number, status: Event['status']): Promise<Event> => {
-    try {
-      console.log('🧪 TESTE - Atualizando status via POST');
-      const response = await api.post(`/events/${id}/status-test`, status, {
-        headers: {
-          'Content-Type': 'text/plain'
-        }
-      });
-      console.log('🧪 TESTE - Status atualizado com sucesso');
-      return response.data;
-    } catch (error: any) {
-      console.error('🧪 TESTE - Erro:', error);
       throw error;
     }
   },
@@ -188,28 +217,14 @@ export const eventService = {
   },
 
   /**
-   * Método de debug para inspecionar um evento
-   */
-  debugEvent: async (id: number): Promise<any> => {
-    try {
-      console.log(`🔍 Debug do evento ${id}...`);
-      const response = await api.get(`/events/${id}/debug`);
-      return response.data;
-    } catch (error) {
-      console.error(`❌ Erro no debug do evento ${id}:`, error);
-      throw error;
-    }
-  },
-
-  /**
    * ✅ NOVO: Busca eventos por período
    */
   getEventsByDateRange: async (startDate: string, endDate: string): Promise<Event[]> => {
     try {
       console.log(`📅 Buscando eventos entre ${startDate} e ${endDate}...`);
-      const allEvents = await eventService.getAllEvents();
+      const response = await api.get('/events/upcoming');
       
-      const filteredEvents = allEvents.filter(event => {
+      const filteredEvents = response.data.filter((event: Event) => {
         return event.eventDate >= startDate && event.eventDate <= endDate;
       });
       
@@ -221,38 +236,13 @@ export const eventService = {
   },
 
   /**
-   * ✅ NOVO: Busca eventos por status
-   */
-  getEventsByStatus: async (status: Event['status']): Promise<Event[]> => {
-    try {
-      console.log(`📅 Buscando eventos com status ${status}...`);
-      const allEvents = await eventService.getAllEvents();
-      
-      const filteredEvents = allEvents.filter(event => event.status === status);
-      
-      return filteredEvents;
-    } catch (error) {
-      console.error('❌ Erro ao buscar eventos por status:', error);
-      return [];
-    }
-  },
-
-  /**
    * ✅ NOVO: Busca eventos futuros
    */
   getUpcomingEvents: async (): Promise<Event[]> => {
     try {
       console.log('📅 Buscando eventos futuros...');
-      const allEvents = await eventService.getAllEvents();
-      const today = new Date().toISOString().split('T')[0];
-      
-      const upcomingEvents = allEvents.filter(event => 
-        event.eventDate >= today && 
-        event.status !== 'CANCELLED' && 
-        event.status !== 'COMPLETED'
-      ).sort((a, b) => a.eventDate.localeCompare(b.eventDate));
-      
-      return upcomingEvents;
+      const response = await api.get('/events/upcoming');
+      return response.data;
     } catch (error) {
       console.error('❌ Erro ao buscar eventos futuros:', error);
       return [];
@@ -260,15 +250,36 @@ export const eventService = {
   },
 
   /**
-   * ✅ NOVO: Conta eventos por cliente
+   * ✅ NOVO: Busca estatísticas do evento
    */
-  countEventsByClient: async (clientId: number): Promise<number> => {
+  getEventStats: async (): Promise<any> => {
     try {
-      const clientEvents = await eventService.getEventsByClientId(clientId);
-      return clientEvents.length;
+      console.log('📊 Buscando estatísticas...');
+      const response = await api.get('/events/stats');
+      return response.data;
     } catch (error) {
-      console.error(`❌ Erro ao contar eventos do cliente ${clientId}:`, error);
-      return 0;
+      console.error('❌ Erro ao buscar estatísticas:', error);
+      return {
+        total: 0,
+        confirmed: 0,
+        completed: 0,
+        quote: 0,
+        cancelled: 0
+      };
+    }
+  },
+
+  /**
+   * Método de debug para inspecionar um evento
+   */
+  debugEvent: async (id: number): Promise<any> => {
+    try {
+      console.log(`🔍 Debug do evento ${id}...`);
+      const response = await api.get(`/events/${id}/debug`);
+      return response.data;
+    } catch (error) {
+      console.error(`❌ Erro no debug do evento ${id}:`, error);
+      throw error;
     }
   }
 };
