@@ -23,7 +23,7 @@ import styles from './Header.module.css';
 
 interface HeaderProps {
   onMenuToggle?: () => void;
-  onViewChange?: (view: string) => void;
+  onViewChange?: (view: string, params?: any) => void;
   onSearch?: (query: string) => void;
   activeView?: string;
 }
@@ -46,13 +46,11 @@ export const Header: React.FC<HeaderProps> = ({
   const userDropdownRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLDivElement>(null);
 
-  // ✅ DEBUG - Verificar tipo de usuário
   useEffect(() => {
     console.log('🎯 HEADER - Usuário atual:', {
       name: user?.name,
       userType: user?.userType,
       role: user?.role,
-      cargo: getUserRoleText()
     });
   }, [user]);
 
@@ -86,17 +84,9 @@ export const Header: React.FC<HeaderProps> = ({
     }
   };
 
-  // ✅ FUNÇÃO CORRIGIDA - Baseada no userType
   const getUserRoleText = (): string => {
-    console.log('📌 getUserRoleText - userType:', user?.userType, 'role:', user?.role);
-    
-    if (user?.userType === 'DEVELOPER') {
-      return 'Desenvolvedor';
-    }
-    
-    if (user?.userType === 'CLIENT') {
-      return 'Cliente';
-    }
+    if (user?.userType === 'DEVELOPER') return 'Desenvolvedor';
+    if (user?.userType === 'CLIENT') return 'Cliente';
     
     if (user?.userType === 'OWNER') {
       const roleMap: Record<string, string> = {
@@ -168,8 +158,8 @@ export const Header: React.FC<HeaderProps> = ({
     }
   };
 
-  const handleSearchResultClick = (view: string) => {
-    handleNavigation(view);
+  const handleSearchResultClick = (view: string, params?: any) => {
+    handleNavigation(view, params);
     setSearchQuery('');
     setShowSearchResults(false);
   };
@@ -183,9 +173,10 @@ export const Header: React.FC<HeaderProps> = ({
   const unreadNotifications = notifications.filter(n => !n.lida);
   const unreadCount = unreadNotifications.length;
 
-  const handleNavigation = (view: string) => {
+  // ✅ NAVEGAÇÃO - Passa a view para o componente pai
+  const handleNavigation = (view: string, params?: any) => {
     console.log('🔀 HEADER - Navegando para:', view);
-    onViewChange?.(view);
+    onViewChange?.(view, params);
     setShowUserDropdown(false);
     setShowNotifications(false);
   };
@@ -225,7 +216,7 @@ export const Header: React.FC<HeaderProps> = ({
     if (notification.urlAcao) {
       window.location.href = notification.urlAcao;
     } else {
-      onViewChange?.('notifications');
+      handleNavigation('notifications');
     }
     setShowNotifications(false);
   };
@@ -234,19 +225,14 @@ export const Header: React.FC<HeaderProps> = ({
     const normalizedType = type?.toLowerCase() || 'system';
     switch(normalizedType) {
       case 'evento':
-      case 'event': 
-        return <FiCalendar size={16} />;
+      case 'event': return <FiCalendar size={16} />;
       case 'pagamento':
-      case 'payment': 
-        return <FiDollarSign size={16} />;
+      case 'payment': return <FiDollarSign size={16} />;
       case 'estoque':
-      case 'stock': 
-        return <FiPackage size={16} />;
+      case 'stock': return <FiPackage size={16} />;
       case 'alerta':
-      case 'alert': 
-        return <FiAlertCircle size={16} />;
-      default: 
-        return <FiBell size={16} />;
+      case 'alert': return <FiAlertCircle size={16} />;
+      default: return <FiBell size={16} />;
     }
   };
 
@@ -254,119 +240,107 @@ export const Header: React.FC<HeaderProps> = ({
     const normalizedType = type?.toLowerCase() || 'system';
     switch(normalizedType) {
       case 'evento':
-      case 'event': 
-        return '#3b82f6';
+      case 'event': return '#3b82f6';
       case 'pagamento':
-      case 'payment': 
-        return '#10b981';
+      case 'payment': return '#10b981';
       case 'estoque':
-      case 'stock': 
-        return '#f59e0b';
+      case 'stock': return '#f59e0b';
       case 'alerta':
-      case 'alert': 
-        return '#ef4444';
-      case 'lembrete':
-      case 'reminder': 
-        return '#8b5cf6';
-      default: 
-        return '#64748b';
+      case 'alert': return '#ef4444';
+      default: return '#64748b';
     }
   };
 
-  // ✅ Menu de busca adaptado por tipo de usuário
+  // Menu de busca por tipo de usuário
   const getSearchResults = () => {
     if (user?.userType === 'CLIENT') {
       return (
         <>
           <div className={styles.searchResultItem} onClick={() => handleSearchResultClick('events')}>
             <MdEvent size={16} />
-            <div>
-              <strong>Meus Eventos</strong>
-              <p>Visualizar eventos agendados</p>
-            </div>
+            <div><strong>Meus Eventos</strong><p>Visualizar eventos agendados</p></div>
           </div>
           <div className={styles.searchResultItem} onClick={() => handleSearchResultClick('payments')}>
             <FiDollarSign size={16} />
-            <div>
-              <strong>Pagamentos</strong>
-              <p>Ver histórico de pagamentos</p>
-            </div>
-          </div>
-          <div className={styles.searchResultItem} onClick={() => handleSearchResultClick('company-search')}>
-            <FiSearch size={16} />
-            <div>
-              <strong>Pesquisar Empresas</strong>
-              <p>Encontrar empresas de eventos</p>
-            </div>
+            <div><strong>Pagamentos</strong><p>Ver histórico de pagamentos</p></div>
           </div>
           <div className={styles.searchResultItem} onClick={() => handleSearchResultClick('documents')}>
             <FiPackage size={16} />
-            <div>
-              <strong>Documentos</strong>
-              <p>Acessar contratos e comprovantes</p>
-            </div>
+            <div><strong>Documentos</strong><p>Acessar contratos</p></div>
+          </div>
+          <div className={styles.searchResultItem} onClick={() => handleSearchResultClick('messages')}>
+            <MdGroup size={16} />
+            <div><strong>Mensagens</strong><p>Conversar com a equipe</p></div>
           </div>
         </>
       );
     }
     
-    // OWNER e DEVELOPER
+    if (user?.userType === 'DEVELOPER') {
+      return (
+        <>
+          <div className={styles.searchResultItem} onClick={() => handleSearchResultClick('organizations')}>
+            <MdGroup size={16} />
+            <div><strong>Organizações</strong><p>Gerenciar empresas</p></div>
+          </div>
+          <div className={styles.searchResultItem} onClick={() => handleSearchResultClick('catalogo')}>
+            <MdGroup size={16} />
+            <div><strong>Catálogo</strong><p>Fornecedores</p></div>
+          </div>
+          <div className={styles.searchResultItem} onClick={() => handleSearchResultClick('crm')}>
+            <FiDollarSign size={16} />
+            <div><strong>CRM</strong><p>Gestão comercial</p></div>
+          </div>
+          <div className={styles.searchResultItem} onClick={() => handleSearchResultClick('logs')}>
+            <MdGroup size={16} />
+            <div><strong>Logs</strong><p>Monitoramento</p></div>
+          </div>
+        </>
+      );
+    }
+    
+    // OWNER (padrão)
     return (
       <>
         <div className={styles.searchResultItem} onClick={() => handleSearchResultClick('events')}>
           <MdEvent size={16} />
-          <div>
-            <strong>Eventos</strong>
-            <p>Gerenciar todos os eventos</p>
-          </div>
+          <div><strong>Eventos</strong><p>Gerenciar todos os eventos</p></div>
         </div>
         <div className={styles.searchResultItem} onClick={() => handleSearchResultClick('clients')}>
           <FiUser size={16} />
-          <div>
-            <strong>Clientes</strong>
-            <p>Visualizar e gerenciar clientes</p>
-          </div>
+          <div><strong>Clientes</strong><p>Visualizar e gerenciar clientes</p></div>
         </div>
         <div className={styles.searchResultItem} onClick={() => handleSearchResultClick('team')}>
           <MdGroup size={16} />
-          <div>
-            <strong>Equipe</strong>
-            <p>Gerenciar membros da equipe</p>
-          </div>
+          <div><strong>Equipe</strong><p>Gerenciar membros</p></div>
         </div>
         <div className={styles.searchResultItem} onClick={() => handleSearchResultClick('itens')}>
           <FaBox size={16} />
-          <div>
-            <strong>Itens</strong>
-            <p>Gerenciar itens e estoque</p>
-          </div>
+          <div><strong>Itens</strong><p>Gerenciar estoque</p></div>
+        </div>
+        <div className={styles.searchResultItem} onClick={() => handleSearchResultClick('financial')}>
+          <FiDollarSign size={16} />
+          <div><strong>Financeiro</strong><p>Relatórios</p></div>
         </div>
       </>
     );
   };
 
-  // ✅ Placeholder de busca adaptado
   const getSearchPlaceholder = (): string => {
-    if (user?.userType === 'CLIENT') {
-      return 'Pesquisar eventos, pagamentos...';
-    }
+    if (user?.userType === 'CLIENT') return 'Pesquisar eventos, pagamentos...';
+    if (user?.userType === 'DEVELOPER') return 'Pesquisar organizações, logs...';
     return 'Pesquisar eventos, clientes, equipe...';
   };
 
   return (
     <header className={styles.header}>
       <div className={styles.headerContent}>
-        {/* Left Section */}
         <div className={styles.headerLeft}>
-          <button 
-            className={styles.menuToggleBtn}
-            onClick={onMenuToggle}
-            aria-label="Toggle menu"
-          >
+          <button className={styles.menuToggleBtn} onClick={onMenuToggle}>
             <FiMenu size={20} />
           </button>
           
-          <div className={styles.headerLogo} onClick={() => handleNavigation(user?.userType === 'CLIENT' ? 'dashboard' : 'dashboard')}>
+          <div className={styles.headerLogo} onClick={() => handleNavigation('dashboard')}>
             <div className={styles.headerLogoIcon}>
               <MdEvent size={24} />
             </div>
@@ -376,7 +350,6 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
         </div>
 
-        {/* Center Section - Search */}
         <div className={styles.headerCenter} ref={searchRef}>
           <div className={styles.searchContainer}>
             <FiSearch className={styles.searchIcon} size={18} />
@@ -394,7 +367,7 @@ export const Header: React.FC<HeaderProps> = ({
             )}
           </div>
           
-          {showSearchResults && (
+          {showSearchResults && searchQuery.trim().length >= 2 && (
             <div className={styles.searchResults}>
               <div className={styles.searchResultsHeader}>
                 <span>Resultados para: "{searchQuery}"</span>
@@ -409,28 +382,21 @@ export const Header: React.FC<HeaderProps> = ({
           )}
         </div>
 
-        {/* Right Section */}
         <div className={styles.headerRight}>
-          {/* Notifications */}
           <div className={styles.notificationDropdown} ref={notificationRef}>
             <button 
               className={`${styles.headerBtn} ${styles.notificationBtn}`}
               onClick={() => setShowNotifications(!showNotifications)}
             >
               <FiBell size={20} />
-              {unreadCount > 0 && (
-                <span className={styles.notificationBadge}>{unreadCount}</span>
-              )}
+              {unreadCount > 0 && <span className={styles.notificationBadge}>{unreadCount}</span>}
             </button>
 
             {showNotifications && (
               <div className={styles.notificationMenu}>
                 <div className={styles.notificationHeader}>
                   <h3>Notificações</h3>
-                  <button 
-                    className={styles.viewAllBtn}
-                    onClick={() => handleNavigation('notifications')}
-                  >
+                  <button className={styles.viewAllBtn} onClick={() => handleNavigation('notifications')}>
                     Ver todas
                   </button>
                 </div>
@@ -438,41 +404,26 @@ export const Header: React.FC<HeaderProps> = ({
                 <div className={styles.notificationList}>
                   {loading ? (
                     <div className={styles.notificationLoading}>
-                      <span className={styles.spinner}></span>
-                      Carregando...
+                      <span className={styles.spinner}></span>Carregando...
                     </div>
                   ) : unreadNotifications.length > 0 ? (
                     unreadNotifications.slice(0, 5).map(notification => (
-                      <div 
-                        key={notification.id} 
-                        className={styles.notificationItem}
-                        onClick={() => handleNotificationClick(notification)}
-                      >
-                        <div 
-                          className={styles.notificationIcon}
-                          style={{ backgroundColor: `${getTypeColor(notification.tipo)}15` }}
-                        >
+                      <div key={notification.id} className={styles.notificationItem}
+                           onClick={() => handleNotificationClick(notification)}>
+                        <div className={styles.notificationIcon} 
+                             style={{ backgroundColor: `${getTypeColor(notification.tipo)}15` }}>
                           <div style={{ color: getTypeColor(notification.tipo) }}>
                             {getTypeIcon(notification.tipo)}
                           </div>
                         </div>
                         <div className={styles.notificationContent}>
-                          <p className={styles.notificationText}>
-                            <strong>{notification.titulo}</strong>
-                          </p>
-                          <p className={styles.notificationMessage}>
-                            {notification.mensagem}
-                          </p>
-                          <span className={styles.notificationTime}>
-                            {formatTimeAgo(notification.dataCriacao)}
-                          </span>
+                          <p className={styles.notificationText}><strong>{notification.titulo}</strong></p>
+                          <p className={styles.notificationMessage}>{notification.mensagem}</p>
+                          <span className={styles.notificationTime}>{formatTimeAgo(notification.dataCriacao)}</span>
                         </div>
                         {!notification.lida && (
-                          <button 
-                            className={styles.notificationMarkRead}
-                            onClick={(e) => handleMarkAsRead(notification.id, e)}
-                            title="Marcar como lida"
-                          >
+                          <button className={styles.notificationMarkRead}
+                                  onClick={(e) => handleMarkAsRead(notification.id, e)}>
                             <FiCheck size={14} />
                           </button>
                         )}
@@ -484,24 +435,12 @@ export const Header: React.FC<HeaderProps> = ({
                       <p>Nenhuma notificação nova</p>
                     </div>
                   )}
-
-                  {unreadNotifications.length > 5 && (
-                    <div className={styles.notificationMore}>
-                      <button onClick={() => handleNavigation('notifications')}>
-                        Ver mais {unreadNotifications.length - 5} notificações
-                      </button>
-                    </div>
-                  )}
                 </div>
 
                 {unreadCount > 0 && (
                   <div className={styles.notificationFooter}>
-                    <button 
-                      className={styles.markAllReadBtn}
-                      onClick={handleMarkAllAsRead}
-                    >
-                      <FiCheck size={14} />
-                      Marcar todas como lidas
+                    <button className={styles.markAllReadBtn} onClick={handleMarkAllAsRead}>
+                      <FiCheck size={14} /> Marcar todas como lidas
                     </button>
                   </div>
                 )}
@@ -509,40 +448,24 @@ export const Header: React.FC<HeaderProps> = ({
             )}
           </div>
 
-          {/* Settings */}
-          <button 
-            className={styles.headerBtn}
-            onClick={() => handleNavigation('settings')}
-            title="Configurações"
-          >
+          <button className={styles.headerBtn} onClick={() => handleNavigation('settings')} title="Configurações">
             <FiSettings size={20} />
           </button>
 
-          {/* User Dropdown */}
           <div className={styles.userDropdown} ref={userDropdownRef}>
-            <button 
-              className={styles.userTrigger}
-              onClick={() => setShowUserDropdown(!showUserDropdown)}
-            >
-              <div className={styles.userAvatarSm}>
-                {getUserInitials()}
-              </div>
+            <button className={styles.userTrigger} onClick={() => setShowUserDropdown(!showUserDropdown)}>
+              <div className={styles.userAvatarSm}>{getUserInitials()}</div>
               <div className={styles.userInfoSm}>
                 <span className={styles.userNameSm}>{user?.name}</span>
                 <span className={styles.userRoleSm}>{getUserRoleText()}</span>
               </div>
-              <FiChevronDown 
-                size={16} 
-                className={`${styles.dropdownArrow} ${showUserDropdown ? styles.dropdownArrowRotated : ''}`}
-              />
+              <FiChevronDown size={16} className={`${styles.dropdownArrow} ${showUserDropdown ? styles.dropdownArrowRotated : ''}`} />
             </button>
 
             {showUserDropdown && (
               <div className={styles.dropdownMenu}>
                 <div className={styles.dropdownHeader}>
-                  <div className={styles.userAvatarMd}>
-                    {getUserInitials()}
-                  </div>
+                  <div className={styles.userAvatarMd}>{getUserInitials()}</div>
                   <div className={styles.userInfoMd}>
                     <span className={styles.userNameMd}>{user?.name}</span>
                     <span className={styles.userEmailMd}>{user?.email || 'Sem email'}</span>
@@ -552,30 +475,23 @@ export const Header: React.FC<HeaderProps> = ({
                 
                 <div className={styles.dropdownDivider} />
                 
-                <button 
-                  className={styles.dropdownItem}
-                  onClick={() => handleNavigation('profile')}
-                >
-                  <FiUser size={16} />
-                  <span>Meu Perfil</span>
+                <button className={styles.dropdownItem} onClick={() => handleNavigation('profile')}>
+                  <FiUser size={16} /> <span>Meu Perfil</span>
                 </button>
                 
-                <button 
-                  className={styles.dropdownItem}
-                  onClick={() => handleNavigation('settings')}
-                >
-                  <FiSettings size={16} />
-                  <span>Configurações</span>
+                <button className={styles.dropdownItem} onClick={() => handleNavigation('settings')}>
+                  <FiSettings size={16} /> <span>Configurações</span>
+                </button>
+                
+                <button className={styles.dropdownItem} onClick={() => handleNavigation('notifications')}>
+                  <FiBell size={16} /> <span>Notificações</span>
+                  {unreadCount > 0 && <span className={styles.dropdownBadge}>{unreadCount}</span>}
                 </button>
                 
                 <div className={styles.dropdownDivider} />
                 
-                <button 
-                  className={`${styles.dropdownItem} ${styles.logoutItem}`}
-                  onClick={handleLogout}
-                >
-                  <FiLogOut size={16} />
-                  <span>Sair</span>
+                <button className={`${styles.dropdownItem} ${styles.logoutItem}`} onClick={handleLogout}>
+                  <FiLogOut size={16} /> <span>Sair</span>
                 </button>
               </div>
             )}

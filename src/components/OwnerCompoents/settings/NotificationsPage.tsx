@@ -1,27 +1,16 @@
-// src/pages/OwnerCompoents/settings/NotificationsPage.tsx
+// src/components/OwnerCompoents/settings/NotificationsPage.tsx
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { 
-  FiBell, 
-  FiCheck, 
-  FiTrash2, 
-  FiSettings, 
-  FiX,
-  FiSend,
-  FiUsers,
-  FiSearch,
-  FiFilter,
-  FiCalendar,
-  FiDollarSign,
-  FiPackage,
-  FiAlertCircle,
-  FiInfo,
-  FiChevronDown,
-  FiChevronUp
+  FiBell, FiCheck, FiTrash2, FiSettings, FiX, FiSend, FiUsers, FiSearch,
+  FiCalendar, FiDollarSign, FiPackage, FiAlertCircle, FiInfo,
+  FiChevronDown, FiChevronUp, FiCheckCircle, FiXCircle, FiClock
 } from 'react-icons/fi';
 import { notificationService } from '../../../services/notification';
+import { eventService } from '../../../services/events';
 import { userService } from '../../../services/users';
 import { teamService } from '../../../services/teamService';
+import { useAuth } from '../../../context/AuthContext';
 import { LoadingSpinner } from '../../../components/common/Loading/LoadingSpinner';
 import { EmptyState } from '../../../components/common/EmptyState/EmptyState';
 import { ConfirmationModal } from '../../../components/common/Alerts/ConfirmationModal';
@@ -39,6 +28,7 @@ interface Notification {
   urlAcao: string | null;
   remetenteId: number | null;
   remetenteNome: string | null;
+  metadata?: string;
 }
 
 interface Recipient {
@@ -51,8 +41,14 @@ interface Recipient {
 }
 
 export const NotificationsPage: React.FC = () => {
+  const { user } = useAuth();
+  
+  // ✅ Verificar se é CLIENT
+  const isClient = user?.userType === 'CLIENT';
+  
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
+  const [dataLoaded, setDataLoaded] = useState(false);
   const [showPreferences, setShowPreferences] = useState(false);
   const [showManager, setShowManager] = useState(false);
   
@@ -67,8 +63,6 @@ export const NotificationsPage: React.FC = () => {
   const [recipients, setRecipients] = useState<Recipient[]>([]);
   const [selectedRecipients, setSelectedRecipients] = useState<number[]>([]);
   const [selectAll, setSelectAll] = useState(false);
-  
-  // ✅ Filtros para destinatários
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState<'all' | 'client' | 'employee'>('all');
   const [showRecipientList, setShowRecipientList] = useState(true);
@@ -79,26 +73,10 @@ export const NotificationsPage: React.FC = () => {
   
   // Preferências
   const [preferences, setPreferences] = useState({
-    email: {
-      newEvent: true,
-      eventReminder: true,
-      paymentReceived: true,
-      lowStock: true,
-      systemUpdates: true
-    },
-    inApp: {
-      newEvent: true,
-      eventReminder: true,
-      paymentReceived: true,
-      lowStock: true,
-      systemUpdates: true
-    },
+    email: { newEvent: true, eventReminder: true, paymentReceived: true, lowStock: true, systemUpdates: true },
+    inApp: { newEvent: true, eventReminder: true, paymentReceived: true, lowStock: true, systemUpdates: true },
     reminderDays: 3,
-    quietHours: {
-      enabled: false,
-      start: '22:00',
-      end: '07:00'
-    }
+    quietHours: { enabled: false, start: '22:00', end: '07:00' }
   });
   
   // Modais
@@ -107,75 +85,80 @@ export const NotificationsPage: React.FC = () => {
   const [showErrorModal, setShowErrorModal] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showAcceptConfirm, setShowAcceptConfirm] = useState(false);
+  const [showRejectConfirm, setShowRejectConfirm] = useState(false);
   const [notificationToDelete, setNotificationToDelete] = useState<number | null>(null);
+  const [notificationToProcess, setNotificationToProcess] = useState<Notification | null>(null);
   const [sending, setSending] = useState(false);
+  const [processing, setProcessing] = useState(false);
 
-  // ✅ Carregar notificações
-  const loadNotifications = useCallback(async () => {
-    try {
+  // ✅ Carregar dados apenas uma vez
+  useEffect(() => {
+    if (dataLoaded) return;
+    
+    const loadAllData = async () => {
       setLoading(true);
+      
+      try {
+        const notifData = await notificationService.getAllNotifications();
+        setNotifications(notifData);
+        console.log('✅ Notificações carregadas:', notifData.length, '| isClient:', isClient);
+        
+        // Apenas OWNER carrega destinatários e preferências
+        if (!isClient) {
+          try {
+            const [clients, teamMembers] = await Promise.all([
+              userService.getAllClients(),
+              teamService.getTeamMembers()
+            ]);
+            
+            const allRecipients: Recipient[] = [
+              ...clients.map((c: any) => ({ ...c, userType: 'CLIENT' })),
+              ...teamMembers.map((m: any) => ({ ...m, userType: 'OWNER' }))
+            ];
+            
+            const uniqueRecipients = allRecipients.filter(
+              (r, i, self) => self.findIndex(t => t.id === r.id) === i
+            );
+            
+            setRecipients(uniqueRecipients);
+            
+            try {
+              const prefs = await notificationService.getPreferences();
+              if (prefs) setPreferences(prefs);
+            } catch (e) {
+              console.log('ℹ️ Usando preferências padrão');
+            }
+          } catch (e) {
+            console.log('ℹ️ Dados de destinatários não carregados');
+          }
+        }
+        
+        setDataLoaded(true);
+      } catch (error) {
+        console.error('Erro ao carregar:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    loadAllData();
+  }, [dataLoaded, isClient]);
+
+  const refreshNotifications = useCallback(async () => {
+    try {
       const data = await notificationService.getAllNotifications();
       setNotifications(data);
     } catch (error) {
-      console.error('Erro ao carregar notificações:', error);
-    } finally {
-      setLoading(false);
+      console.error('Erro ao recarregar:', error);
     }
   }, []);
 
-  // ✅ Carregar destinatários (CLIENTES + FUNCIONÁRIOS)
-  const loadRecipients = useCallback(async () => {
-    try {
-      console.log('👥 Carregando destinatários...');
-      
-      const [clients, teamMembers] = await Promise.all([
-        userService.getAllClients(),
-        teamService.getTeamMembers()
-      ]);
-      
-      const allRecipients: Recipient[] = [
-        ...clients.map(c => ({ ...c, userType: 'CLIENT' })),
-        ...teamMembers.map(m => ({ ...m, userType: 'OWNER' }))
-      ];
-      
-      const uniqueRecipients = allRecipients.filter(
-        (recipient, index, self) => 
-          self.findIndex(r => r.id === recipient.id) === index
-      );
-      
-      setRecipients(uniqueRecipients);
-      console.log(`✅ Total de destinatários: ${uniqueRecipients.length}`);
-    } catch (error) {
-      console.error('❌ Erro ao carregar destinatários:', error);
-    }
-  }, []);
-
-  // ✅ Carregar preferências
-  const loadPreferences = useCallback(async () => {
-    try {
-      const prefs = await notificationService.getPreferences();
-      if (prefs) {
-        setPreferences(prefs);
-      }
-    } catch (error) {
-      console.error('Erro ao carregar preferências:', error);
-    }
-  }, []);
-
-  useEffect(() => {
-    loadNotifications();
-    loadRecipients();
-    loadPreferences();
-  }, [loadNotifications, loadRecipients, loadPreferences]);
-
-  // ✅ Destinatários filtrados
+  // Destinatários filtrados
   const filteredRecipients = useMemo(() => {
     return recipients.filter(recipient => {
-      // Filtro por tipo
       if (filterType === 'client' && recipient.userType !== 'CLIENT') return false;
       if (filterType === 'employee' && recipient.userType !== 'OWNER') return false;
-      
-      // Filtro por busca
       if (searchTerm) {
         const search = searchTerm.toLowerCase();
         return (
@@ -184,170 +167,236 @@ export const NotificationsPage: React.FC = () => {
           recipient.cpf?.includes(search)
         );
       }
-      
       return true;
     });
   }, [recipients, filterType, searchTerm]);
 
-  // ✅ Contagem de destinatários por tipo
-  const recipientCounts = useMemo(() => {
-    return {
-      all: recipients.length,
-      client: recipients.filter(r => r.userType === 'CLIENT').length,
-      employee: recipients.filter(r => r.userType === 'OWNER').length
-    };
-  }, [recipients]);
+  const recipientCounts = useMemo(() => ({
+    all: recipients.length,
+    client: recipients.filter(r => r.userType === 'CLIENT').length,
+    employee: recipients.filter(r => r.userType === 'OWNER').length
+  }), [recipients]);
 
-  // ✅ Notificações filtradas
   const filteredNotifications = useMemo(() => {
     return notifications.filter(notification => {
-      // Filtro por status
       if (filterStatus === 'unread' && notification.lida) return false;
       if (filterStatus === 'read' && !notification.lida) return false;
-      
-      // Filtro por tipo
       if (filterNotificationType !== 'all' && notification.tipo !== filterNotificationType) return false;
-      
       return true;
     });
   }, [notifications, filterStatus, filterNotificationType]);
 
-  // ✅ Selecionar/deselecionar todos os filtrados
-  const handleSelectAll = () => {
+  // ✅ OWNER: Verificar solicitação de reserva
+  const isReservationRequest = (notification: Notification): boolean => {
+    if (isClient) return false;
+    return notification.tipo === 'event' && 
+           (notification.titulo.includes('Nova Solicitação') || 
+            notification.titulo.includes('Reserva') ||
+            notification.mensagem.includes('solicitou'));
+  };
+
+  // ✅ CLIENT: Verificar notificação de status
+  const isStatusNotification = (notification: Notification): boolean => {
+    return notification.tipo === 'event' && 
+           (notification.titulo.includes('Reserva Confirmada') || 
+            notification.titulo.includes('Reserva Não Aprovada') ||
+            notification.titulo.includes('Reserva Recusada'));
+  };
+
+  const extractEventId = (notification: Notification): number | null => {
+    const urlMatch = notification.urlAcao?.match(/\/events\/(\d+)/);
+    if (urlMatch) return parseInt(urlMatch[1]);
+    if (notification.metadata) {
+      try {
+        const meta = JSON.parse(notification.metadata);
+        if (meta.eventId) return meta.eventId;
+      } catch (e) {}
+    }
+    return null;
+  };
+
+  const extractClientId = (notification: Notification): number | null => {
+    if (notification.metadata) {
+      try {
+        const meta = JSON.parse(notification.metadata);
+        if (meta.clientId) return meta.clientId;
+      } catch (e) {}
+    }
+    return notification.remetenteId;
+  };
+
+  // ✅ Aceitar reserva (apenas OWNER)
+  const handleAcceptReservation = useCallback(async () => {
+    if (!notificationToProcess || isClient) return;
+    setProcessing(true);
+    try {
+      const eventId = extractEventId(notificationToProcess);
+      const clientId = extractClientId(notificationToProcess);
+      if (!eventId) {
+        setErrorMessage('Não foi possível identificar o evento');
+        setShowErrorModal(true);
+        return;
+      }
+      await eventService.updateEventStatus(eventId, 'CONFIRMED');
+      await notificationService.markAsRead(notificationToProcess.id);
+      if (clientId) {
+        await notificationService.createNotification({
+          titulo: '✅ Reserva Confirmada!',
+          mensagem: `Sua solicitação de reserva foi APROVADA! O evento está confirmado. Acesse o acompanhamento para ver os próximos passos.`,
+          tipo: 'event',
+          prioridade: 'high',
+          destinatarios: [clientId],
+          urlAcao: `/client/tracking/${eventId}`
+        });
+      }
+      await eventService.createDefaultChecklist(eventId);
+      setSuccessMessage('Reserva aceita com sucesso!');
+      setShowSuccessModal(true);
+      await refreshNotifications();
+    } catch (error: any) {
+      setErrorMessage(error.message || 'Erro ao processar');
+      setShowErrorModal(true);
+    } finally {
+      setProcessing(false);
+      setShowAcceptConfirm(false);
+      setNotificationToProcess(null);
+    }
+  }, [notificationToProcess, isClient, refreshNotifications]);
+
+  // ✅ Recusar reserva (apenas OWNER)
+  const handleRejectReservation = useCallback(async () => {
+    if (!notificationToProcess || isClient) return;
+    setProcessing(true);
+    try {
+      const eventId = extractEventId(notificationToProcess);
+      const clientId = extractClientId(notificationToProcess);
+      if (!eventId) {
+        setErrorMessage('Não foi possível identificar o evento');
+        setShowErrorModal(true);
+        return;
+      }
+      await eventService.updateEventStatus(eventId, 'CANCELLED');
+      await notificationService.markAsRead(notificationToProcess.id);
+      if (clientId) {
+        await notificationService.createNotification({
+          titulo: '❌ Solicitação de Reserva Não Aprovada',
+          mensagem: `Sua solicitação de reserva não pôde ser aprovada neste momento. Entre em contato para mais informações.`,
+          tipo: 'event',
+          prioridade: 'high',
+          destinatarios: [clientId],
+          urlAcao: `/client/new-booking`
+        });
+      }
+      setSuccessMessage('Reserva recusada.');
+      setShowSuccessModal(true);
+      await refreshNotifications();
+    } catch (error: any) {
+      setErrorMessage(error.message || 'Erro ao processar');
+      setShowErrorModal(true);
+    } finally {
+      setProcessing(false);
+      setShowRejectConfirm(false);
+      setNotificationToProcess(null);
+    }
+  }, [notificationToProcess, isClient, refreshNotifications]);
+
+  useEffect(() => {
+    if (filteredRecipients.length > 0 && selectedRecipients.length === filteredRecipients.length) {
+      setSelectAll(true);
+    } else {
+      setSelectAll(false);
+    }
+  }, [selectedRecipients, filteredRecipients]);
+
+  const handleSelectAll = useCallback(() => {
     if (selectAll) {
       setSelectedRecipients([]);
     } else {
       setSelectedRecipients(filteredRecipients.map(r => r.id));
     }
-    setSelectAll(!selectAll);
-  };
+  }, [selectAll, filteredRecipients]);
 
-  // ✅ Selecionar/deselecionar um destinatário
-  const handleSelectRecipient = (id: number) => {
-    setSelectedRecipients(prev => {
-      if (prev.includes(id)) {
-        return prev.filter(r => r !== id);
-      } else {
-        return [...prev, id];
-      }
-    });
-  };
+  const handleSelectRecipient = useCallback((id: number) => {
+    setSelectedRecipients(prev => prev.includes(id) ? prev.filter(r => r !== id) : [...prev, id]);
+  }, []);
 
-  // ✅ Enviar notificação
-  const handleCreateNotification = async () => {
-    if (!titulo.trim()) {
-      setErrorMessage('O título é obrigatório');
-      setShowErrorModal(true);
-      return;
-    }
-    
-    if (!mensagem.trim()) {
-      setErrorMessage('A mensagem é obrigatória');
-      setShowErrorModal(true);
-      return;
-    }
-    
-    if (selectedRecipients.length === 0) {
-      setErrorMessage('Selecione pelo menos um destinatário');
-      setShowErrorModal(true);
-      return;
-    }
-    
+  const handleCreateNotification = useCallback(async () => {
+    if (!titulo.trim()) { setErrorMessage('Título obrigatório'); setShowErrorModal(true); return; }
+    if (!mensagem.trim()) { setErrorMessage('Mensagem obrigatória'); setShowErrorModal(true); return; }
+    if (selectedRecipients.length === 0) { setErrorMessage('Selecione destinatários'); setShowErrorModal(true); return; }
     setSending(true);
-    
     try {
-      const payload = {
-        titulo: titulo.trim(),
-        mensagem: mensagem.trim(),
-        tipo: tipo,
-        prioridade: prioridade,
-        destinatarios: selectedRecipients,
-        urlAcao: urlAcao.trim() || null
-      };
-      
-      console.log('📤 Enviando notificação:', payload);
-      
-      await notificationService.createNotification(payload);
-      
-      setSuccessMessage('Notificação enviada com sucesso!');
+      await notificationService.createNotification({
+        titulo: titulo.trim(), mensagem: mensagem.trim(), tipo, prioridade,
+        destinatarios: selectedRecipients, urlAcao: urlAcao.trim() || null
+      });
+      setSuccessMessage('Notificação enviada!');
       setShowSuccessModal(true);
-      
-      // Limpar formulário
-      setTitulo('');
-      setMensagem('');
-      setUrlAcao('');
-      setSelectedRecipients([]);
-      setSelectAll(false);
-      setShowManager(false);
-      setSearchTerm('');
-      setFilterType('all');
-      
-      await loadNotifications();
+      setTitulo(''); setMensagem(''); setUrlAcao('');
+      setSelectedRecipients([]); setShowManager(false);
+      setSearchTerm(''); setFilterType('all');
+      await refreshNotifications();
     } catch (error: any) {
-      console.error('Erro ao enviar notificação:', error);
-      setErrorMessage(error.message || 'Erro ao enviar notificação');
+      setErrorMessage(error.message || 'Erro ao enviar');
       setShowErrorModal(true);
     } finally {
       setSending(false);
     }
-  };
+  }, [titulo, mensagem, tipo, prioridade, selectedRecipients, urlAcao, refreshNotifications]);
 
-  // ✅ Marcar como lida
-  const handleMarkAsRead = async (id: number) => {
+  const handleMarkAsRead = useCallback(async (id: number) => {
     try {
       await notificationService.markAsRead(id);
-      setNotifications(prev => 
-        prev.map(n => n.id === id ? { ...n, lida: true } : n)
-      );
+      setNotifications(prev => prev.map(n => n.id === id ? { ...n, lida: true } : n));
     } catch (error) {
       console.error('Erro ao marcar como lida:', error);
     }
-  };
+  }, []);
 
-  // ✅ Marcar todas como lidas
-  const handleMarkAllAsRead = async () => {
+  const handleMarkAllAsRead = useCallback(async () => {
     try {
       await notificationService.markAllAsRead();
       setNotifications(prev => prev.map(n => ({ ...n, lida: true })));
-      setSuccessMessage('Todas as notificações marcadas como lidas');
+      setSuccessMessage('Todas marcadas como lidas');
       setShowSuccessModal(true);
     } catch (error) {
-      console.error('Erro ao marcar todas como lidas:', error);
+      console.error('Erro:', error);
     }
-  };
+  }, []);
 
-  // ✅ Excluir notificação
-  const handleDeleteNotification = async () => {
+  const handleDeleteNotification = useCallback(async () => {
     if (!notificationToDelete) return;
-    
     try {
       await notificationService.deleteNotification(notificationToDelete);
       setNotifications(prev => prev.filter(n => n.id !== notificationToDelete));
-      setSuccessMessage('Notificação excluída com sucesso');
+      setSuccessMessage('Notificação excluída');
       setShowSuccessModal(true);
     } catch (error) {
-      console.error('Erro ao excluir notificação:', error);
-      setErrorMessage('Erro ao excluir notificação');
+      setErrorMessage('Erro ao excluir');
       setShowErrorModal(true);
     } finally {
       setShowDeleteConfirm(false);
       setNotificationToDelete(null);
     }
-  };
+  }, [notificationToDelete]);
 
-  // ✅ Salvar preferências
-  const handleSavePreferences = async () => {
+  const handleSavePreferences = useCallback(async () => {
     try {
       await notificationService.updatePreferences(preferences);
-      setSuccessMessage('Preferências salvas com sucesso!');
+      setSuccessMessage('Preferências salvas!');
       setShowSuccessModal(true);
       setShowPreferences(false);
     } catch (error) {
-      console.error('Erro ao salvar preferências:', error);
-      setErrorMessage('Erro ao salvar preferências');
+      setErrorMessage('Erro ao salvar');
       setShowErrorModal(true);
     }
-  };
+  }, [preferences]);
+
+  const handleCancelManager = useCallback(() => {
+    setShowManager(false);
+    setTitulo(''); setMensagem(''); setUrlAcao('');
+    setSelectedRecipients([]); setSearchTerm(''); setFilterType('all');
+  }, []);
 
   const getTypeIcon = (type: string) => {
     const icons: Record<string, JSX.Element> = {
@@ -362,31 +411,22 @@ export const NotificationsPage: React.FC = () => {
 
   const getTypeColor = (type: string): string => {
     const colors: Record<string, string> = {
-      'event': '#3b82f6',
-      'payment': '#10b981',
-      'stock': '#f59e0b',
-      'alert': '#ef4444',
-      'system': '#6b7280'
+      'event': '#3b82f6', 'payment': '#10b981', 'stock': '#f59e0b',
+      'alert': '#ef4444', 'system': '#6b7280'
     };
     return colors[type] || '#6b7280';
   };
 
   const getPriorityColor = (priority: string): string => {
     const colors: Record<string, string> = {
-      'low': '#6b7280',
-      'medium': '#3b82f6',
-      'high': '#f59e0b',
-      'urgent': '#ef4444'
+      'low': '#6b7280', 'medium': '#3b82f6', 'high': '#f59e0b', 'urgent': '#ef4444'
     };
     return colors[priority] || '#6b7280';
   };
 
   const getPriorityLabel = (priority: string): string => {
     const labels: Record<string, string> = {
-      'low': 'Baixa',
-      'medium': 'Média',
-      'high': 'Alta',
-      'urgent': 'Urgente'
+      'low': 'Baixa', 'medium': 'Média', 'high': 'Alta', 'urgent': 'Urgente'
     };
     return labels[priority] || priority;
   };
@@ -394,7 +434,11 @@ export const NotificationsPage: React.FC = () => {
   const unreadCount = notifications.filter(n => !n.lida).length;
 
   if (loading) {
-    return <LoadingSpinner text="Carregando notificações..." fullScreen />;
+    return (
+      <div className={styles.loadingContainer}>
+        <LoadingSpinner text="Carregando notificações..." />
+      </div>
+    );
   }
 
   return (
@@ -405,276 +449,108 @@ export const NotificationsPage: React.FC = () => {
           <h1 className={styles.pageTitle}>
             <FiBell size={28} />
             Notificações
-            {unreadCount > 0 && (
-              <span className={styles.unreadBadge}>{unreadCount}</span>
-            )}
+            {unreadCount > 0 && <span className={styles.unreadBadge}>{unreadCount}</span>}
           </h1>
           <p className={styles.pageSubtitle}>
-            Gerencie suas notificações e preferências
+            {isClient ? 'Acompanhe suas notificações e atualizações' : 'Gerencie notificações e aprove solicitações'}
           </p>
         </div>
         
-        <div className={styles.headerActions}>
-          <button 
-            className={`${styles.secondaryButton} ${showPreferences ? styles.active : ''}`}
-            onClick={() => setShowPreferences(!showPreferences)}
-          >
-            <FiSettings size={18} />
-            {showPreferences ? 'Fechar Preferências' : 'Preferências'}
-          </button>
-          
-          <button 
-            className={styles.primaryButton}
-            onClick={() => setShowManager(!showManager)}
-          >
-            <FiSend size={18} />
-            {showManager ? 'Cancelar' : 'Enviar Notificação'}
-          </button>
-        </div>
+        {/* ✅ Apenas OWNER vê botões de Preferências e Enviar */}
+        {!isClient && (
+          <div className={styles.headerActions}>
+            <button className={`${styles.secondaryButton} ${showPreferences ? styles.active : ''}`}
+                    onClick={() => setShowPreferences(!showPreferences)}>
+              <FiSettings size={18} />
+              {showPreferences ? 'Fechar' : 'Preferências'}
+            </button>
+            <button className={styles.primaryButton} onClick={() => setShowManager(!showManager)}>
+              <FiSend size={18} />
+              {showManager ? 'Cancelar' : 'Enviar Notificação'}
+            </button>
+          </div>
+        )}
       </div>
 
-      {/* Painel de Preferências */}
-      {showPreferences && (
+      {/* Painel de Preferências - Apenas OWNER */}
+      {showPreferences && !isClient && (
         <div className={styles.preferencesPanel}>
           <h2 className={styles.panelTitle}>Preferências de Notificação</h2>
-          
           <div className={styles.preferencesGrid}>
             <div className={styles.preferencesColumn}>
-              <h4>Notificações por Email</h4>
-              <label className={styles.checkboxLabel}>
-                <input 
-                  type="checkbox" 
-                  checked={preferences.email.newEvent}
-                  onChange={(e) => setPreferences(prev => ({
-                    ...prev,
-                    email: { ...prev.email, newEvent: e.target.checked }
-                  }))}
-                />
-                Novos eventos
-              </label>
-              <label className={styles.checkboxLabel}>
-                <input 
-                  type="checkbox" 
-                  checked={preferences.email.eventReminder}
-                  onChange={(e) => setPreferences(prev => ({
-                    ...prev,
-                    email: { ...prev.email, eventReminder: e.target.checked }
-                  }))}
-                />
-                Lembretes de eventos
-              </label>
-              <label className={styles.checkboxLabel}>
-                <input 
-                  type="checkbox" 
-                  checked={preferences.email.paymentReceived}
-                  onChange={(e) => setPreferences(prev => ({
-                    ...prev,
-                    email: { ...prev.email, paymentReceived: e.target.checked }
-                  }))}
-                />
-                Pagamentos recebidos
-              </label>
-              <label className={styles.checkboxLabel}>
-                <input 
-                  type="checkbox" 
-                  checked={preferences.email.lowStock}
-                  onChange={(e) => setPreferences(prev => ({
-                    ...prev,
-                    email: { ...prev.email, lowStock: e.target.checked }
-                  }))}
-                />
-                Estoque baixo
-              </label>
-              <label className={styles.checkboxLabel}>
-                <input 
-                  type="checkbox" 
-                  checked={preferences.email.systemUpdates}
-                  onChange={(e) => setPreferences(prev => ({
-                    ...prev,
-                    email: { ...prev.email, systemUpdates: e.target.checked }
-                  }))}
-                />
-                Atualizações do sistema
-              </label>
+              <h4>Email</h4>
+              {Object.entries(preferences.email).map(([key, value]) => (
+                <label key={key} className={styles.checkboxLabel}>
+                  <input type="checkbox" checked={value}
+                    onChange={(e) => setPreferences(prev => ({
+                      ...prev, email: { ...prev.email, [key]: e.target.checked }
+                    }))} />
+                  {key === 'newEvent' && 'Novos eventos'}
+                  {key === 'eventReminder' && 'Lembretes'}
+                  {key === 'paymentReceived' && 'Pagamentos'}
+                  {key === 'lowStock' && 'Estoque baixo'}
+                  {key === 'systemUpdates' && 'Atualizações'}
+                </label>
+              ))}
             </div>
-            
             <div className={styles.preferencesColumn}>
-              <h4>Notificações no Aplicativo</h4>
-              <label className={styles.checkboxLabel}>
-                <input 
-                  type="checkbox" 
-                  checked={preferences.inApp.newEvent}
-                  onChange={(e) => setPreferences(prev => ({
-                    ...prev,
-                    inApp: { ...prev.inApp, newEvent: e.target.checked }
-                  }))}
-                />
-                Novos eventos
-              </label>
-              <label className={styles.checkboxLabel}>
-                <input 
-                  type="checkbox" 
-                  checked={preferences.inApp.eventReminder}
-                  onChange={(e) => setPreferences(prev => ({
-                    ...prev,
-                    inApp: { ...prev.inApp, eventReminder: e.target.checked }
-                  }))}
-                />
-                Lembretes de eventos
-              </label>
-              <label className={styles.checkboxLabel}>
-                <input 
-                  type="checkbox" 
-                  checked={preferences.inApp.paymentReceived}
-                  onChange={(e) => setPreferences(prev => ({
-                    ...prev,
-                    inApp: { ...prev.inApp, paymentReceived: e.target.checked }
-                  }))}
-                />
-                Pagamentos recebidos
-              </label>
-              <label className={styles.checkboxLabel}>
-                <input 
-                  type="checkbox" 
-                  checked={preferences.inApp.lowStock}
-                  onChange={(e) => setPreferences(prev => ({
-                    ...prev,
-                    inApp: { ...prev.inApp, lowStock: e.target.checked }
-                  }))}
-                />
-                Estoque baixo
-              </label>
-              <label className={styles.checkboxLabel}>
-                <input 
-                  type="checkbox" 
-                  checked={preferences.inApp.systemUpdates}
-                  onChange={(e) => setPreferences(prev => ({
-                    ...prev,
-                    inApp: { ...prev.inApp, systemUpdates: e.target.checked }
-                  }))}
-                />
-                Atualizações do sistema
-              </label>
+              <h4>Aplicativo</h4>
+              {Object.entries(preferences.inApp).map(([key, value]) => (
+                <label key={key} className={styles.checkboxLabel}>
+                  <input type="checkbox" checked={value}
+                    onChange={(e) => setPreferences(prev => ({
+                      ...prev, inApp: { ...prev.inApp, [key]: e.target.checked }
+                    }))} />
+                  {key === 'newEvent' && 'Novos eventos'}
+                  {key === 'eventReminder' && 'Lembretes'}
+                  {key === 'paymentReceived' && 'Pagamentos'}
+                  {key === 'lowStock' && 'Estoque baixo'}
+                  {key === 'systemUpdates' && 'Atualizações'}
+                </label>
+              ))}
             </div>
-            
             <div className={styles.preferencesColumn}>
-              <h4>Configurações Gerais</h4>
+              <h4>Geral</h4>
               <div className={styles.formGroup}>
-                <label className={styles.formLabel}>Dias de antecedência para lembretes</label>
-                <input 
-                  type="number" 
-                  min="1" 
-                  max="30"
+                <label>Dias de antecedência</label>
+                <input type="number" min="1" max="30" className={styles.formInput}
                   value={preferences.reminderDays}
-                  onChange={(e) => setPreferences(prev => ({
-                    ...prev,
-                    reminderDays: parseInt(e.target.value) || 3
-                  }))}
-                  className={styles.formInput}
-                />
+                  onChange={(e) => setPreferences(prev => ({ ...prev, reminderDays: parseInt(e.target.value) || 3 }))} />
               </div>
-              
-              <label className={styles.checkboxLabel}>
-                <input 
-                  type="checkbox" 
-                  checked={preferences.quietHours.enabled}
-                  onChange={(e) => setPreferences(prev => ({
-                    ...prev,
-                    quietHours: { ...prev.quietHours, enabled: e.target.checked }
-                  }))}
-                />
-                Horário de silêncio
-              </label>
-              
-              {preferences.quietHours.enabled && (
-                <div className={styles.quietHoursInputs}>
-                  <input 
-                    type="time" 
-                    value={preferences.quietHours.start}
-                    onChange={(e) => setPreferences(prev => ({
-                      ...prev,
-                      quietHours: { ...prev.quietHours, start: e.target.value }
-                    }))}
-                    className={styles.formInput}
-                  />
-                  <span>até</span>
-                  <input 
-                    type="time" 
-                    value={preferences.quietHours.end}
-                    onChange={(e) => setPreferences(prev => ({
-                      ...prev,
-                      quietHours: { ...prev.quietHours, end: e.target.value }
-                    }))}
-                    className={styles.formInput}
-                  />
-                </div>
-              )}
             </div>
           </div>
-          
           <div className={styles.panelActions}>
-            <button 
-              className={styles.secondaryButton}
-              onClick={() => setShowPreferences(false)}
-            >
-              Cancelar
-            </button>
-            <button 
-              className={styles.primaryButton}
-              onClick={handleSavePreferences}
-            >
-              Salvar Preferências
-            </button>
+            <button className={styles.secondaryButton} onClick={() => setShowPreferences(false)}>Cancelar</button>
+            <button className={styles.primaryButton} onClick={handleSavePreferences}>Salvar</button>
           </div>
         </div>
       )}
 
-      {/* Painel de Envio de Notificação */}
-      {showManager && (
+      {/* Painel de Envio - Apenas OWNER */}
+      {showManager && !isClient && (
         <div className={styles.managerPanel}>
           <div className={styles.managerHeader}>
             <h2 className={styles.panelTitle}>Enviar Notificação</h2>
-            <button 
-              className={styles.toggleRecipientList}
-              onClick={() => setShowRecipientList(!showRecipientList)}
-            >
+            <button className={styles.toggleRecipientList} onClick={() => setShowRecipientList(!showRecipientList)}>
               {showRecipientList ? <FiChevronUp size={18} /> : <FiChevronDown size={18} />}
-              {showRecipientList ? 'Ocultar' : 'Mostrar'} lista
             </button>
           </div>
-          
           <div className={styles.managerGrid}>
             <div className={styles.managerForm}>
               <div className={styles.formGroup}>
-                <label className={styles.formLabel}>Título *</label>
-                <input 
-                  type="text" 
-                  value={titulo}
-                  onChange={(e) => setTitulo(e.target.value)}
-                  placeholder="Título da notificação"
-                  className={styles.formInput}
-                />
+                <label>Título *</label>
+                <input type="text" className={styles.formInput} value={titulo}
+                  onChange={(e) => setTitulo(e.target.value)} placeholder="Título" />
               </div>
-              
               <div className={styles.formGroup}>
-                <label className={styles.formLabel}>Mensagem *</label>
-                <textarea 
-                  value={mensagem}
-                  onChange={(e) => setMensagem(e.target.value)}
-                  placeholder="Digite a mensagem..."
-                  className={styles.formTextarea}
-                  rows={4}
-                />
+                <label>Mensagem *</label>
+                <textarea className={styles.formTextarea} value={mensagem}
+                  onChange={(e) => setMensagem(e.target.value)} placeholder="Mensagem..." rows={4} />
               </div>
-              
               <div className={styles.formRow}>
                 <div className={styles.formGroup}>
-                  <label className={styles.formLabel}>Tipo</label>
-                  <select 
-                    value={tipo}
-                    onChange={(e) => setTipo(e.target.value)}
-                    className={styles.formSelect}
-                  >
+                  <label>Tipo</label>
+                  <select className={styles.formSelect} value={tipo} onChange={(e) => setTipo(e.target.value)}>
                     <option value="system">Sistema</option>
                     <option value="event">Evento</option>
                     <option value="payment">Pagamento</option>
@@ -682,14 +558,9 @@ export const NotificationsPage: React.FC = () => {
                     <option value="alert">Alerta</option>
                   </select>
                 </div>
-                
                 <div className={styles.formGroup}>
-                  <label className={styles.formLabel}>Prioridade</label>
-                  <select 
-                    value={prioridade}
-                    onChange={(e) => setPrioridade(e.target.value)}
-                    className={styles.formSelect}
-                  >
+                  <label>Prioridade</label>
+                  <select className={styles.formSelect} value={prioridade} onChange={(e) => setPrioridade(e.target.value)}>
                     <option value="low">Baixa</option>
                     <option value="medium">Média</option>
                     <option value="high">Alta</option>
@@ -697,109 +568,53 @@ export const NotificationsPage: React.FC = () => {
                   </select>
                 </div>
               </div>
-              
               <div className={styles.formGroup}>
-                <label className={styles.formLabel}>Link de Ação (opcional)</label>
-                <input 
-                  type="text" 
-                  value={urlAcao}
-                  onChange={(e) => setUrlAcao(e.target.value)}
-                  placeholder="/dashboard, /events/123, etc."
-                  className={styles.formInput}
-                />
+                <label>Link (opcional)</label>
+                <input type="text" className={styles.formInput} value={urlAcao}
+                  onChange={(e) => setUrlAcao(e.target.value)} placeholder="/events/123" />
               </div>
-              
               <div className={styles.selectedCount}>
                 <FiUsers size={14} />
-                <span>{selectedRecipients.length} destinatário(s) selecionado(s)</span>
+                <span>{selectedRecipients.length} selecionado(s)</span>
               </div>
             </div>
-            
             {showRecipientList && (
               <div className={styles.managerUsers}>
                 <div className={styles.recipientHeader}>
-                  <h4 className={styles.managerUsersTitle}>
-                    <FiUsers size={16} />
-                    Destinatários
-                  </h4>
-                  
-                  {/* ✅ Filtros de tipo */}
+                  <h4><FiUsers size={16} /> Destinatários</h4>
                   <div className={styles.recipientFilters}>
-                    <button 
-                      className={`${styles.filterChip} ${filterType === 'all' ? styles.active : ''}`}
-                      onClick={() => setFilterType('all')}
-                    >
-                      Todos ({recipientCounts.all})
-                    </button>
-                    <button 
-                      className={`${styles.filterChip} ${filterType === 'client' ? styles.active : ''}`}
-                      onClick={() => setFilterType('client')}
-                    >
-                      Clientes ({recipientCounts.client})
-                    </button>
-                    <button 
-                      className={`${styles.filterChip} ${filterType === 'employee' ? styles.active : ''}`}
-                      onClick={() => setFilterType('employee')}
-                    >
-                      Funcionários ({recipientCounts.employee})
-                    </button>
+                    <button className={`${styles.filterChip} ${filterType === 'all' ? styles.active : ''}`}
+                      onClick={() => setFilterType('all')}>Todos ({recipientCounts.all})</button>
+                    <button className={`${styles.filterChip} ${filterType === 'client' ? styles.active : ''}`}
+                      onClick={() => setFilterType('client')}>Clientes ({recipientCounts.client})</button>
+                    <button className={`${styles.filterChip} ${filterType === 'employee' ? styles.active : ''}`}
+                      onClick={() => setFilterType('employee')}>Funcionários ({recipientCounts.employee})</button>
                   </div>
                 </div>
-                
-                {/* ✅ Barra de busca */}
                 <div className={styles.recipientSearch}>
                   <FiSearch size={16} />
-                  <input 
-                    type="text" 
-                    placeholder="Buscar por nome, email ou CPF..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className={styles.recipientSearchInput}
-                  />
-                  {searchTerm && (
-                    <button 
-                      className={styles.clearSearch}
-                      onClick={() => setSearchTerm('')}
-                    >
-                      <FiX size={14} />
-                    </button>
-                  )}
+                  <input type="text" placeholder="Buscar..." value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)} className={styles.recipientSearchInput} />
+                  {searchTerm && <button className={styles.clearSearch} onClick={() => setSearchTerm('')}><FiX size={14} /></button>}
                 </div>
-                
                 <label className={styles.selectAllLabel}>
-                  <input 
-                    type="checkbox" 
-                    checked={selectAll && filteredRecipients.length > 0}
-                    onChange={handleSelectAll}
-                  />
-                  <strong>Selecionar Todos os Filtrados</strong>
-                  <span className={styles.filteredCount}>({filteredRecipients.length})</span>
+                  <input type="checkbox" checked={selectAll && filteredRecipients.length > 0} onChange={handleSelectAll} />
+                  <strong>Selecionar Todos</strong> ({filteredRecipients.length})
                 </label>
-                
                 <div className={styles.usersListContainer}>
                   {filteredRecipients.length === 0 ? (
-                    <div className={styles.noRecipients}>
-                      <FiUsers size={24} />
-                      <p>Nenhum destinatário encontrado</p>
-                    </div>
+                    <div className={styles.noRecipients}><FiUsers size={24} /><p>Nenhum encontrado</p></div>
                   ) : (
                     filteredRecipients.map(recipient => (
                       <label key={recipient.id} className={styles.recipientItem}>
-                        <input 
-                          type="checkbox" 
-                          checked={selectedRecipients.includes(recipient.id)}
-                          onChange={() => handleSelectRecipient(recipient.id)}
-                        />
+                        <input type="checkbox" checked={selectedRecipients.includes(recipient.id)}
+                          onChange={() => handleSelectRecipient(recipient.id)} />
                         <div className={styles.recipientInfo}>
                           <span className={styles.recipientName}>{recipient.name}</span>
                           <span className={styles.recipientEmail}>{recipient.email}</span>
                         </div>
-                        {recipient.userType === 'OWNER' && (
-                          <span className={styles.employeeBadge}>Funcionário</span>
-                        )}
-                        {recipient.userType === 'CLIENT' && (
-                          <span className={styles.clientBadge}>Cliente</span>
-                        )}
+                        {recipient.userType === 'OWNER' && <span className={styles.employeeBadge}>Func.</span>}
+                        {recipient.userType === 'CLIENT' && <span className={styles.clientBadge}>Cliente</span>}
                       </label>
                     ))
                   )}
@@ -807,63 +622,28 @@ export const NotificationsPage: React.FC = () => {
               </div>
             )}
           </div>
-          
           <div className={styles.panelActions}>
-            <button 
-              className={styles.secondaryButton}
-              onClick={() => {
-                setShowManager(false);
-                setTitulo('');
-                setMensagem('');
-                setUrlAcao('');
-                setSelectedRecipients([]);
-                setSelectAll(false);
-                setSearchTerm('');
-                setFilterType('all');
-              }}
-            >
-              Cancelar
-            </button>
-            <button 
-              className={styles.primaryButton}
-              onClick={handleCreateNotification}
-              disabled={sending}
-            >
-              {sending ? 'Enviando...' : 'Enviar Notificação'}
+            <button className={styles.secondaryButton} onClick={handleCancelManager}>Cancelar</button>
+            <button className={styles.primaryButton} onClick={handleCreateNotification} disabled={sending}>
+              {sending ? 'Enviando...' : 'Enviar'}
             </button>
           </div>
         </div>
       )}
 
-      {/* Filtros de Notificações */}
+      {/* Filtros */}
       <div className={styles.filtersBar}>
         <div className={styles.filterGroup}>
-          <button 
-            className={`${styles.filterButton} ${filterStatus === 'all' ? styles.activeFilter : ''}`}
-            onClick={() => setFilterStatus('all')}
-          >
-            Todas ({notifications.length})
-          </button>
-          <button 
-            className={`${styles.filterButton} ${filterStatus === 'unread' ? styles.activeFilter : ''}`}
-            onClick={() => setFilterStatus('unread')}
-          >
-            Não lidas ({unreadCount})
-          </button>
-          <button 
-            className={`${styles.filterButton} ${filterStatus === 'read' ? styles.activeFilter : ''}`}
-            onClick={() => setFilterStatus('read')}
-          >
-            Lidas ({notifications.filter(n => n.lida).length})
-          </button>
+          <button className={`${styles.filterButton} ${filterStatus === 'all' ? styles.activeFilter : ''}`}
+            onClick={() => setFilterStatus('all')}>Todas ({notifications.length})</button>
+          <button className={`${styles.filterButton} ${filterStatus === 'unread' ? styles.activeFilter : ''}`}
+            onClick={() => setFilterStatus('unread')}>Não lidas ({unreadCount})</button>
+          <button className={`${styles.filterButton} ${filterStatus === 'read' ? styles.activeFilter : ''}`}
+            onClick={() => setFilterStatus('read')}>Lidas ({notifications.filter(n => n.lida).length})</button>
         </div>
-        
         <div className={styles.filterGroup}>
-          <select 
-            className={styles.filterSelect}
-            value={filterNotificationType}
-            onChange={(e) => setFilterNotificationType(e.target.value)}
-          >
+          <select className={styles.filterSelect} value={filterNotificationType}
+            onChange={(e) => setFilterNotificationType(e.target.value)}>
             <option value="all">Todos os tipos</option>
             <option value="event">Eventos</option>
             <option value="payment">Pagamentos</option>
@@ -872,139 +652,123 @@ export const NotificationsPage: React.FC = () => {
             <option value="system">Sistema</option>
           </select>
         </div>
-        
         {unreadCount > 0 && (
-          <button 
-            className={styles.secondaryButton}
-            onClick={handleMarkAllAsRead}
-          >
-            <FiCheck size={16} />
-            Marcar todas como lidas
+          <button className={styles.markAllBtn} onClick={handleMarkAllAsRead}>
+            <FiCheck size={16} /> Marcar todas
           </button>
         )}
       </div>
 
-      {/* Lista de Notificações */}
+      {/* Lista */}
       {filteredNotifications.length === 0 ? (
-        <EmptyState
-          icon={<FiBell size={48} />}
-          title="Nenhuma notificação"
-          description={
-            filterStatus !== 'all' || filterNotificationType !== 'all'
-              ? 'Nenhuma notificação corresponde aos filtros aplicados.'
-              : 'Você não tem notificações no momento.'
-          }
-        />
+        <EmptyState icon={<FiBell size={48} />} title="Nenhuma notificação"
+          description={filterStatus !== 'all' || filterNotificationType !== 'all'
+            ? 'Nenhuma corresponde aos filtros.' : 'Você não tem notificações.'} />
       ) : (
         <div className={styles.notificationsList}>
-          {filteredNotifications.map(notification => (
-            <div 
-              key={notification.id} 
-              className={`${styles.notificationCard} ${!notification.lida ? styles.unread : ''}`}
-            >
-              <div 
-                className={styles.notificationIcon}
-                style={{ backgroundColor: getTypeColor(notification.tipo) + '20', color: getTypeColor(notification.tipo) }}
-              >
-                {getTypeIcon(notification.tipo)}
-              </div>
-              
-              <div className={styles.notificationContent}>
-                <div className={styles.notificationHeader}>
-                  <h3 className={styles.notificationTitle}>
-                    {!notification.lida && <span className={styles.unreadDot} />}
-                    {notification.titulo}
-                  </h3>
-                  <div className={styles.notificationMeta}>
-                    <span 
-                      className={styles.priorityBadge}
-                      style={{ backgroundColor: getPriorityColor(notification.prioridade) }}
-                    >
-                      {getPriorityLabel(notification.prioridade)}
-                    </span>
-                    <span className={styles.notificationTime}>
-                      {new Date(notification.dataCriacao).toLocaleString('pt-BR')}
-                    </span>
-                  </div>
+          {filteredNotifications.map(notification => {
+            const isReservation = isReservationRequest(notification);
+            const isStatus = isStatusNotification(notification);
+            const isApproved = notification.titulo.includes('Confirmada');
+            const isRejected = notification.titulo.includes('Não Aprovada') || notification.titulo.includes('Recusada');
+            
+            return (
+              <div key={notification.id} 
+                className={`${styles.notificationCard} ${!notification.lida ? styles.unread : ''} 
+                  ${isReservation ? styles.reservationCard : ''} 
+                  ${isApproved ? styles.approvedCard : ''} 
+                  ${isRejected ? styles.rejectedCard : ''}`}>
+                <div className={styles.notificationIcon}
+                  style={{ backgroundColor: getTypeColor(notification.tipo) + '20', color: getTypeColor(notification.tipo) }}>
+                  {isApproved ? <FiCheckCircle size={20} /> : isRejected ? <FiXCircle size={20} /> : getTypeIcon(notification.tipo)}
                 </div>
-                
-                <p className={styles.notificationMessage}>{notification.mensagem}</p>
-                
-                {notification.remetenteNome && (
-                  <p className={styles.notificationSender}>
-                    Enviado por: <strong>{notification.remetenteNome}</strong>
-                  </p>
-                )}
-                
-                <div className={styles.notificationFooter}>
-                  {notification.urlAcao && (
-                    <a 
-                      href={notification.urlAcao} 
-                      className={styles.notificationAction}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      Ver detalhes →
-                    </a>
+                <div className={styles.notificationContent}>
+                  <div className={styles.notificationHeader}>
+                    <h3 className={styles.notificationTitle}>
+                      {!notification.lida && <span className={styles.unreadDot} />}
+                      {notification.titulo}
+                    </h3>
+                    <div className={styles.notificationMeta}>
+                      <span className={styles.priorityBadge} style={{ backgroundColor: getPriorityColor(notification.prioridade) }}>
+                        {getPriorityLabel(notification.prioridade)}
+                      </span>
+                      <span className={styles.notificationTime}>
+                        {new Date(notification.dataCriacao).toLocaleString('pt-BR')}
+                      </span>
+                    </div>
+                  </div>
+                  <p className={styles.notificationMessage}>{notification.mensagem}</p>
+                  {notification.remetenteNome && (
+                    <p className={styles.notificationSender}>
+                      {isClient ? 'Enviado por: ' : 'Solicitado por: '}
+                      <strong>{notification.remetenteNome}</strong>
+                    </p>
                   )}
-                  
-                  <div className={styles.notificationActions}>
-                    {!notification.lida && (
-                      <button 
-                        className={styles.markReadButton}
-                        onClick={() => handleMarkAsRead(notification.id)}
-                      >
-                        <FiCheck size={14} />
-                        Marcar como lida
-                      </button>
+                  <div className={styles.notificationFooter}>
+                    {/* ✅ OWNER: Botões Aceitar/Recusar */}
+                    {isReservation && !notification.lida && !isClient && (
+                      <div className={styles.reservationActions}>
+                        <button className={styles.acceptButton}
+                          onClick={() => { setNotificationToProcess(notification); setShowAcceptConfirm(true); }}
+                          disabled={processing}>
+                          <FiCheckCircle size={16} /> Aceitar
+                        </button>
+                        <button className={styles.rejectButton}
+                          onClick={() => { setNotificationToProcess(notification); setShowRejectConfirm(true); }}
+                          disabled={processing}>
+                          <FiXCircle size={16} /> Recusar
+                        </button>
+                      </div>
                     )}
-                    <button 
-                      className={styles.deleteButton}
-                      onClick={() => {
-                        setNotificationToDelete(notification.id);
-                        setShowDeleteConfirm(true);
-                      }}
-                      title="Excluir notificação"
-                    >
-                      <FiTrash2 size={16} />
-                    </button>
+                    {/* ✅ CLIENT: Status visual */}
+                    {isStatus && isClient && (
+                      <div className={`${styles.statusBadge} ${isApproved ? styles.approved : styles.rejected}`}>
+                        {isApproved ? <FiCheckCircle size={14} /> : <FiXCircle size={14} />}
+                        <span>{isApproved ? 'Aprovado' : 'Não aprovado'}</span>
+                      </div>
+                    )}
+                    <div className={styles.notificationActions}>
+                      {!notification.lida && !isReservation && (
+                        <button className={styles.markReadButton} onClick={() => handleMarkAsRead(notification.id)}>
+                          <FiCheck size={14} /> Lida
+                        </button>
+                      )}
+                      <button className={styles.deleteButton}
+                        onClick={() => { setNotificationToDelete(notification.id); setShowDeleteConfirm(true); }}>
+                        <FiTrash2 size={16} />
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
       {/* Modais */}
-      <ConfirmationModal
-        isOpen={showSuccessModal}
-        title="Sucesso!"
-        message={successMessage}
-        type="success"
-        onConfirm={() => setShowSuccessModal(false)}
-        onCancel={() => setShowSuccessModal(false)}
-        confirmText="OK"
-      />
-
-      <ErrorModal
-        isOpen={showErrorModal}
-        message={errorMessage}
-        onClose={() => setShowErrorModal(false)}
-      />
-
-      <ConfirmationModal
-        isOpen={showDeleteConfirm}
-        title="Excluir Notificação"
-        message="Tem certeza que deseja excluir esta notificação?"
-        type="warning"
-        onConfirm={handleDeleteNotification}
-        onCancel={() => {
-          setShowDeleteConfirm(false);
-          setNotificationToDelete(null);
-        }}
-        confirmText="Excluir"
-      />
+      <ConfirmationModal isOpen={showSuccessModal} title="Sucesso!" message={successMessage}
+        type="success" onConfirm={() => setShowSuccessModal(false)} onCancel={() => setShowSuccessModal(false)} confirmText="OK" />
+      <ErrorModal isOpen={showErrorModal} message={errorMessage} onClose={() => setShowErrorModal(false)} />
+      <ConfirmationModal isOpen={showDeleteConfirm} title="Excluir" message="Excluir esta notificação?"
+        type="warning" onConfirm={handleDeleteNotification}
+        onCancel={() => { setShowDeleteConfirm(false); setNotificationToDelete(null); }} confirmText="Excluir" />
+      
+      {/* Modais de Aceitar/Recusar - Apenas OWNER */}
+      {!isClient && (
+        <>
+          <ConfirmationModal isOpen={showAcceptConfirm} title="Confirmar Reserva"
+            message="Aprovar esta solicitação? O cliente será notificado."
+            type="success" onConfirm={handleAcceptReservation}
+            onCancel={() => { setShowAcceptConfirm(false); setNotificationToProcess(null); }}
+            confirmText="Aprovar" cancelText="Cancelar" />
+          <ConfirmationModal isOpen={showRejectConfirm} title="Recusar Reserva"
+            message="Recusar esta solicitação? O cliente será notificado."
+            type="warning" onConfirm={handleRejectReservation}
+            onCancel={() => { setShowRejectConfirm(false); setNotificationToProcess(null); }}
+            confirmText="Recusar" cancelText="Cancelar" />
+        </>
+      )}
     </div>
   );
 };

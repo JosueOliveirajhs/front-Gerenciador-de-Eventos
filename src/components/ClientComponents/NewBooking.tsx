@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { CreateEventData } from '../../types/Event';
 import { eventService } from '../../services/events';
+import { notificationService } from '../../services/notification';
 import { useAuth } from '../../context/AuthContext';
 import { 
   FiCalendar, 
@@ -13,9 +14,24 @@ import {
   FiAlertCircle,
   FiInfo,
   FiMapPin,
-  FiChevronRight
+  FiChevronRight,
+  FiGift,
+  FiHeart,
+  FiBriefcase,
+  FiStar,
+  FiCoffee,
+  FiMoreHorizontal
 } from 'react-icons/fi';
-import { MdEvent, MdOutlineEventNote } from 'react-icons/md';
+import { 
+  MdEvent, 
+  MdOutlineEventNote,
+  MdCake,
+  MdDiamond,
+  MdBusiness,
+  MdSchool,
+  MdCelebration,
+  MdAutoAwesome
+} from 'react-icons/md';
 import styles from './NewBooking.module.css';
 
 interface NewBookingProps {
@@ -42,7 +58,6 @@ export const NewBooking: React.FC<NewBookingProps> = ({ onSuccess }) => {
   const [selectedDateAvailable, setSelectedDateAvailable] = useState<boolean | null>(null);
   const { user } = useAuth();
 
-  // Carregar datas indisponíveis (eventos já agendados)
   useEffect(() => {
     loadUnavailableDates();
   }, []);
@@ -55,7 +70,7 @@ export const NewBooking: React.FC<NewBookingProps> = ({ onSuccess }) => {
         .map(e => e.eventDate);
       setUnavailableDates(dates);
     } catch (error) {
-      console.warn('⚠️ Não foi possível carregar datas indisponíveis');
+      console.warn('Não foi possível carregar datas indisponíveis');
     }
   };
 
@@ -68,7 +83,6 @@ export const NewBooking: React.FC<NewBookingProps> = ({ onSuccess }) => {
     setCheckingAvailability(true);
     
     try {
-      // Simular verificação (substituir por endpoint real)
       const isUnavailable = unavailableDates.includes(date);
       setSelectedDateAvailable(!isUnavailable);
     } catch (error) {
@@ -101,10 +115,40 @@ export const NewBooking: React.FC<NewBookingProps> = ({ onSuccess }) => {
         clientId: user!.id
       };
       
-      await eventService.createEvent(eventData);
+      const createdEvent = await eventService.createEvent(eventData);
+      console.log('✅ Evento criado:', createdEvent);
+      
+      // Enviar notificação para os OWNERS
+      try {
+        await notificationService.createNotification({
+          titulo: `Nova Solicitação de Reserva: ${formData.title}`,
+          mensagem: `${user?.name} solicitou uma reserva para ${getEventTypeLabel(formData.eventType)} no dia ${formatDateForDisplay(formData.eventDate)} com ${formData.guestCount} convidados.`,
+          tipo: 'event',
+          prioridade: 'high',
+          destinatarios: [],
+          urlAcao: `/owner/events/${createdEvent.id}`,
+          metadata: JSON.stringify({
+            eventId: createdEvent.id,
+            clientId: user?.id,
+            clientName: user?.name,
+            eventDate: formData.eventDate,
+            guestCount: formData.guestCount,
+            eventType: formData.eventType,
+            startTime: formData.startTime,
+            endTime: formData.endTime,
+            location: formData.location,
+            totalValue: formData.totalValue,
+            notes: formData.notes
+          })
+        });
+        
+        console.log('✅ Notificação de nova reserva enviada para os administradores');
+      } catch (notifError) {
+        console.error('Erro ao enviar notificação:', notifError);
+      }
+      
       setSubmitted(true);
       
-      // Reset form
       setFormData({
         title: '',
         eventDate: '',
@@ -128,13 +172,39 @@ export const NewBooking: React.FC<NewBookingProps> = ({ onSuccess }) => {
     }
   };
 
+  const formatDateForDisplay = (dateString: string): string => {
+    if (!dateString) return '';
+    try {
+      return new Date(dateString).toLocaleDateString('pt-BR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+      });
+    } catch {
+      return dateString;
+    }
+  };
+
+  const getEventTypeLabel = (type: string): string => {
+    const labels: Record<string, string> = {
+      'ANIVERSARIO': 'Aniversário',
+      'CASAMENTO': 'Casamento',
+      'CORPORATIVO': 'Corporativo',
+      'FORMATURA': 'Formatura',
+      'CONFRATERNIZACAO': 'Confraternização',
+      'OUTRO': 'Outro'
+    };
+    return labels[type] || type;
+  };
+
+  // ✅ Ícones profissionais React em vez de emojis
   const eventTypes = [
-    { value: 'ANIVERSARIO', label: '🎂 Aniversário' },
-    { value: 'CASAMENTO', label: '💍 Casamento' },
-    { value: 'CORPORATIVO', label: '💼 Evento Corporativo' },
-    { value: 'FORMATURA', label: '🎓 Formatura' },
-    { value: 'CONFRATERNIZACAO', label: '🎉 Confraternização' },
-    { value: 'OUTRO', label: '✨ Outro' }
+    { value: 'ANIVERSARIO', label: 'Aniversário', icon: <MdCake size={18} /> },
+    { value: 'CASAMENTO', label: 'Casamento', icon: <MdDiamond size={18} /> },
+    { value: 'CORPORATIVO', label: 'Evento Corporativo', icon: <MdBusiness size={18} /> },
+    { value: 'FORMATURA', label: 'Formatura', icon: <MdSchool size={18} /> },
+    { value: 'CONFRATERNIZACAO', label: 'Confraternização', icon: <MdCelebration size={18} /> },
+    { value: 'OUTRO', label: 'Outro', icon: <MdAutoAwesome size={18} /> }
   ];
 
   const guestCountOptions = [30, 50, 80, 100, 150, 200];
@@ -144,26 +214,31 @@ export const NewBooking: React.FC<NewBookingProps> = ({ onSuccess }) => {
       <div className={styles.successContainer}>
         <div className={styles.successCard}>
           <div className={styles.successIcon}>
-            <FiCheckCircle size={64} color="#10b981" />
+            <MdOutlineEventNote size={64} color="#10b981" />
           </div>
-          <h2 className={styles.successTitle}>Solicitação Enviada!</h2>
+          <h2 className={styles.successTitle}>
+            <FiCheckCircle size={28} className={styles.successTitleIcon} />
+            Solicitação Enviada!
+          </h2>
           <p className={styles.successText}>
             Sua solicitação de reserva foi enviada com sucesso.
           </p>
           <p className={styles.successSubtext}>
-            Entraremos em contato em breve para confirmar a disponibilidade e detalhes do seu evento.
+            Nossa equipe analisará sua solicitação e você receberá uma notificação em breve.
           </p>
           <div className={styles.successActions}>
             <button 
               onClick={() => setSubmitted(false)} 
               className={styles.primaryButton}
             >
+              <MdOutlineEventNote size={20} />
               Fazer Nova Solicitação
             </button>
             <button 
               onClick={() => window.location.href = '/client/events'} 
               className={styles.secondaryButton}
             >
+              <MdEvent size={20} />
               Ver Meus Eventos
               <FiChevronRight size={16} />
             </button>
@@ -183,7 +258,7 @@ export const NewBooking: React.FC<NewBookingProps> = ({ onSuccess }) => {
           <div>
             <h1 className={styles.pageTitle}>Nova Solicitação de Reserva</h1>
             <p className={styles.pageSubtitle}>
-              Preencha os dados do seu evento e entraremos em contato para confirmar
+              Preencha os dados do seu evento e nossa equipe analisará sua solicitação
             </p>
           </div>
         </div>
@@ -222,18 +297,21 @@ export const NewBooking: React.FC<NewBookingProps> = ({ onSuccess }) => {
               min={new Date().toISOString().split('T')[0]}
             />
             {checkingAvailability && (
-              <span className={styles.checkingMessage}>Verificando disponibilidade...</span>
+              <span className={styles.checkingMessage}>
+                <FiClock size={12} className={styles.spinIcon} />
+                Verificando disponibilidade...
+              </span>
             )}
             {selectedDateAvailable === true && (
               <span className={styles.availableMessage}>
                 <FiCheckCircle size={14} />
-                Data disponível!
+                Data disponível para solicitação!
               </span>
             )}
             {selectedDateAvailable === false && (
               <span className={styles.unavailableMessage}>
                 <FiAlertCircle size={14} />
-                Data indisponível. Escolha outra data.
+                Você já tem um evento nesta data.
               </span>
             )}
           </div>
@@ -305,6 +383,7 @@ export const NewBooking: React.FC<NewBookingProps> = ({ onSuccess }) => {
                     className={`${styles.presetButton} ${formData.guestCount === count ? styles.active : ''}`}
                     onClick={() => setFormData({ ...formData, guestCount: count })}
                   >
+                    <FiUsers size={14} />
                     {count}
                   </button>
                 ))}
@@ -388,7 +467,7 @@ export const NewBooking: React.FC<NewBookingProps> = ({ onSuccess }) => {
         <div className={styles.infoBox}>
           <FiInfo size={16} />
           <span>
-            Após o envio, nossa equipe entrará em contato em até 24 horas para confirmar a disponibilidade e enviar uma proposta personalizada.
+            Após o envio, nossa equipe analisará sua solicitação e você receberá uma notificação sobre a aprovação.
           </span>
         </div>
 
@@ -413,7 +492,7 @@ export const NewBooking: React.FC<NewBookingProps> = ({ onSuccess }) => {
               </>
             ) : (
               <>
-                <FiCheckCircle size={18} />
+                <MdOutlineEventNote size={20} />
                 Solicitar Reserva
               </>
             )}

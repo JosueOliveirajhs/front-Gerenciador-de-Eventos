@@ -13,12 +13,12 @@
   align-items: center;
   gap: 12px;
   font-size: 28px;
-  color: #1e293b;
+  color: var(--text-primary);
   margin-bottom: 8px;
 }
 
 .communityHeader p {
-  color: #64748b;
+  color: var(--text-muted);
   font-size: 16px;
 }
 
@@ -26,7 +26,7 @@
   display: flex;
   gap: 8px;
   margin-bottom: 24px;
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid var(--border-color);
   padding-bottom: 8px;
 }
 
@@ -37,7 +37,7 @@
   padding: 10px 20px;
   background: none;
   border: none;
-  color: #64748b;
+  color: var(--text-muted);
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
@@ -46,21 +46,22 @@
 }
 
 .tab:hover {
-  background: #f1f5f9;
-  color: #1e293b;
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
 }
 
 .tab.active {
-  background: #00B4D8;
-  color: white;
+  background: var(--accent-primary);
+  color: var(--text-inverse);
 }
 
 .postBox {
-  background: white;
+  background: var(--card-bg);
   border-radius: 16px;
   padding: 20px;
   margin-bottom: 24px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--border-color);
 }
 
 .postBoxHeader {
@@ -73,11 +74,11 @@
   width: 48px;
   height: 48px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #00B4D8 0%, #0077b6 100%);
+  background: var(--accent-gradient);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: white;
+  color: var(--text-inverse);
   font-weight: 600;
   font-size: 18px;
   flex-shrink: 0;
@@ -85,17 +86,23 @@
 
 .postBox textarea {
   flex: 1;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--border-color);
   border-radius: 12px;
   padding: 12px;
   font-size: 14px;
   resize: none;
   font-family: inherit;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
 }
 
 .postBox textarea:focus {
   outline: none;
-  border-color: #00B4D8;
+  border-color: var(--accent-primary);
+}
+
+.postBox textarea::placeholder {
+  color: var(--text-muted);
 }
 
 .postBoxFooter {
@@ -109,32 +116,32 @@
   align-items: center;
   gap: 8px;
   padding: 8px 16px;
-  background: #f1f5f9;
+  background: var(--bg-tertiary);
   border: none;
   border-radius: 8px;
-  color: #64748b;
+  color: var(--text-muted);
   font-size: 14px;
   cursor: pointer;
   transition: background 0.2s;
 }
 
 .attachButton:hover {
-  background: #e2e8f0;
+  background: var(--border-color);
 }
 
 .postButton {
   padding: 10px 24px;
-  background: #00B4D8;
+  background: var(--accent-primary);
   border: none;
   border-radius: 8px;
-  color: white;
+  color: var(--text-inverse);
   font-weight: 500;
   cursor: pointer;
   transition: background 0.2s;
 }
 
 .postButton:hover:not(:disabled) {
-  background: #0077b6;
+  background: var(--accent-primary-dark);
 }
 
 .postButton:disabled {
@@ -149,10 +156,11 @@
 }
 
 .postCard {
-  background: white;
+  background: var(--card-bg);
   border-radius: 16px;
   padding: 20px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--border-color);
 }
 
 .postHeader {
@@ -173,7 +181,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: white;
+  color: var(--text-inverse);
   font-weight: 600;
 }
 
@@ -184,18 +192,18 @@
 
 .authorName {
   font-weight: 600;
-  color: #1e293b;
+  color: var(--text-primary);
 }
 
 .postMeta {
   font-size: 12px;
-  color: #64748b;
+  color: var(--text-muted);
 }
 
 .postContent {
   margin-bottom: 16px;
   line-height: 1.6;
-  color: #334155;
+  color: var(--text-secondary);
 }
 
 .postImage {
@@ -207,7 +215,7 @@
 .postActions {
   display: flex;
   gap: 24px;
-  border-top: 1px solid #e2e8f0;
+  border-top: 1px solid var(--border-color);
   padding-top: 16px;
 }
 
@@ -217,37 +225,38 @@
   gap: 8px;
   background: none;
   border: none;
-  color: #64748b;
+  color: var(--text-muted);
   font-size: 14px;
   cursor: pointer;
   transition: color 0.2s;
 }
 
 .actionButton:hover {
-  color: #00B4D8;
+  color: var(--accent-primary);
 }
 
 .comingSoon {
   text-align: center;
   padding: 60px 20px;
-  background: white;
+  background: var(--card-bg);
   border-radius: 16px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--border-color);
 }
 
 .comingSoon svg {
-  color: #00B4D8;
+  color: var(--accent-primary);
   margin-bottom: 20px;
 }
 
 .comingSoon h3 {
   font-size: 24px;
-  color: #1e293b;
+  color: var(--text-primary);
   margin-bottom: 12px;
 }
 
 .comingSoon p {
-  color: #64748b;
+  color: var(--text-muted);
   max-width: 400px;
   margin: 0 auto;
 }

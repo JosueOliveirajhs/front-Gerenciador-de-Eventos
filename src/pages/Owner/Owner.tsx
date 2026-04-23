@@ -1,5 +1,6 @@
 // src/pages/Owner/Owner.tsx
 import React, { useState, useEffect, useCallback, useMemo, memo } from "react";
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Header } from "../../components/common/Header/Header";
 import { Sidebar } from "../../components/common/Sidebar/Sidebar";
 
@@ -8,6 +9,7 @@ import { SettingsPage } from "../../components/OwnerCompoents/settings/SettingsP
 import { ProfilePage } from "../../components/OwnerCompoents/settings/ProfilePage";
 import { NotificationsPage } from "../../components/OwnerCompoents/settings/NotificationsPage";
 import styles from "./Owner.module.css";
+import { OwnerChat } from '../../components/OwnerCompoents/OwnerChat/OwnerChat';
 import { OwnerDashboard } from "../../components/OwnerCompoents/OwnerManagement/OwnerDashboard/OwnerDashboard";
 import { EventManagement } from "../../components/OwnerCompoents/events/EventManagement/EventManagement";
 import FinancialReports from "../../components/OwnerCompoents/OwnerManagement/FinalcialReports/FinancialReports";
@@ -15,8 +17,10 @@ import { ClientManagement } from "../../components/OwnerCompoents/OwnerManagemen
 import ItemsManagement from "../../components/OwnerCompoents/OwnerManagement/ItemsManagement/ItemsManagement";
 import { TeamManagement } from "../../components/OwnerCompoents/OwnerManagement/TeamManagement/TeamManagement";
 
-// ✅ Componente de conteúdo memoizado - SÓ renderiza quando activeView muda
+// Componente de conteúdo memoizado
 const PageContent = memo(({ activeView }: { activeView: string }) => {
+  console.log('📄 Owner - Renderizando view:', activeView);
+  
   switch (activeView) {
     case "dashboard":
       return <OwnerDashboard />;
@@ -32,40 +36,33 @@ const PageContent = memo(({ activeView }: { activeView: string }) => {
       return <ItemsManagement />;
     case "team":
       return <TeamManagement />;
+      case "chat":
+case "messages":
+  return <OwnerChat />;
+    case "settings":
     case "configuracoes":
       return <SettingsPage />;
+    case "profile":
     case "perfil":
       return <ProfilePage />;
+    case "notifications":
     case "notificacoes":
       return <NotificationsPage />;
-    case "reports":
-      return (
-        <div className={styles.placeholderPage}>
-          <div className={styles.placeholderContent}>
-            <div className={styles.placeholderIcon}>📊</div>
-            <h2 className={styles.placeholderTitle}>Relatórios Detalhados</h2>
-            <p className={styles.placeholderDescription}>
-              Esta funcionalidade está em desenvolvimento e estará disponível em breve.
-            </p>
-          </div>
-        </div>
-      );
     default:
+      console.warn('⚠️ Owner - View não encontrada:', activeView);
       return <OwnerDashboard />;
   }
 }, (prevProps, nextProps) => {
-  // ✅ SÓ re-renderiza se activeView realmente mudou
   return prevProps.activeView === nextProps.activeView;
 });
 
 PageContent.displayName = 'PageContent';
 
-// ✅ Componente de header da página memoizado
-const PageHeader = memo(({ title, actions }: { title: string; actions: React.ReactNode }) => {
+const PageHeader = memo(({ title }: { title: string; actions?: React.ReactNode }) => {
   return (
     <div className={styles.pageHeader}>
       <h1 className={styles.pageTitle}>{title}</h1>
-      <div className={styles.pageActions}>{actions}</div>
+      <div className={styles.pageActions}>{null}</div>
     </div>
   );
 });
@@ -73,44 +70,74 @@ const PageHeader = memo(({ title, actions }: { title: string; actions: React.Rea
 PageHeader.displayName = 'PageHeader';
 
 export const Owner: React.FC = () => {
-  const [activeView, setActiveView] = useState(() => {
-    // ✅ Recupera a view salva ou usa dashboard como padrão
-    return localStorage.getItem('lastActiveView') || "dashboard";
-  });
+  const navigate = useNavigate();
+  const location = useLocation();
+  
+  // Extrair a view atual da URL
+  const getViewFromPath = (pathname: string): string => {
+    const match = pathname.match(/\/owner\/([^/]+)/);
+    return match ? match[1] : 'dashboard';
+  };
+  
+  const [activeView, setActiveView] = useState(() => getViewFromPath(location.pathname));
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
-    const saved = localStorage.getItem('sidebarCollapsed');
+    const saved = localStorage.getItem('ownerSidebarCollapsed');
     return saved === 'true';
   });
 
-  // ✅ Salvar view ativa no localStorage
+  // Sincronizar com mudanças de URL
   useEffect(() => {
-    localStorage.setItem('lastActiveView', activeView);
-  }, [activeView]);
+    const view = getViewFromPath(location.pathname);
+    if (view !== activeView) {
+      setActiveView(view);
+    }
+  }, [location.pathname]);
 
-  // ✅ Handler para colapso da sidebar
   const handleSidebarCollapse = useCallback((collapsed: boolean) => {
     setIsSidebarCollapsed(collapsed);
-    localStorage.setItem('sidebarCollapsed', String(collapsed));
+    localStorage.setItem('ownerSidebarCollapsed', String(collapsed));
   }, []);
 
-  // ✅ Handler para toggle do menu mobile
   const handleMenuToggle = useCallback(() => {
     setIsMobileMenuOpen(prev => !prev);
   }, []);
 
-  // ✅ Handler para mudança de view - SÓ atualiza se diferente
-  const handleViewChange = useCallback((view: string) => {
-    setActiveView(prevView => {
-      if (prevView !== view) {
-        console.log('📱 Mudando view para:', view);
-        return view;
-      }
-      return prevView;
-    });
-  }, []);
+  // ✅ HANDLER CORRIGIDO - Navega usando React Router
+  const handleViewChange = useCallback((view: string, params?: any) => {
+    console.log('🔀 Owner - Mudando view para:', view);
+    
+    // Mapeamento de views para rotas
+    const routeMapping: Record<string, string> = {
+      'dashboard': '/owner/dashboard',
+      'events': '/owner/events',
+      'clients': '/owner/clients',
+      'itens': '/owner/itens',
+      'financial': '/owner/financial',
+      'checklist': '/owner/checklist',
+      'team': '/owner/team',
+      'chat': '/owner/chat',
+'messages': '/owner/chat',
+      'settings': '/owner/settings',
+      'configuracoes': '/owner/settings',
+      'profile': '/owner/profile',
+      'perfil': '/owner/profile',
+      'notifications': '/owner/notifications',
+      'notificacoes': '/owner/notifications',
+    };
+    
+    const route = routeMapping[view] || `/owner/${view}`;
+    
+    // Se tiver params, adicionar à navegação
+    if (params) {
+      navigate(route, { state: params });
+    } else {
+      navigate(route);
+    }
+    
+    setIsMobileMenuOpen(false);
+  }, [navigate]);
 
-  // ✅ Título da página memoizado
   const pageTitle = useMemo(() => {
     const titles: Record<string, string> = {
       dashboard: "Dashboard",
@@ -118,17 +145,17 @@ export const Owner: React.FC = () => {
       clients: "Gestão de Clientes",
       itens: "Gestão de Itens",
       financial: "Relatórios Financeiros",
-      reports: "Relatórios Detalhados",
       checklist: "Checklists de Eventos",
+      chat: "Mensagens",
+messages: "Mensagens",
       team: "Gerenciar Equipe",
-      configuracoes: "Configurações do Sistema",
-      perfil: "Meu Perfil",
-      notificacoes: "Notificações",
+      settings: "Configurações do Sistema",
+      profile: "Meu Perfil",
+      notifications: "Notificações",
     };
     return titles[activeView] || "Dashboard";
   }, [activeView]);
 
-  // ✅ Classe CSS memoizada
   const mainContentClass = useMemo(() => {
     return `${styles.mainContent} ${isSidebarCollapsed ? styles.mainContentCollapsed : ''}`;
   }, [isSidebarCollapsed]);
@@ -148,10 +175,11 @@ export const Owner: React.FC = () => {
         <Header 
           onMenuToggle={handleMenuToggle} 
           onViewChange={handleViewChange}
+          activeView={activeView}
         />
 
         <main className={styles.contentArea}>
-          <PageHeader title={pageTitle} actions={null} />
+          <PageHeader title={pageTitle} />
 
           <div className={styles.pageContent}>
             <PageContent activeView={activeView} />

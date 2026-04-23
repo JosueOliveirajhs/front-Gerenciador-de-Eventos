@@ -13,12 +13,12 @@
   align-items: center;
   gap: 12px;
   font-size: 28px;
-  color: #1e293b;
+  color: var(--text-primary);
   margin-bottom: 8px;
 }
 
 .searchHeader p {
-  color: #64748b;
+  color: var(--text-muted);
   font-size: 16px;
 }
 
@@ -33,20 +33,20 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  background: white;
-  border: 1px solid #e2e8f0;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
   border-radius: 12px;
   padding: 12px 16px;
   transition: border-color 0.2s, box-shadow 0.2s;
 }
 
 .searchBox:focus-within {
-  border-color: #00B4D8;
+  border-color: var(--accent-primary);
   box-shadow: 0 0 0 3px rgba(0, 180, 216, 0.1);
 }
 
 .searchBox svg {
-  color: #64748b;
+  color: var(--text-muted);
 }
 
 .searchBox input {
@@ -55,10 +55,11 @@
   outline: none;
   font-size: 16px;
   background: transparent;
+  color: var(--text-primary);
 }
 
 .searchBox input::placeholder {
-  color: #94a3b8;
+  color: var(--text-muted);
 }
 
 .filterButton {
@@ -66,10 +67,10 @@
   align-items: center;
   gap: 8px;
   padding: 12px 20px;
-  background: white;
-  border: 1px solid #e2e8f0;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
   border-radius: 12px;
-  color: #64748b;
+  color: var(--text-muted);
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
@@ -78,25 +79,26 @@
 }
 
 .filterButton:hover {
-  background: #f8fafc;
-  border-color: #cbd5e1;
+  background: var(--bg-tertiary);
+  border-color: var(--text-muted);
 }
 
 .filterBadge {
-  color: #ef4444;
+  color: var(--danger);
   font-size: 8px;
   margin-left: 4px;
 }
 
 .filtersPanel {
-  background: white;
+  background: var(--card-bg);
   border-radius: 12px;
   padding: 20px;
   margin-bottom: 20px;
   display: flex;
   gap: 20px;
   align-items: flex-end;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--border-color);
 }
 
 .filterGroup {
@@ -109,42 +111,42 @@
 .filterGroup label {
   font-size: 14px;
   font-weight: 500;
-  color: #475569;
+  color: var(--text-secondary);
 }
 
 .filterGroup select {
   padding: 10px 12px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--border-color);
   border-radius: 8px;
   font-size: 14px;
-  color: #1e293b;
-  background: white;
+  color: var(--text-primary);
+  background: var(--bg-secondary);
   cursor: pointer;
 }
 
 .filterGroup select:focus {
   outline: none;
-  border-color: #00B4D8;
+  border-color: var(--accent-primary);
 }
 
 .clearFiltersButton {
   padding: 10px 20px;
   background: none;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--border-color);
   border-radius: 8px;
-  color: #64748b;
+  color: var(--text-muted);
   font-size: 14px;
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .clearFiltersButton:hover {
-  background: #f1f5f9;
+  background: var(--bg-tertiary);
 }
 
 .resultsInfo {
   margin-bottom: 20px;
-  color: #64748b;
+  color: var(--text-muted);
   font-size: 14px;
 }
 
@@ -155,17 +157,18 @@
 }
 
 .companyCard {
-  background: white;
+  background: var(--card-bg);
   border-radius: 16px;
   padding: 24px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  box-shadow: var(--shadow-md);
   cursor: pointer;
   transition: transform 0.2s, box-shadow 0.2s;
+  border: 1px solid var(--border-color);
 }
 
 .companyCard:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-xl);
 }
 
 .companyHeader {
@@ -178,11 +181,11 @@
   width: 56px;
   height: 56px;
   border-radius: 12px;
-  background: linear-gradient(135deg, #00B4D8 0%, #0077b6 100%);
+  background: var(--accent-gradient);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: white;
+  color: var(--text-inverse);
   flex-shrink: 0;
 }
 
@@ -200,11 +203,11 @@
 .companyNameRow h3 {
   font-size: 18px;
   font-weight: 600;
-  color: #1e293b;
+  color: var(--text-primary);
 }
 
 .verifiedIcon {
-  color: #00B4D8;
+  color: var(--accent-primary);
 }
 
 .companyRating {
@@ -215,11 +218,11 @@
 
 .companyRating span {
   font-size: 14px;
-  color: #64748b;
+  color: var(--text-muted);
 }
 
 .companyDescription {
-  color: #475569;
+  color: var(--text-secondary);
   line-height: 1.6;
   margin-bottom: 16px;
 }
@@ -235,7 +238,7 @@
   align-items: center;
   gap: 6px;
   font-size: 14px;
-  color: #64748b;
+  color: var(--text-muted);
 }
 
 .specialties {
@@ -247,10 +250,10 @@
 
 .specialtyTag {
   padding: 4px 12px;
-  background: #f1f5f9;
+  background: var(--bg-tertiary);
   border-radius: 20px;
   font-size: 12px;
-  color: #475569;
+  color: var(--text-secondary);
 }
 
 .viewButton {
@@ -260,7 +263,7 @@
   padding: 8px 0;
   background: none;
   border: none;
-  color: #00B4D8;
+  color: var(--accent-primary);
   font-weight: 500;
   cursor: pointer;
   transition: gap 0.2s;
@@ -273,22 +276,23 @@
 .emptyState {
   text-align: center;
   padding: 60px 20px;
-  background: white;
+  background: var(--card-bg);
   border-radius: 16px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--border-color);
 }
 
 .emptyState svg {
-  color: #94a3b8;
+  color: var(--text-muted);
   margin-bottom: 20px;
 }
 
 .emptyState h3 {
   font-size: 20px;
-  color: #1e293b;
+  color: var(--text-primary);
   margin-bottom: 8px;
 }
 
 .emptyState p {
-  color: #64748b;
+  color: var(--text-muted);
 }

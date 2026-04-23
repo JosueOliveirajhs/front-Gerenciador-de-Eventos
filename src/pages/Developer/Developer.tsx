@@ -1,27 +1,21 @@
-// src/pages/Developer.tsx
-import React, { useState } from 'react';
+// src/pages/Developer/Developer.tsx
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { Header } from '../../components/common/Header/Header';
+import { Sidebar } from '../../components/common/Sidebar/Sidebar';
 import { 
   MdDashboard,
   MdBusiness,
   MdStore,
-  MdStorage,
   MdTerminal,
-  MdSettings,
-  MdLogout,
-  MdMenu,
-  MdClose,
-  MdNotifications,
   MdCode,
   MdAttachMoney,
-  MdPeople,
-  MdEvent,
-  MdReceipt
 } from 'react-icons/md';
 import {
   FaShieldAlt,
   FaHeadset,
 } from 'react-icons/fa';
-import { useAuth } from '../../context/AuthContext';
+import { FiSettings } from 'react-icons/fi';
 import { DeveloperDashboard } from '../../components/DeveloperCompents/DeveloperDashboard/DeveloperDashboard';
 import { Organizations } from '../../components/DeveloperCompents/Organizations/Organizations';
 import { OrganizationDetails } from '../../components/DeveloperCompents/OrganizationsDetails/OrganizationsDetails';
@@ -35,259 +29,258 @@ import { LogViewer } from '../../components/DeveloperCompents/LogViewer/LogViewe
 import { Settings } from '../../components/DeveloperCompents/Settings/Settings';
 import styles from './Developer.module.css';
 
-type TabType = 
-  | 'dashboard' 
-  | 'organizations'      // Assinantes do SaaS
-  | 'catalogo'           // Catálogo de fornecedores
-  | 'crm' 
-  | 'support' 
-  | 'logs' 
-  | 'settings';
-
-type SubViewType = 'list' | 'details' | 'form';
+// Extrair view e subview da URL
+const parsePath = (pathname: string) => {
+  // Exemplos: /developer/organizations, /developer/organizations/123, /developer/organizations/new
+  const parts = pathname.split('/').filter(Boolean);
+  const view = parts[1] || 'dashboard';
+  const subView = parts[2] || 'list';
+  const id = parts[3] ? parseInt(parts[3]) : null;
+  
+  return { view, subView, id };
+};
 
 export const Developer: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<TabType>('dashboard');
-  const [subView, setSubView] = useState<SubViewType>('list');
-  const [selectedId, setSelectedId] = useState<number | null>(null);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
-  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+  
+  const { view: initialView, subView: initialSubView, id: initialId } = parsePath(location.pathname);
+  
+  const [activeView, setActiveView] = useState<string>(initialView);
+  const [subView, setSubView] = useState<string>(initialSubView);
+  const [selectedId, setSelectedId] = useState<number | null>(initialId);
+  const [viewParams, setViewParams] = useState<any>(null);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    const saved = localStorage.getItem('developerSidebarCollapsed');
+    return saved === 'true';
+  });
 
-  const handleNavigate = (tab: TabType, view: SubViewType = 'list', id?: number) => {
-    setActiveTab(tab);
-    setSubView(view);
-    if (id) setSelectedId(id);
+  // Sincronizar com mudanças de URL
+  useEffect(() => {
+    const { view, subView: newSubView, id } = parsePath(location.pathname);
+    if (view !== activeView) {
+      setActiveView(view);
+    }
+    if (newSubView !== subView) {
+      setSubView(newSubView);
+    }
+    if (id !== selectedId) {
+      setSelectedId(id);
+    }
+  }, [location.pathname]);
+
+  const handleMenuToggle = useCallback(() => {
+    setIsMobileMenuOpen(prev => !prev);
+  }, []);
+
+  const handleSidebarCollapse = useCallback((collapsed: boolean) => {
+    setSidebarCollapsed(collapsed);
+    localStorage.setItem('developerSidebarCollapsed', String(collapsed));
+  }, []);
+
+  // ✅ HANDLER CORRIGIDO - Navega usando React Router
+  const handleViewChange = useCallback((view: string, params?: any) => {
+    console.log('🔀 Developer - Mudando view para:', view);
+    
+    const routeMapping: Record<string, string> = {
+      'dashboard': '/developer/dashboard',
+      'organizations': '/developer/organizations',
+      'catalogo': '/developer/catalogo',
+      'crm': '/developer/crm',
+      'support': '/developer/support',
+      'logs': '/developer/logs',
+      'settings': '/developer/settings',
+      'profile': '/developer/profile',
+      'notifications': '/developer/notifications',
+    };
+    
+    const route = routeMapping[view] || `/developer/${view}`;
+    navigate(route, { state: params });
+    setIsMobileMenuOpen(false);
+  }, [navigate]);
+
+  const handleNavigate = (path: string, params?: any) => {
+    navigate(path, { state: params });
   };
 
   const handleBack = () => {
-    setSubView('list');
-    setSelectedId(null);
+    navigate('/developer/organizations');
   };
 
   const renderContent = () => {
-    // Organizations (Assinantes)
-    if (activeTab === 'organizations') {
-      if (subView === 'form') {
-        return (
-          <OrganizationForm 
-            organizationId={selectedId} 
-            onSuccess={handleBack}
-            onCancel={handleBack}
-          />
-        );
-      }
-      if (subView === 'details' && selectedId) {
-        return (
-          <OrganizationDetails 
-            organizationId={selectedId}
-            onBack={handleBack}
-            onEdit={() => setSubView('form')}
-          />
-        );
-      }
-      return (
-        <Organizations 
-          onNavigate={handleNavigate}
-        />
-      );
-    }
-
-    // Catálogo de Fornecedores
-    if (activeTab === 'catalogo') {
-      if (subView === 'form') {
-        return (
-          <CatalogoForm 
-            empresaId={selectedId} 
-            onSuccess={handleBack}
-            onCancel={handleBack}
-          />
-        );
-      }
-      if (subView === 'details' && selectedId) {
-        return (
-          <CatalogoDetails 
-            empresaId={selectedId}
-            onBack={handleBack}
-            onEdit={() => setSubView('form')}
-          />
-        );
-      }
-      return (
-        <Catalogo 
-          onNavigate={handleNavigate}
-        />
-      );
-    }
-
-    // Outras abas
-    switch (activeTab) {
+    const stateParams = location.state as any;
+    
+    switch (activeView) {
       case 'dashboard':
-        return <DeveloperDashboard />;
+        return <DeveloperDashboard onNavigate={handleNavigate} />;
+        
+      case 'organizations':
+        if (subView === 'new' || subView === 'edit') {
+          return (
+            <OrganizationForm 
+              organizationId={selectedId || stateParams?.organizationId} 
+              onSuccess={() => navigate('/developer/organizations')}
+              onCancel={() => navigate('/developer/organizations')}
+            />
+          );
+        }
+        if (subView && !isNaN(parseInt(subView))) {
+          return (
+            <OrganizationDetails 
+              organizationId={parseInt(subView)}
+              onBack={() => navigate('/developer/organizations')}
+              onEdit={(id) => navigate(`/developer/organizations/edit/${id}`)}
+            />
+          );
+        }
+        return <Organizations onNavigate={(view, id) => {
+          if (view === 'details') navigate(`/developer/organizations/${id}`);
+          if (view === 'form') navigate(`/developer/organizations/${id ? `edit/${id}` : 'new'}`);
+        }} />;
+        
+      case 'catalogo':
+        if (subView === 'new' || subView === 'edit') {
+          return (
+            <CatalogoForm 
+              empresaId={selectedId || stateParams?.empresaId} 
+              onSuccess={() => navigate('/developer/catalogo')}
+              onCancel={() => navigate('/developer/catalogo')}
+            />
+          );
+        }
+        if (subView && !isNaN(parseInt(subView))) {
+          return (
+            <CatalogoDetails 
+              empresaId={parseInt(subView)}
+              onBack={() => navigate('/developer/catalogo')}
+              onEdit={(id) => navigate(`/developer/catalogo/edit/${id}`)}
+            />
+          );
+        }
+        return <Catalogo onNavigate={(view, id) => {
+          if (view === 'details') navigate(`/developer/catalogo/${id}`);
+          if (view === 'form') navigate(`/developer/catalogo/${id ? `edit/${id}` : 'new'}`);
+        }} />;
+        
       case 'crm':
         return <CRM />;
+        
       case 'support':
         return <GlobalSupport />;
+        
       case 'logs':
         return <LogViewer />;
+        
       case 'settings':
         return <Settings />;
+        
+      case 'profile':
+        return (
+          <div className={styles.placeholderPage}>
+            <div className={styles.placeholderContent}>
+              <div className={styles.placeholderIcon}>👤</div>
+              <h2>Perfil do Desenvolvedor</h2>
+              <p>Em desenvolvimento...</p>
+            </div>
+          </div>
+        );
+        
+      case 'notifications':
+        return (
+          <div className={styles.placeholderPage}>
+            <div className={styles.placeholderContent}>
+              <div className={styles.placeholderIcon}>🔔</div>
+              <h2>Notificações</h2>
+              <p>Em desenvolvimento...</p>
+            </div>
+          </div>
+        );
+        
       default:
-        return <DeveloperDashboard />;
+        return <DeveloperDashboard onNavigate={handleNavigate} />;
     }
   };
 
+  const getPageTitle = (): string => {
+    const titles: Record<string, string> = {
+      'dashboard': 'Dashboard do Desenvolvedor',
+      'organizations': 'Organizações - Empresas Assinantes',
+      'catalogo': 'Catálogo de Fornecedores',
+      'crm': 'CRM Comercial',
+      'support': 'Suporte Global',
+      'logs': 'Logs do Sistema',
+      'settings': 'Configurações Técnicas',
+      'profile': 'Meu Perfil',
+      'notifications': 'Notificações',
+    };
+    return titles[activeView] || 'Dashboard';
+  };
+
+  const getPageIcon = () => {
+    const icons: Record<string, React.ReactNode> = {
+      'dashboard': <MdDashboard size={24} />,
+      'organizations': <MdBusiness size={24} />,
+      'catalogo': <MdStore size={24} />,
+      'crm': <MdAttachMoney size={24} />,
+      'support': <FaHeadset size={24} />,
+      'logs': <MdTerminal size={24} />,
+      'settings': <FiSettings size={24} />,
+      'profile': <MdCode size={24} />,
+      'notifications': <MdCode size={24} />,
+    };
+    return icons[activeView] || <MdDashboard size={24} />;
+  };
+
+  const mainWrapperClass = useMemo(() => {
+    return `${styles.mainWrapper} ${sidebarCollapsed ? styles.mainWrapperExpanded : ''}`;
+  }, [sidebarCollapsed]);
+
   return (
-    <div className={styles.developerContainer}>
-      {/* Sidebar */}
-      <aside className={`${styles.sidebar} ${!sidebarOpen ? styles.sidebarClosed : ''}`}>
-        <div className={styles.sidebarHeader}>
-          <div className={styles.logo}>
-            {sidebarOpen ? (
-              <>
-                <MdCode size={24} />
-                <h2>DevOps</h2>
-              </>
-            ) : (
-              <MdCode size={24} />
-            )}
-          </div>
-          <button 
-            className={styles.menuToggle}
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-          >
-            {sidebarOpen ? <MdClose /> : <MdMenu />}
-          </button>
-        </div>
-
-        <nav className={styles.sidebarNav}>
-          <button
-            className={`${styles.navItem} ${activeTab === 'dashboard' ? styles.active : ''}`}
-            onClick={() => handleNavigate('dashboard')}
-            title={!sidebarOpen ? 'Dashboard' : ''}
-          >
-            <MdDashboard />
-            {sidebarOpen && <span>Dashboard</span>}
-          </button>
-
-          <button
-            className={`${styles.navItem} ${activeTab === 'organizations' ? styles.active : ''}`}
-            onClick={() => handleNavigate('organizations')}
-            title={!sidebarOpen ? 'Organizações' : ''}
-          >
-            <MdBusiness />
-            {sidebarOpen && <span>Organizações</span>}
-          </button>
-
-          <button
-            className={`${styles.navItem} ${activeTab === 'catalogo' ? styles.active : ''}`}
-            onClick={() => handleNavigate('catalogo')}
-            title={!sidebarOpen ? 'Catálogo' : ''}
-          >
-            <MdStore />
-            {sidebarOpen && <span>Catálogo</span>}
-          </button>
-
-          <button
-            className={`${styles.navItem} ${activeTab === 'crm' ? styles.active : ''}`}
-            onClick={() => handleNavigate('crm')}
-            title={!sidebarOpen ? 'CRM' : ''}
-          >
-            <MdAttachMoney />
-            {sidebarOpen && <span>CRM</span>}
-          </button>
-
-          <button
-            className={`${styles.navItem} ${activeTab === 'support' ? styles.active : ''}`}
-            onClick={() => handleNavigate('support')}
-            title={!sidebarOpen ? 'Suporte' : ''}
-          >
-            <FaHeadset />
-            {sidebarOpen && <span>Suporte</span>}
-          </button>
-
-          <button
-            className={`${styles.navItem} ${activeTab === 'logs' ? styles.active : ''}`}
-            onClick={() => handleNavigate('logs')}
-            title={!sidebarOpen ? 'Logs' : ''}
-          >
-            <MdTerminal />
-            {sidebarOpen && <span>Logs</span>}
-          </button>
-
-          <button
-            className={`${styles.navItem} ${activeTab === 'settings' ? styles.active : ''}`}
-            onClick={() => handleNavigate('settings')}
-            title={!sidebarOpen ? 'Config' : ''}
-          >
-            <MdSettings />
-            {sidebarOpen && <span>Config</span>}
-          </button>
-        </nav>
-
-        <div className={styles.sidebarFooter}>
-          <div className={styles.systemInfo}>
-            {sidebarOpen && (
-              <>
-                <div className={styles.systemVersion}>
-                  <FaShieldAlt />
-                  <span>v2.1.4</span>
-                </div>
-                <div className={styles.systemEnv}>
-                  <span>Production</span>
-                </div>
-              </>
-            )}
-          </div>
-
-          <div className={styles.userInfo}>
-            <div className={styles.userAvatar}>
-              <MdCode />
-            </div>
-            {sidebarOpen && (
-              <div className={styles.userDetails}>
-                <span className={styles.userName}>{user?.name || 'DevOps'}</span>
-                <span className={styles.userRole}>Desenvolvedor</span>
-              </div>
-            )}
-          </div>
-
-          <button onClick={logout} className={styles.logoutButton} title="Sair">
-            <MdLogout />
-            {sidebarOpen && <span>Sair</span>}
-          </button>
-        </div>
-      </aside>
-
-      {/* Main Content */}
-      <main className={styles.mainContent}>
-        <header className={styles.mainHeader}>
-          <div className={styles.headerLeft}>
-            <h1 className={styles.pageTitle}>
-              {activeTab === 'dashboard' && 'Dashboard do Desenvolvedor'}
-              {activeTab === 'organizations' && 'Organizações - Empresas Assinantes'}
-              {activeTab === 'catalogo' && 'Catálogo de Fornecedores'}
-              {activeTab === 'crm' && 'CRM Comercial'}
-              {activeTab === 'support' && 'Suporte Global'}
-              {activeTab === 'logs' && 'Logs do Sistema'}
-              {activeTab === 'settings' && 'Configurações Técnicas'}
-            </h1>
-          </div>
-          <div className={styles.headerRight}>
-            <button className={styles.notificationButton}>
-              <MdNotifications size={20} />
-              <span className={styles.notificationBadge}>5</span>
-            </button>
-            <div className={styles.environmentBadge}>
-              <span className={styles.environmentDot}></span>
-              <span>Produção</span>
-            </div>
-          </div>
-        </header>
-
+    <div className={styles.developerLayout}>
+      <Sidebar 
+        activeView={activeView}
+        onViewChange={handleViewChange}
+        isMobileOpen={isMobileMenuOpen}
+        onMobileToggle={handleMenuToggle}
+        isCollapsed={sidebarCollapsed}
+        onCollapseChange={handleSidebarCollapse}
+      />
+      
+      <div className={mainWrapperClass}>
+        <Header 
+          onMenuToggle={handleMenuToggle} 
+          onViewChange={handleViewChange}
+          activeView={activeView}
+        />
+        
         <div className={styles.contentArea}>
-          {renderContent()}
+          <div className={styles.pageHeader}>
+            <div className={styles.pageTitleSection}>
+              <div className={styles.pageIcon}>
+                {getPageIcon()}
+              </div>
+              <h1 className={styles.pageTitle}>
+                {getPageTitle()}
+              </h1>
+            </div>
+            <div className={styles.headerRight}>
+              <div className={styles.environmentBadge}>
+                <span className={styles.environmentDot}></span>
+                <span>Produção</span>
+              </div>
+              <div className={styles.versionBadge}>
+                <FaShieldAlt size={12} />
+                <span>v2.1.4</span>
+              </div>
+            </div>
+          </div>
+          
+          <div className={styles.pageContent}>
+            {renderContent()}
+          </div>
         </div>
-      </main>
+      </div>
     </div>
   );
 };

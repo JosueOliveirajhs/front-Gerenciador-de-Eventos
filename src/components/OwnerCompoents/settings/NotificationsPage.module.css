@@ -498,7 +498,102 @@
 .quietHoursInputs span {
   color: var(--text-muted);
 }
+/* Adicione ao arquivo de estilos */
 
+.reservationCard {
+  border-left: 4px solid #3b82f6 !important;
+  background: linear-gradient(90deg, rgba(59, 130, 246, 0.05) 0%, transparent 100%);
+}
+
+.reservationActions {
+  display: flex;
+  gap: 12px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.acceptButton {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: #10b981;
+  border: none;
+  border-radius: 8px;
+  color: white;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.acceptButton:hover {
+  background: #059669;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.acceptButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.rejectButton {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: white;
+  border: 1px solid #ef4444;
+  border-radius: 8px;
+  color: #ef4444;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.rejectButton:hover {
+  background: #fef2f2;
+}
+
+.rejectButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.viewDetailsButton {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: white;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  color: #6b7280;
+  font-weight: 500;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-left: auto;
+}
+
+.viewDetailsButton:hover {
+  background: #f9fafb;
+  border-color: #9ca3af;
+}
+
+.processedStatus {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: #f3f4f6;
+  border-radius: 20px;
+  font-size: 12px;
+  color: #6b7280;
+}
 /* ========== PAINEL ACTIONS ========== */
 .panelActions {
   display: flex;

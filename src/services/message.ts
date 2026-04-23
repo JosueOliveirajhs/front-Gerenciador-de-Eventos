@@ -1,4 +1,5 @@
-import api from './api';
+// src/services/message.ts
+import { api } from './api';
 
 export interface Attachment {
   id: number;
@@ -39,45 +40,39 @@ export interface Conversation {
 
 export const messageService = {
   async getConversations(): Promise<Conversation[]> {
-    const response = await api.get('/messages/conversations');
+    const response = await api.get('/api/messages/conversations');
     return response.data;
   },
 
   async getMessages(conversationId: number): Promise<Message[]> {
-    const response = await api.get(`/messages/conversations/${conversationId}`);
+    const response = await api.get(`/api/messages/conversations/${conversationId}`);
     return response.data;
   },
 
   async sendMessage(conversationId: number, content: string, attachments?: File[]): Promise<Message> {
     const formData = new FormData();
-    if (content) {
-      formData.append('content', content);
-    }
+    if (content) formData.append('content', content);
     if (attachments) {
-      attachments.forEach(file => {
-        formData.append('attachments', file);
-      });
+      attachments.forEach(file => formData.append('attachments', file));
     }
     
-    const response = await api.post(`/messages/conversations/${conversationId}`, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data'
-      }
+    const response = await api.post(`/api/messages/conversations/${conversationId}`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
     });
     return response.data;
   },
 
   async markAsRead(conversationId: number): Promise<void> {
-    await api.post(`/messages/conversations/${conversationId}/read`);
+    await api.post(`/api/messages/conversations/${conversationId}/read`);
   },
 
   async createConversation(eventId: number): Promise<Conversation> {
-    const response = await api.post('/messages/conversations', { eventId });
+    const response = await api.post('/api/messages/conversations', { eventId });
     return response.data;
   },
 
   async getUnreadCount(): Promise<number> {
-    const response = await api.get('/messages/unread-count');
+    const response = await api.get('/api/messages/unread-count');
     return response.data;
   }
 };

@@ -1,95 +1,278 @@
-import React, { useState } from 'react';
-import { FiUpload, FiFile, FiDownload, FiTrash2, FiEye } from 'react-icons/fi';
-import { MdInsertDriveFile, MdPictureAsPdf, MdImage } from 'react-icons/md';
+// src/components/ClientComponents/ClientDocuments.tsx
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { 
+  FiUpload, FiFile, FiDownload, FiTrash2, FiEye, 
+  FiAlertCircle, FiCheckCircle, FiX, FiRefreshCw,
+  FiSearch, FiImage, FiMaximize2, FiMinimize2
+} from 'react-icons/fi';
+import { MdInsertDriveFile, MdPictureAsPdf, MdImage, MdEvent } from 'react-icons/md';
+import { documentService, Document } from '../../services/documents';
+import { useAuth } from '../../context/AuthContext';
+import { ConfirmationModal } from '../common/Alerts/ConfirmationModal';
+import { ErrorModal } from '../common/Alerts/ErrorModal';
+import { LoadingSpinner } from '../common/Loading/LoadingSpinner';
 import styles from './ClientDocuments.module.css';
 
-interface Document {
-  id: number;
-  name: string;
-  type: string;
-  size: number;
-  uploadDate: string;
-  eventName?: string;
-  url: string;
-}
-
 export const ClientDocuments: React.FC = () => {
-  const [documents, setDocuments] = useState<Document[]>([
-    {
-      id: 1,
-      name: 'Contrato - Casamento.pdf',
-      type: 'application/pdf',
-      size: 2500000,
-      uploadDate: '2026-02-15',
-      eventName: 'Casamento João e Maria',
-      url: '#'
-    },
-    {
-      id: 2,
-      name: 'Comprovante de Pagamento.jpg',
-      type: 'image/jpeg',
-      size: 1500000,
-      uploadDate: '2026-02-10',
-      eventName: 'Casamento João e Maria',
-      url: '#'
-    }
-  ]);
-
+  const { user } = useAuth();
+  const [documents, setDocuments] = useState<Document[]>([]);
+  const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterType, setFilterType] = useState<string>('all');
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const formatFileSize = (bytes: number) => {
-    if (bytes < 1024) return bytes + ' B';
-    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
-    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+  // Preview state
+  const [previewDocument, setPreviewDocument] = useState<Document | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string>('');
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [previewError, setPreviewError] = useState<string | null>(null);
+
+  // Modais
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [showErrorModal, setShowErrorModal] = useState(false);
+  const [documentToDelete, setDocumentToDelete] = useState<Document | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
+  // Carregar documentos
+  useEffect(() => {
+    loadDocuments();
+  }, []);
+
+  const loadDocuments = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const data = await documentService.getAllDocuments();
+      setDocuments(data);
+      console.log('✅ Documentos carregados:', data.length);
+    } catch (error) {
+      console.error('Erro ao carregar documentos:', error);
+      setError('Erro ao carregar documentos. Tente novamente.');
+      setShowErrorModal(true);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const formatFileSize = (tamanhoFormatado?: string): string => {
+    if (tamanhoFormatado) return tamanhoFormatado;
+    return '0 B';
   };
 
   const getFileIcon = (type: string) => {
-    if (type.includes('pdf')) return <MdPictureAsPdf size={24} />;
-    if (type.includes('image')) return <MdImage size={24} />;
-    return <MdInsertDriveFile size={24} />;
+    if (!type) return <MdInsertDriveFile size={24} color="#64748b" />;
+    if (type.includes('pdf')) return <MdPictureAsPdf size={24} color="#ef4444" />;
+    if (type.includes('image')) return <MdImage size={24} color="#3b82f6" />;
+    return <MdInsertDriveFile size={24} color="#64748b" />;
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('pt-BR');
-  };
-
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = event.target.files;
-    if (!files) return;
-
-    setUploading(true);
-    
-    setTimeout(() => {
-      const newDocuments: Document[] = [];
-      for (let i = 0; i < files.length; i++) {
-        const file = files[i];
-        newDocuments.push({
-          id: documents.length + i + 1,
-          name: file.name,
-          type: file.type,
-          size: file.size,
-          uploadDate: new Date().toISOString().split('T')[0],
-          url: '#'
-        });
-      }
-      setDocuments([...newDocuments, ...documents]);
-      setUploading(false);
-    }, 2000);
-  };
-
-  const handleDelete = (id: number) => {
-    if (window.confirm('Tem certeza que deseja excluir este documento?')) {
-      setDocuments(documents.filter(doc => doc.id !== id));
+  const formatDate = (dataFormatada?: string, dataUpload?: string): string => {
+    if (dataFormatada) return dataFormatada;
+    if (!dataUpload) return '';
+    try {
+      return new Date(dataUpload).toLocaleDateString('pt-BR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+      });
+    } catch {
+      return dataUpload;
     }
   };
 
+  // Upload de arquivo
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
+
+    setUploading(true);
+    setUploadProgress(0);
+    setError(null);
+
+    try {
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        
+        if (file.size > 10 * 1024 * 1024) {
+          setError(`O arquivo "${file.name}" excede o limite de 10MB`);
+          setShowErrorModal(true);
+          continue;
+        }
+
+        const allowedTypes = [
+          'application/pdf',
+          'image/jpeg',
+          'image/png',
+          'image/jpg',
+          'image/gif',
+          'image/webp',
+          'application/msword',
+          'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+          'application/vnd.ms-excel',
+          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        ];
+
+        if (!allowedTypes.includes(file.type)) {
+          setError(`Tipo de arquivo não permitido: "${file.name}". Use PDF, imagens, Word ou Excel.`);
+          setShowErrorModal(true);
+          continue;
+        }
+
+        await documentService.uploadDocument(file, 'cliente');
+        setUploadProgress(((i + 1) / files.length) * 100);
+      }
+
+      setSuccessMessage(`${files.length} documento(s) enviado(s) com sucesso!`);
+      setShowSuccessModal(true);
+      await loadDocuments();
+      
+    } catch (error: any) {
+      console.error('Erro ao fazer upload:', error);
+      setError(error.response?.data?.message || 'Erro ao enviar arquivo. Tente novamente.');
+      setShowErrorModal(true);
+    } finally {
+      setUploading(false);
+      setUploadProgress(0);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  // Download de arquivo
+  const handleDownload = async (document: Document) => {
+    try {
+      await documentService.downloadDocument(document.id, document.nome);
+      setSuccessMessage('Download iniciado!');
+      setShowSuccessModal(true);
+    } catch (error) {
+      console.error('Erro ao baixar:', error);
+      setError('Erro ao baixar arquivo.');
+      setShowErrorModal(true);
+    }
+  };
+
+  // ✅ Visualizar arquivo em modal com iframe
+  const handleView = (document: Document) => {
+    const viewUrl = `http://localhost:8080/api/documentos/${document.id}/view`;
+    
+    setPreviewDocument(document);
+    setPreviewUrl(viewUrl);
+    setPreviewLoading(true);
+    setPreviewError(null);
+  };
+
+  // Fechar preview
+  const handleClosePreview = () => {
+    setPreviewDocument(null);
+    setPreviewUrl('');
+    setPreviewLoading(false);
+    setPreviewError(null);
+  };
+
+  // Callback quando o iframe carrega
+  const handleIframeLoad = () => {
+    setPreviewLoading(false);
+  };
+
+  // Callback quando o iframe dá erro
+  const handleIframeError = () => {
+    setPreviewLoading(false);
+    setPreviewError('Erro ao carregar o documento. Tente fazer o download.');
+  };
+
+  // Deletar arquivo
+  const handleDeleteClick = (doc: Document) => {
+    setDocumentToDelete(doc);
+    setShowDeleteConfirm(true);
+  };
+
+  const handleDeleteConfirm = useCallback(async () => {
+    if (!documentToDelete) return;
+    
+    setDeleting(true);
+    try {
+      await documentService.deleteDocument(documentToDelete.id);
+      setDocuments(prev => prev.filter(doc => doc.id !== documentToDelete.id));
+      setSuccessMessage('Documento excluído com sucesso!');
+      setShowSuccessModal(true);
+    } catch (error: any) {
+      console.error('Erro ao deletar:', error);
+      setError(error.response?.data?.message || 'Erro ao excluir documento.');
+      setShowErrorModal(true);
+    } finally {
+      setDeleting(false);
+      setShowDeleteConfirm(false);
+      setDocumentToDelete(null);
+    }
+  }, [documentToDelete]);
+
+  const handleDeleteCancel = useCallback(() => {
+    setShowDeleteConfirm(false);
+    setDocumentToDelete(null);
+  }, []);
+
+  const handleCloseSuccess = useCallback(() => {
+    setShowSuccessModal(false);
+    setSuccessMessage(null);
+  }, []);
+
+  const handleCloseError = useCallback(() => {
+    setShowErrorModal(false);
+  }, []);
+
+  // Filtrar documentos
+  const filteredDocuments = documents.filter(doc => {
+    const matchesSearch = doc.nome?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          doc.contexto?.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesType = filterType === 'all' || 
+                        (filterType === 'pdf' && doc.tipo?.includes('pdf')) ||
+                        (filterType === 'image' && doc.tipo?.includes('image')) ||
+                        (filterType === 'other' && 
+                          !doc.tipo?.includes('pdf') && 
+                          !doc.tipo?.includes('image'));
+    
+    return matchesSearch && matchesType;
+  });
+
+  if (loading) {
+    return (
+      <div className={styles.loading}>
+        <LoadingSpinner text="Carregando documentos..." />
+      </div>
+    );
+  }
+
   return (
     <div className={styles.documents}>
-      <h2 className={styles.title}>
-        <FiFile size={28} />
-        Espaço de Anexar Documento
-      </h2>
+      {/* Header */}
+      <div className={styles.header}>
+        <div>
+          <h2 className={styles.title}>
+            <FiFile size={28} />
+            Meus Documentos
+          </h2>
+          <p className={styles.subtitle}>
+            {documents.length} documento(s) anexado(s)
+          </p>
+        </div>
+        <button 
+          className={styles.refreshButton}
+          onClick={loadDocuments}
+          title="Atualizar"
+        >
+          <FiRefreshCw size={18} />
+        </button>
+      </div>
 
+      {/* Upload Section */}
       <div className={styles.uploadSection}>
         <div className={styles.uploadArea}>
           <input
@@ -98,62 +281,133 @@ export const ClientDocuments: React.FC = () => {
             multiple
             onChange={handleFileUpload}
             style={{ display: 'none' }}
+            ref={fileInputRef}
+            accept=".pdf,.jpg,.jpeg,.png,.gif,.webp,.doc,.docx,.xls,.xlsx"
           />
           <label htmlFor="fileUpload" className={styles.uploadLabel}>
-            <FiUpload size={24} />
+            <FiUpload size={28} />
             <span>Clique para anexar documentos</span>
-            <span className={styles.uploadHint}>PDF, imagens (max 10MB)</span>
+            <span className={styles.uploadHint}>
+              PDF, imagens, Word, Excel (max 10MB por arquivo)
+            </span>
           </label>
         </div>
 
         {uploading && (
           <div className={styles.uploadProgress}>
             <div className={styles.progressBar}>
-              <div className={styles.progressFill}></div>
+              <div 
+                className={styles.progressFill} 
+                style={{ width: `${uploadProgress}%` }}
+              />
             </div>
-            <p>Enviando...</p>
+            <p>Enviando... {Math.round(uploadProgress)}%</p>
           </div>
         )}
       </div>
 
-      <h3 className={styles.sectionTitle}>Documentos Anexados</h3>
+      {/* Filtros */}
+      <div className={styles.filtersBar}>
+        <div className={styles.searchBox}>
+          <FiSearch size={16} />
+          <input
+            type="text"
+            placeholder="Buscar documentos..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+          {searchTerm && (
+            <button className={styles.clearSearch} onClick={() => setSearchTerm('')}>
+              <FiX size={14} />
+            </button>
+          )}
+        </div>
+        
+        <div className={styles.filterGroup}>
+          <button 
+            className={`${styles.filterBtn} ${filterType === 'all' ? styles.active : ''}`}
+            onClick={() => setFilterType('all')}
+          >
+            Todos
+          </button>
+          <button 
+            className={`${styles.filterBtn} ${filterType === 'pdf' ? styles.active : ''}`}
+            onClick={() => setFilterType('pdf')}
+          >
+            <MdPictureAsPdf size={14} /> PDF
+          </button>
+          <button 
+            className={`${styles.filterBtn} ${filterType === 'image' ? styles.active : ''}`}
+            onClick={() => setFilterType('image')}
+          >
+            <FiImage size={14} /> Imagens
+          </button>
+          <button 
+            className={`${styles.filterBtn} ${filterType === 'other' ? styles.active : ''}`}
+            onClick={() => setFilterType('other')}
+          >
+            Outros
+          </button>
+        </div>
+      </div>
 
-      {documents.length === 0 ? (
+      {/* Lista de Documentos */}
+      <h3 className={styles.sectionTitle}>
+        Documentos Anexados
+        <span className={styles.sectionCount}>{filteredDocuments.length}</span>
+      </h3>
+
+      {filteredDocuments.length === 0 ? (
         <div className={styles.emptyState}>
           <FiFile size={48} />
-          <p>Nenhum documento anexado</p>
+          <p>
+            {searchTerm || filterType !== 'all' 
+              ? 'Nenhum documento corresponde aos filtros.' 
+              : 'Nenhum documento anexado'}
+          </p>
         </div>
       ) : (
         <div className={styles.documentsGrid}>
-          {documents.map(doc => (
+          {filteredDocuments.map(doc => (
             <div key={doc.id} className={styles.documentCard}>
               <div className={styles.documentIcon}>
-                {getFileIcon(doc.type)}
+                {getFileIcon(doc.tipo)}
               </div>
               
               <div className={styles.documentInfo}>
-                <h4>{doc.name}</h4>
+                <h4 title={doc.nome}>{doc.nome}</h4>
                 <div className={styles.documentMeta}>
-                  <span>{formatFileSize(doc.size)}</span>
+                  <span>{formatFileSize(doc.tamanhoFormatado)}</span>
                   <span>•</span>
-                  <span>{formatDate(doc.uploadDate)}</span>
+                  <span>{formatDate(doc.dataFormatada, (doc as any).dataUpload)}</span>
                 </div>
-                {doc.eventName && (
-                  <span className={styles.eventTag}>{doc.eventName}</span>
+                {doc.contexto && (
+                  <span className={styles.eventTag}>
+                    <MdEvent size={12} />
+                    {doc.contexto}
+                  </span>
                 )}
               </div>
 
               <div className={styles.documentActions}>
-                <button className={styles.actionButton} title="Visualizar">
+                <button 
+                  className={styles.actionButton} 
+                  title="Visualizar"
+                  onClick={() => handleView(doc)}
+                >
                   <FiEye size={16} />
                 </button>
-                <button className={styles.actionButton} title="Download">
+                <button 
+                  className={styles.actionButton} 
+                  title="Download"
+                  onClick={() => handleDownload(doc)}
+                >
                   <FiDownload size={16} />
                 </button>
                 <button 
                   className={`${styles.actionButton} ${styles.deleteButton}`}
                   title="Excluir"
-                  onClick={() => handleDelete(doc.id)}
+                  onClick={() => handleDeleteClick(doc)}
                 >
                   <FiTrash2 size={16} />
                 </button>
@@ -162,6 +416,105 @@ export const ClientDocuments: React.FC = () => {
           ))}
         </div>
       )}
+
+      {/* ✅ MODAL DE VISUALIZAÇÃO COM IFRAME */}
+      {previewDocument && previewUrl && (
+        <div className={styles.previewOverlay} onClick={handleClosePreview}>
+          <div className={styles.previewModal} onClick={(e) => e.stopPropagation()}>
+            {/* Header do Preview */}
+            <div className={styles.previewHeader}>
+              <div className={styles.previewHeaderLeft}>
+                <div className={styles.previewHeaderIcon}>
+                  {getFileIcon(previewDocument.tipo)}
+                </div>
+                <div className={styles.previewHeaderInfo}>
+                  <h3>{previewDocument.nome}</h3>
+                  <span>{formatFileSize(previewDocument.tamanhoFormatado)}</span>
+                </div>
+              </div>
+              <div className={styles.previewHeaderActions}>
+                <button 
+                  className={styles.previewActionButton}
+                  onClick={() => handleDownload(previewDocument)}
+                  title="Download"
+                >
+                  <FiDownload size={18} />
+                </button>
+                <button 
+                  className={styles.previewCloseButton}
+                  onClick={handleClosePreview}
+                  title="Fechar"
+                >
+                  <FiX size={20} />
+                </button>
+              </div>
+            </div>
+
+            {/* Conteúdo do Preview */}
+            <div className={styles.previewContent}>
+              {previewLoading && (
+                <div className={styles.previewLoading}>
+                  <div className={styles.spinner}></div>
+                  <p>Carregando documento...</p>
+                </div>
+              )}
+              
+              {previewError && (
+                <div className={styles.previewError}>
+                  <FiAlertCircle size={48} />
+                  <p>{previewError}</p>
+                  <button 
+                    className={styles.previewDownloadButton}
+                    onClick={() => handleDownload(previewDocument)}
+                  >
+                    <FiDownload size={16} />
+                    Baixar documento
+                  </button>
+                </div>
+              )}
+
+              <iframe
+                src={previewUrl}
+                className={styles.previewIframe}
+                title={previewDocument.nome}
+                onLoad={handleIframeLoad}
+                onError={handleIframeError}
+                style={{ display: previewLoading || previewError ? 'none' : 'block' }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modais */}
+      <ConfirmationModal
+        isOpen={showDeleteConfirm}
+        title="Excluir Documento"
+        message={`Tem certeza que deseja excluir o documento "${documentToDelete?.nome}"? Esta ação não pode ser desfeita.`}
+        type="warning"
+        onConfirm={handleDeleteConfirm}
+        onCancel={handleDeleteCancel}
+        confirmText={deleting ? 'Excluindo...' : 'Sim, Excluir'}
+        cancelText="Cancelar"
+      />
+
+      <ConfirmationModal
+        isOpen={showSuccessModal}
+        title="Sucesso!"
+        message={successMessage || ''}
+        type="success"
+        onConfirm={handleCloseSuccess}
+        onCancel={handleCloseSuccess}
+        confirmText="OK"
+      />
+
+      <ErrorModal
+        isOpen={showErrorModal}
+        message={error || ''}
+        onClose={handleCloseError}
+      />
     </div>
   );
 };
+
+export default ClientDocuments;

@@ -1,5 +1,6 @@
 // src/pages/Client/Client.tsx
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Header } from '../../components/common/Header/Header';
 import { Sidebar } from '../../components/common/Sidebar/Sidebar';
 import { ClientPayments } from '../../components/ClientComponents/ClientPayments';
@@ -9,10 +10,12 @@ import { NewBooking } from '../../components/ClientComponents/NewBooking';
 import { EventTracking } from '../../components/ClientComponents/EventTracking/EventTracking';
 import { ProposalView } from '../../components/ClientComponents/ProposalView/ProposalView';
 import { ContractViewer } from '../../components/ClientComponents/ContractViewer/ContractViewer';
-import { Messages } from '../../components/ClientComponents/Messages/Messages';
-import { Notifications } from '../../components/ClientComponents/Notifications/Notifications';
+import { OwnerChat } from '../../components/OwnerCompoents/OwnerChat/OwnerChat'; // ✅ CHAT UNIFICADO
+import { NotificationsPage } from '../../components/OwnerCompoents/settings/NotificationsPage';
 import { CommunityView } from '../../components/ClientComponents/CommunityView/CommunityView';
 import { CompanySearch } from '../../components/ClientComponents/CompanySearch/CompanySearch';
+import { ProfilePage } from '../../components/OwnerCompoents/settings/ProfilePage';
+import { SettingsPage } from '../../components/OwnerCompoents/settings/SettingsPage';
 import { 
   FiPlus, 
   FiUpload, 
@@ -33,7 +36,7 @@ import {
 import { useAuth } from '../../context/AuthContext';
 import styles from './Client.module.css';
 
-// Componente Dashboard simples enquanto o ClientDashboard não existe
+// Componente Dashboard
 const ClientDashboard: React.FC<{ onViewChange: (view: string, params?: any) => void }> = ({ onViewChange }) => {
   const { user } = useAuth();
   
@@ -82,50 +85,113 @@ const ClientDashboard: React.FC<{ onViewChange: (view: string, params?: any) => 
   );
 };
 
+// Extrair view da URL
+const getViewFromPath = (pathname: string): string => {
+  const match = pathname.match(/\/client\/([^/]+)/);
+  return match ? match[1] : 'dashboard';
+};
+
 export const Client: React.FC = () => {
-  const { user } = useAuth();
-  const [activeView, setActiveView] = useState('dashboard');
-  const [viewParams, setViewParams] = useState<any>(null);
+  const navigate = useNavigate();
+  const location = useLocation();
+  
+  const [activeView, setActiveView] = useState(() => getViewFromPath(location.pathname));
+  const [viewParams, setViewParams] = useState<any>(() => location.state || null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    const saved = localStorage.getItem('clientSidebarCollapsed');
+    return saved === 'true';
+  });
+
+  useEffect(() => {
+    const view = getViewFromPath(location.pathname);
+    if (view !== activeView) {
+      setActiveView(view);
+    }
+    if (location.state) {
+      setViewParams(location.state);
+    }
+  }, [location.pathname]);
 
   const handleMenuToggle = useCallback(() => {
     setIsMobileMenuOpen(prev => !prev);
   }, []);
 
-  const handleViewChange = useCallback((view: string, params?: any) => {
-    console.log('🔄 Client - Mudando para view:', view, params);
-    setActiveView(view);
-    setViewParams(params || null);
-    setIsMobileMenuOpen(false);
+  const handleSidebarCollapse = useCallback((collapsed: boolean) => {
+    setSidebarCollapsed(collapsed);
+    localStorage.setItem('clientSidebarCollapsed', String(collapsed));
   }, []);
 
+  const handleViewChange = useCallback((view: string, params?: any) => {
+    console.log('🔄 Client - Mudando para view:', view, params);
+    
+    const routeMapping: Record<string, string> = {
+      'dashboard': '/client/dashboard',
+      'events': '/client/events',
+      'new-booking': '/client/new-booking',
+      'tracking': '/client/tracking',
+      'proposal': '/client/proposal',
+      'contract': '/client/contract',
+      'payments': '/client/payments',
+      'documents': '/client/documents',
+      'messages': '/client/messages',
+      'notifications': '/client/notifications',
+      'notificacoes': '/client/notifications',
+      'community': '/client/community',
+      'company-search': '/client/company-search',
+      'profile': '/client/profile',
+      'perfil': '/client/profile',
+      'settings': '/client/settings',
+      'configuracoes': '/client/settings',
+    };
+    
+    const route = routeMapping[view] || `/client/${view}`;
+    
+    if (params) {
+      navigate(route, { state: params });
+    } else {
+      navigate(route);
+    }
+    
+    setIsMobileMenuOpen(false);
+  }, [navigate]);
+
   const renderActiveView = () => {
+    const params = location.state as any || viewParams;
+    
     switch (activeView) {
       case 'dashboard':
         return <ClientDashboard onViewChange={handleViewChange} />;
       case 'events':
         return <MyEvents onViewChange={handleViewChange} />;
       case 'new-booking':
-        return <NewBooking />;
+        return <NewBooking onSuccess={() => handleViewChange('events')} />;
       case 'tracking':
-        return <EventTracking eventId={viewParams?.eventId} onBack={() => handleViewChange('events')} />;
+        return <EventTracking eventId={params?.eventId} onBack={() => handleViewChange('events')} onViewChange={handleViewChange} />;
       case 'proposal':
-        return <ProposalView proposalId={viewParams?.proposalId} onBack={() => handleViewChange('dashboard')} />;
+        return <ProposalView proposalId={params?.proposalId} onBack={() => handleViewChange('dashboard')} />;
       case 'contract':
-        return <ContractViewer contractId={viewParams?.contractId} onBack={() => handleViewChange('dashboard')} />;
+        return <ContractViewer contractId={params?.contractId} onBack={() => handleViewChange('dashboard')} />;
       case 'payments':
         return <ClientPayments />;
       case 'documents':
         return <ClientDocuments />;
       case 'messages':
-        return <Messages conversationId={viewParams?.conversationId} onBack={() => handleViewChange('dashboard')} />;
+        // ✅ CHAT UNIFICADO - OwnerChat funciona tanto para Owner quanto Client
+        return <OwnerChat />;
       case 'notifications':
-        return <Notifications onViewChange={handleViewChange} />;
+      case 'notificacoes':
+        return <NotificationsPage />;
       case 'community':
         return <CommunityView />;
       case 'company-search':
         return <CompanySearch onViewChange={handleViewChange} />;
+      case 'profile':
+      case 'perfil':
+        return <ProfilePage />;
+      case 'settings':
+      case 'configuracoes':
+        return <SettingsPage />;
       default:
         return <ClientDashboard onViewChange={handleViewChange} />;
     }
@@ -144,7 +210,9 @@ export const Client: React.FC = () => {
       messages: 'Mensagens',
       notifications: 'Notificações',
       community: 'Comunidade',
-      'company-search': 'Pesquisar Empresas'
+      'company-search': 'Pesquisar Empresas',
+      profile: 'Meu Perfil',
+      settings: 'Configurações',
     };
     return titles[view] || 'Dashboard';
   };
@@ -161,39 +229,33 @@ export const Client: React.FC = () => {
       documents: <MdOutlineFolder size={24} />,
       messages: <MdOutlineMessage size={24} />,
       notifications: <MdOutlineNotifications size={24} />,
-      community: <MdOutlineMessage size={24} />,
-      'company-search': <MdOutlineFolder size={24} />
     };
     return icons[view] || <MdDashboard size={24} />;
   };
 
   const renderPageActions = (view: string) => {
-    switch (view) {
-      case 'events':
-        return (
-          <button className={styles.primaryButton} onClick={() => handleViewChange('new-booking')}>
-            <FiPlus size={18} />
-            Solicitar Reserva
-          </button>
-        );
-      case 'documents':
-        return (
-          <button className={styles.primaryButton}>
-            <FiUpload size={18} />
-            Anexar Documento
-          </button>
-        );
-      case 'messages':
-        return (
-          <button className={styles.primaryButton}>
-            <FiMessageCircle size={18} />
-            Nova Mensagem
-          </button>
-        );
-      default:
-        return null;
-    }
-  };
+  switch (view) {
+    case 'events':
+      return (
+        <button className={styles.primaryButton} onClick={() => handleViewChange('new-booking')}>
+          <FiPlus size={18} />
+          Solicitar Reserva
+        </button>
+      );
+    case 'documents':
+      return (
+        <button className={styles.primaryButton}>
+          <FiUpload size={18} />
+          Anexar Documento
+        </button>
+      );
+    case 'messages':
+      // ✅ Removido botão "Nova Mensagem" pois o OwnerChat já tem o botão integrado
+      return null;
+    default:
+      return null;
+  }
+};
 
   const mainWrapperClass = useMemo(() => {
     return `${styles.mainWrapper} ${sidebarCollapsed ? styles.mainWrapperExpanded : ''}`;
@@ -207,7 +269,7 @@ export const Client: React.FC = () => {
         isMobileOpen={isMobileMenuOpen}
         onMobileToggle={handleMenuToggle}
         isCollapsed={sidebarCollapsed}
-        onCollapseChange={setSidebarCollapsed}
+        onCollapseChange={handleSidebarCollapse}
       />
       
       <div className={mainWrapperClass}>
