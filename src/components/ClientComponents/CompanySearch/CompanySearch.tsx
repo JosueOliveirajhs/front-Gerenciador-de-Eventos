@@ -1,5 +1,5 @@
 // src/components/ClientComponents/CompanySearch/CompanySearch.tsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   FiSearch, 
   FiMapPin, 
@@ -10,6 +10,9 @@ import {
 } from 'react-icons/fi';
 import { MdEvent, MdVerified } from 'react-icons/md';
 import styles from './CompanySearch.module.css';
+
+// Importe o serviço (ajuste o caminho se necessário de acordo com a sua estrutura de pastas)
+import { empresaService, EmpresaData } from '../../../services/empresa'; 
 
 interface Company {
   id: string;
@@ -34,53 +37,45 @@ export const CompanySearch: React.FC<CompanySearchProps> = ({ onViewChange }) =>
   const [selectedSpecialty, setSelectedSpecialty] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   
-  const [companies] = useState<Company[]>([
-    {
-      id: '1',
-      name: 'Espaço Premium Eventos',
-      description: 'Espaço sofisticado para casamentos e eventos corporativos com capacidade para até 200 pessoas.',
-      location: 'São Paulo, SP',
-      rating: 4.8,
-      totalReviews: 156,
-      specialties: ['Casamentos', 'Corporativo', '15 Anos'],
-      verified: true,
-      nextAvailable: '2026-06-15'
-    },
-    {
-      id: '2',
-      name: 'Buffet Sabor & Arte',
-      description: 'Buffet especializado em gastronomia contemporânea e coquetéis exclusivos.',
-      location: 'Rio de Janeiro, RJ',
-      rating: 4.9,
-      totalReviews: 203,
-      specialties: ['Buffet', 'Coquetel', 'Jantar'],
-      verified: true,
-      nextAvailable: '2026-05-20'
-    },
-    {
-      id: '3',
-      name: 'Fotografia Lens',
-      description: 'Fotografia e filmagem profissional para eternizar seus momentos especiais.',
-      location: 'Belo Horizonte, MG',
-      rating: 4.7,
-      totalReviews: 89,
-      specialties: ['Fotografia', 'Filmagem', 'Ensaio'],
-      verified: true
-    },
-    {
-      id: '4',
-      name: 'Decoração Encanto',
-      description: 'Decoração personalizada para todos os tipos de eventos.',
-      location: 'Curitiba, PR',
-      rating: 4.6,
-      totalReviews: 67,
-      specialties: ['Decoração', 'Flores', 'Cenografia'],
-      verified: true
-    }
-  ]);
+  // Estado alterado para iniciar vazio e receber dados da API
+  const [companies, setCompanies] = useState<Company[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const locations = ['São Paulo, SP', 'Rio de Janeiro, RJ', 'Belo Horizonte, MG', 'Curitiba, PR', 'Brasília, DF'];
-  const specialties = ['Casamentos', 'Corporativo', '15 Anos', 'Buffet', 'Fotografia', 'Decoração', 'Música'];
+  // Hook para buscar as empresas na montagem do componente
+  useEffect(() => {
+    carregarEmpresas();
+  }, []);
+
+  const carregarEmpresas = async () => {
+    try {
+      setLoading(true);
+      const data: EmpresaData[] = await empresaService.listar();
+      
+      // Mapeando o retorno da API (EmpresaData) para o formato da Interface UI (Company)
+      const empresasFormatadas: Company[] = data.map((empresa) => ({
+        id: String(empresa.id),
+        name: empresa.nome,
+        description: empresa.descricao || 'Nenhuma descrição fornecida.',
+        location: empresa.localizacao || 'Localização não informada',
+        rating: empresa.avaliacao || 0,
+        // Mock de avaliações, já que o back-end atual não possui um campo totalReviews
+        totalReviews: Math.floor(Math.random() * 200) + 10, 
+        // Convertendo a categoria única do back-end para o array visual de especialidades
+        specialties: [empresa.categoria], 
+        verified: empresa.verificado,
+      }));
+
+      setCompanies(empresasFormatadas);
+    } catch (error) {
+      console.error("Erro ao buscar empresas da API:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Mantendo os filtros que você já tinha (ajustados dinamicamente)
+  const locations = Array.from(new Set(companies.map(c => c.location))).filter(Boolean);
+  const specialties = ['Buffet', 'Decoracao', 'Fotografia', 'Outros']; // Categorias baseadas no seu Enum do Java
 
   const filteredCompanies = companies.filter(company => {
     const matchesSearch = company.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -181,11 +176,15 @@ export const CompanySearch: React.FC<CompanySearchProps> = ({ onViewChange }) =>
       )}
 
       <div className={styles.resultsInfo}>
-        <span>{filteredCompanies.length} empresas encontradas</span>
+        <span>{loading ? 'Carregando empresas...' : `${filteredCompanies.length} empresas encontradas`}</span>
       </div>
 
       <div className={styles.companiesList}>
-        {filteredCompanies.length === 0 ? (
+        {loading ? (
+           <div className={styles.emptyState}>
+             <h3>Buscando fornecedores...</h3>
+           </div>
+        ) : filteredCompanies.length === 0 ? (
           <div className={styles.emptyState}>
             <FiSearch size={48} />
             <h3>Nenhuma empresa encontrada</h3>
