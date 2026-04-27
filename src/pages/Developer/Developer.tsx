@@ -7,15 +7,12 @@ import {
   MdDashboard,
   MdBusiness,
   MdStore,
-  MdTerminal,
   MdCode,
-  MdAttachMoney,
 } from 'react-icons/md';
 import {
   FaShieldAlt,
-  FaHeadset,
 } from 'react-icons/fa';
-import { FiSettings } from 'react-icons/fi';
+import { FiSettings, FiUser, FiBell } from 'react-icons/fi';
 import { DeveloperDashboard } from '../../components/DeveloperCompents/DeveloperDashboard/DeveloperDashboard';
 import { Organizations } from '../../components/DeveloperCompents/Organizations/Organizations';
 import { OrganizationDetails } from '../../components/DeveloperCompents/OrganizationsDetails/OrganizationsDetails';
@@ -23,15 +20,13 @@ import { OrganizationForm } from '../../components/DeveloperCompents/Organizatio
 import { Catalogo } from '../../components/DeveloperCompents/Catalogo/Catalogo';
 import { CatalogoForm } from '../../components/DeveloperCompents/CatalogoForm/CatalogoForm';
 import { CatalogoDetails } from '../../components/DeveloperCompents/CatalogoDetails/CatalogoDetails';
-import { CRM } from '../../components/DeveloperCompents/CRM/CRM';
-import { GlobalSupport } from '../../components/DeveloperCompents/GlobalSupport/GlobalSupport';
-import { LogViewer } from '../../components/DeveloperCompents/LogViewer/LogViewer';
+import { SettingsPage } from '../../components/OwnerCompoents/settings/SettingsPage';
+import { ProfilePage } from '../../components/OwnerCompoents/settings/ProfilePage';
+import { NotificationsPage } from '../../components/OwnerCompoents/settings/NotificationsPage';
 import { Settings } from '../../components/DeveloperCompents/Settings/Settings';
 import styles from './Developer.module.css';
 
-// Extrair view e subview da URL
 const parsePath = (pathname: string) => {
-  // Exemplos: /developer/organizations, /developer/organizations/123, /developer/organizations/new
   const parts = pathname.split('/').filter(Boolean);
   const view = parts[1] || 'dashboard';
   const subView = parts[2] || 'list';
@@ -49,25 +44,17 @@ export const Developer: React.FC = () => {
   const [activeView, setActiveView] = useState<string>(initialView);
   const [subView, setSubView] = useState<string>(initialSubView);
   const [selectedId, setSelectedId] = useState<number | null>(initialId);
-  const [viewParams, setViewParams] = useState<any>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
     const saved = localStorage.getItem('developerSidebarCollapsed');
     return saved === 'true';
   });
 
-  // Sincronizar com mudanças de URL
   useEffect(() => {
     const { view, subView: newSubView, id } = parsePath(location.pathname);
-    if (view !== activeView) {
-      setActiveView(view);
-    }
-    if (newSubView !== subView) {
-      setSubView(newSubView);
-    }
-    if (id !== selectedId) {
-      setSelectedId(id);
-    }
+    if (view !== activeView) setActiveView(view);
+    if (newSubView !== subView) setSubView(newSubView);
+    if (id !== selectedId) setSelectedId(id);
   }, [location.pathname]);
 
   const handleMenuToggle = useCallback(() => {
@@ -79,20 +66,17 @@ export const Developer: React.FC = () => {
     localStorage.setItem('developerSidebarCollapsed', String(collapsed));
   }, []);
 
-  // ✅ HANDLER CORRIGIDO - Navega usando React Router
   const handleViewChange = useCallback((view: string, params?: any) => {
-    console.log('🔀 Developer - Mudando view para:', view);
-    
     const routeMapping: Record<string, string> = {
       'dashboard': '/developer/dashboard',
       'organizations': '/developer/organizations',
       'catalogo': '/developer/catalogo',
-      'crm': '/developer/crm',
-      'support': '/developer/support',
-      'logs': '/developer/logs',
       'settings': '/developer/settings',
+      'configuracoes': '/developer/settings',
       'profile': '/developer/profile',
+      'perfil': '/developer/profile',
       'notifications': '/developer/notifications',
+      'notificacoes': '/developer/notifications',
     };
     
     const route = routeMapping[view] || `/developer/${view}`;
@@ -100,20 +84,12 @@ export const Developer: React.FC = () => {
     setIsMobileMenuOpen(false);
   }, [navigate]);
 
-  const handleNavigate = (path: string, params?: any) => {
-    navigate(path, { state: params });
-  };
-
-  const handleBack = () => {
-    navigate('/developer/organizations');
-  };
-
   const renderContent = () => {
     const stateParams = location.state as any;
     
     switch (activeView) {
       case 'dashboard':
-        return <DeveloperDashboard onNavigate={handleNavigate} />;
+        return <DeveloperDashboard onNavigate={(path: string) => navigate(path)} />;
         
       case 'organizations':
         if (subView === 'new' || subView === 'edit') {
@@ -163,56 +139,31 @@ export const Developer: React.FC = () => {
           if (view === 'form') navigate(`/developer/catalogo/${id ? `edit/${id}` : 'new'}`);
         }} />;
         
-      case 'crm':
-        return <CRM />;
-        
-      case 'support':
-        return <GlobalSupport />;
-        
-      case 'logs':
-        return <LogViewer />;
-        
       case 'settings':
-        return <Settings />;
+      case 'configuracoes':
+        return <SettingsPage />;
         
       case 'profile':
-        return (
-          <div className={styles.placeholderPage}>
-            <div className={styles.placeholderContent}>
-              <div className={styles.placeholderIcon}>👤</div>
-              <h2>Perfil do Desenvolvedor</h2>
-              <p>Em desenvolvimento...</p>
-            </div>
-          </div>
-        );
+      case 'perfil':
+        return <ProfilePage />;
         
       case 'notifications':
-        return (
-          <div className={styles.placeholderPage}>
-            <div className={styles.placeholderContent}>
-              <div className={styles.placeholderIcon}>🔔</div>
-              <h2>Notificações</h2>
-              <p>Em desenvolvimento...</p>
-            </div>
-          </div>
-        );
+      case 'notificacoes':
+        return <NotificationsPage />;
         
       default:
-        return <DeveloperDashboard onNavigate={handleNavigate} />;
+        return <DeveloperDashboard onNavigate={(path: string) => navigate(path)} />;
     }
   };
 
   const getPageTitle = (): string => {
     const titles: Record<string, string> = {
       'dashboard': 'Dashboard do Desenvolvedor',
-      'organizations': 'Organizações - Empresas Assinantes',
-      'catalogo': 'Catálogo de Fornecedores',
-      'crm': 'CRM Comercial',
-      'support': 'Suporte Global',
-      'logs': 'Logs do Sistema',
-      'settings': 'Configurações Técnicas',
+      'organizations': 'Organizacoes - Empresas Assinantes',
+      'catalogo': 'Catalogo de Fornecedores',
+      'settings': 'Configuracoes',
       'profile': 'Meu Perfil',
-      'notifications': 'Notificações',
+      'notifications': 'Notificacoes',
     };
     return titles[activeView] || 'Dashboard';
   };
@@ -222,12 +173,9 @@ export const Developer: React.FC = () => {
       'dashboard': <MdDashboard size={24} />,
       'organizations': <MdBusiness size={24} />,
       'catalogo': <MdStore size={24} />,
-      'crm': <MdAttachMoney size={24} />,
-      'support': <FaHeadset size={24} />,
-      'logs': <MdTerminal size={24} />,
       'settings': <FiSettings size={24} />,
-      'profile': <MdCode size={24} />,
-      'notifications': <MdCode size={24} />,
+      'profile': <FiUser size={24} />,
+      'notifications': <FiBell size={24} />,
     };
     return icons[activeView] || <MdDashboard size={24} />;
   };
@@ -267,7 +215,7 @@ export const Developer: React.FC = () => {
             <div className={styles.headerRight}>
               <div className={styles.environmentBadge}>
                 <span className={styles.environmentDot}></span>
-                <span>Produção</span>
+                <span>Producao</span>
               </div>
               <div className={styles.versionBadge}>
                 <FaShieldAlt size={12} />

@@ -8,7 +8,7 @@ interface AuthContextType {
   user: User | null;
   login: (user: User, token: string) => void;
   logout: () => void;
-  updateUser: (updatedUser: User) => void;
+  updateUser: (updatedUser: Partial<User>) => void;
   loading: boolean;
   unreadNotifications: number;
   refreshUnreadCount: () => Promise<void>;
@@ -26,7 +26,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const count = await notificationService.getUnreadCount();
       setUnreadNotifications(count);
     } catch (error) {
-      // Silencioso - usuário pode não estar logado ainda
+      // Silencioso
     }
   }, []);
 
@@ -37,7 +37,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     if (token && savedUser) {
       try {
         const parsedUser = JSON.parse(savedUser);
-        console.log('✅ Usuário carregado:', {
+        console.log('Usuario carregado:', {
           id: parsedUser.id,
           name: parsedUser.name,
           userType: parsedUser.userType,
@@ -45,11 +45,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         });
         setUser(parsedUser);
         api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-        
-        // ✅ Buscar contagem inicial
         refreshUnreadCount();
       } catch (error) {
-        console.error('❌ Erro ao recuperar usuário:', error);
+        console.error('Erro ao recuperar usuario:', error);
         localStorage.removeItem('token');
         localStorage.removeItem('user');
       }
@@ -57,41 +55,31 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setLoading(false);
   }, [refreshUnreadCount]);
 
-  // ✅ Polling de notificações a cada 15 segundos
   useEffect(() => {
     if (!user) return;
-    
     const interval = setInterval(() => {
       refreshUnreadCount();
     }, 15000);
-    
     return () => clearInterval(interval);
   }, [user, refreshUnreadCount]);
 
   const login = (userData: User, token: string) => {
-    console.log('🔐 AuthContext - Login:', {
+    console.log('AuthContext - Login:', {
       id: userData.id,
       name: userData.name,
       userType: userData.userType,
       role: userData.role
     });
     
-    const userWithOrg = {
-      ...userData,
-      organizationId: userData.organizationId || null
-    };
-    
-    setUser(userWithOrg);
+    setUser(userData);
     localStorage.setItem('token', token);
-    localStorage.setItem('user', JSON.stringify(userWithOrg));
+    localStorage.setItem('user', JSON.stringify(userData));
     api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-    
-    // Buscar contagem após login
     refreshUnreadCount();
   };
 
   const logout = () => {
-    console.log('🚪 Logout realizado');
+    console.log('Logout realizado');
     setUser(null);
     setUnreadNotifications(0);
     localStorage.removeItem('token');
@@ -99,10 +87,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     delete api.defaults.headers.common['Authorization'];
   };
 
-  const updateUser = (updatedUser: User) => {
-    console.log('🔄 Atualizando usuário:', updatedUser);
-    setUser(updatedUser);
-    localStorage.setItem('user', JSON.stringify(updatedUser));
+  const updateUser = (updatedUser: Partial<User>) => {
+    console.log('Atualizando usuario:', updatedUser);
+    setUser(prev => {
+      if (!prev) return prev;
+      // Mesclar dados antigos com novos (preserva id, userType, role)
+      const merged = { ...prev, ...updatedUser };
+      localStorage.setItem('user', JSON.stringify(merged));
+      console.log('Usuario salvo no localStorage:', merged);
+      return merged;
+    });
   };
 
   return (

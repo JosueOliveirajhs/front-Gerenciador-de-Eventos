@@ -54,5 +54,11 @@ export const empresaService = {
       headers: { 'Content-Type': 'text/plain' }
     });
     return response.data;
-  }
+  },
+
+  // ✅ NOVO: Avaliar empresa via endpoint PATCH específico
+  avaliarEmpresa: async (id: number, avaliacao: number): Promise<EmpresaData> => {
+    const response = await api.patch(`/api/empresas/${id}/avaliar`, { avaliacao });
+    return response.data;
+  },
 };

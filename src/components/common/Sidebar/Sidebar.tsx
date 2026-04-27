@@ -9,9 +9,9 @@ import {
 } from "react-icons/fi";
 import {
   MdEvent, MdDashboard, MdPeople, MdAttachMoney, MdGroup,
-  MdBusiness, MdStore, MdTerminal, MdCode,
+  MdBusiness, MdStore, MdCode,
 } from "react-icons/md";
-import { FaBox, FaHeadset } from "react-icons/fa";
+import { FaBox } from "react-icons/fa";
 import styles from "./Sidebar.module.css";
 import logoSmall from "../../../assets/logo-small.png";
 
@@ -35,7 +35,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const { user, updateUser } = useAuth();
   const [internalCollapsed, setInternalCollapsed] = useState(false);
   const [systemName, setSystemName] = useState("EEMS");
-  const [systemSubtitle, setSystemSubtitle] = useState("Gestão");
+  const [systemSubtitle, setSystemSubtitle] = useState("Gestao");
   const [isEditingName, setIsEditingName] = useState(false);
   const [editNameValue, setEditNameValue] = useState("");
   const [isSaving, setIsSaving] = useState(false);
@@ -84,20 +84,20 @@ export const Sidebar: React.FC<SidebarProps> = ({
         'MANAGER': 'Gerente',
         'ANALYST': 'Analista'
       };
-      return roleMap[user?.role || ''] || 'Funcionário';
+      return roleMap[user?.role || ''] || 'Funcionario';
     }
     
-    return 'Usuário';
+    return 'Usuario';
   };
 
   const handleSaveName = async () => {
     if (!editNameValue.trim()) {
-      alert("O nome não pode estar vazio");
+      alert("O nome nao pode estar vazio");
       return;
     }
 
     if (!user?.id) {
-      alert("Usuário não encontrado");
+      alert("Usuario nao encontrado");
       return;
     }
 
@@ -129,14 +129,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
     else if (e.key === 'Escape') handleCancelEdit();
   };
 
-  // Menu DEVELOPER
+  // Menu DEVELOPER (sem CRM, Suporte, Logs)
   const developerMenu = [
     { id: "dashboard", label: "Dashboard", icon: <MdDashboard size={20} /> },
-    { id: "organizations", label: "Organizações", icon: <MdBusiness size={20} /> },
-    { id: "catalogo", label: "Catálogo", icon: <MdStore size={20} /> },
-    { id: "crm", label: "CRM", icon: <MdAttachMoney size={20} /> },
-    { id: "support", label: "Suporte", icon: <FaHeadset size={20} /> },
-    { id: "logs", label: "Logs", icon: <MdTerminal size={20} /> },
+    { id: "organizations", label: "Organizacoes", icon: <MdBusiness size={20} /> },
+    { id: "catalogo", label: "Catalogo", icon: <MdStore size={20} /> },
   ];
 
   // Menu OWNER
@@ -174,7 +171,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   const getSectionLabel = (): string => {
     if (user?.userType === 'DEVELOPER') return "DEV MODE";
-    if (user?.userType === 'CLIENT') return "MEU ESPAÇO";
+    if (user?.userType === 'CLIENT') return "MEU ESPACO";
     return "MENU PRINCIPAL";
   };
 
@@ -242,7 +239,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   </div>
                 ) : (
                   <div className={styles.userNameDisplay}>
-                    <span className={styles.userName}>{user?.name || "Usuário"}</span>
+                    <span className={styles.userName}>{user?.name || "Usuario"}</span>
                     <button className={styles.userEditBtn} onClick={handleStartEdit} title="Editar nome">
                       <FiEdit2 size={12} />
                     </button>

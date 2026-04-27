@@ -46,35 +46,34 @@ export const MyEvents: React.FC<MyEventsProps> = ({ onViewChange }) => {
       setLoading(true);
       setError(null);
       
-      console.log('📅 Carregando eventos...');
+      console.log('Carregando eventos...');
       
       let data: Event[] = [];
       
       try {
         data = await eventService.getMyEvents();
       } catch (apiError) {
-        console.warn('⚠️ API indisponível, tentando fallback...');
+        console.warn('API indisponivel, tentando fallback...');
         
         if (user?.id) {
           try {
             data = await eventService.getEventsByClientId(String(user.id));
           } catch (fallbackError) {
-            console.warn('⚠️ Fallback também falhou');
+            console.warn('Fallback tambem falhou');
           }
         }
       }
       
-      // Ordenar por data (mais próximo primeiro)
       const sortedEvents = data.sort((a, b) => {
         return new Date(a.eventDate).getTime() - new Date(b.eventDate).getTime();
       });
       
       setEvents(sortedEvents);
-      console.log('✅ Eventos carregados:', sortedEvents.length);
+      console.log('Eventos carregados:', sortedEvents.length);
       
     } catch (err) {
-      console.error('❌ Erro ao carregar eventos:', err);
-      setError('Não foi possível carregar seus eventos.');
+      console.error('Erro ao carregar eventos:', err);
+      setError('Nao foi possivel carregar seus eventos.');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -95,7 +94,7 @@ export const MyEvents: React.FC<MyEventsProps> = ({ onViewChange }) => {
         year: 'numeric'
       });
     } catch {
-      return 'Data inválida';
+      return 'Data invalida';
     }
   };
 
@@ -120,7 +119,7 @@ export const MyEvents: React.FC<MyEventsProps> = ({ onViewChange }) => {
       },
       QUOTE: {
         icon: <MdPending size={16} />,
-        label: 'Em Cotação',
+        label: 'Em Cotacao',
         color: '#f59e0b',
         bgColor: '#fef3c7'
       },
@@ -145,25 +144,13 @@ export const MyEvents: React.FC<MyEventsProps> = ({ onViewChange }) => {
     };
   };
 
-  const getEventTypeIcon = (type: string) => {
-    const icons: Record<string, React.ReactNode> = {
-      ANIVERSARIO: '🎂',
-      CASAMENTO: '💍',
-      CORPORATIVO: '💼',
-      FORMATURA: '🎓',
-      CONFRATERNIZACAO: '🎉',
-      OUTRO: '✨'
-    };
-    return icons[type] || '📅';
-  };
-
   const getEventTypeLabel = (type: string) => {
     const labels: Record<string, string> = {
-      ANIVERSARIO: 'Aniversário',
+      ANIVERSARIO: 'Aniversario',
       CASAMENTO: 'Casamento',
       CORPORATIVO: 'Corporativo',
       FORMATURA: 'Formatura',
-      CONFRATERNIZACAO: 'Confraternização',
+      CONFRATERNIZACAO: 'Confraternizacao',
       OUTRO: 'Outro'
     };
     return labels[type] || type;
@@ -192,7 +179,6 @@ export const MyEvents: React.FC<MyEventsProps> = ({ onViewChange }) => {
     onViewChange?.('new-booking');
   };
 
-  // Separar eventos futuros e passados
   const upcomingEvents = events.filter(e => isUpcoming(e.eventDate) && e.status !== 'CANCELLED');
   const pastEvents = events.filter(e => !isUpcoming(e.eventDate) || e.status === 'CANCELLED' || e.status === 'COMPLETED');
 
@@ -231,8 +217,8 @@ export const MyEvents: React.FC<MyEventsProps> = ({ onViewChange }) => {
             <h1 className={styles.pageTitle}>Meus Eventos</h1>
             <p className={styles.pageSubtitle}>
               {events.length === 0 
-                ? 'Você ainda não tem eventos' 
-                : `${events.length} ${events.length === 1 ? 'evento' : 'eventos'} ${upcomingEvents.length > 0 ? `• ${upcomingEvents.length} futuro${upcomingEvents.length > 1 ? 's' : ''}` : ''}`
+                ? 'Voce ainda nao tem eventos' 
+                : `${events.length} ${events.length === 1 ? 'evento' : 'eventos'} ${upcomingEvents.length > 0 ? '- ' + upcomingEvents.length + ' futuro' + (upcomingEvents.length > 1 ? 's' : '') : ''}`
               }
             </p>
           </div>
@@ -258,7 +244,7 @@ export const MyEvents: React.FC<MyEventsProps> = ({ onViewChange }) => {
             <MdEvent size={48} />
           </div>
           <h3>Nenhum evento encontrado</h3>
-          <p>Quando você fizer uma reserva, seus eventos aparecerão aqui.</p>
+          <p>Quando voce fizer uma reserva, seus eventos aparecerao aqui.</p>
           <button className={styles.createButton} onClick={handleNewBooking}>
             <FiPlus size={18} />
             Solicitar Primeira Reserva
@@ -271,7 +257,7 @@ export const MyEvents: React.FC<MyEventsProps> = ({ onViewChange }) => {
             <div className={styles.section}>
               <h2 className={styles.sectionTitle}>
                 <FiCalendar size={20} />
-                Próximos Eventos
+                Proximos Eventos
                 <span className={styles.sectionCount}>{upcomingEvents.length}</span>
               </h2>
               <div className={styles.eventsGrid}>
@@ -287,7 +273,6 @@ export const MyEvents: React.FC<MyEventsProps> = ({ onViewChange }) => {
                     >
                       <div className={styles.cardHeader}>
                         <div className={styles.eventType}>
-                          <span className={styles.typeIcon}>{getEventTypeIcon(event.eventType)}</span>
                           <span className={styles.typeLabel}>{getEventTypeLabel(event.eventType)}</span>
                         </div>
                         <div 
@@ -302,7 +287,7 @@ export const MyEvents: React.FC<MyEventsProps> = ({ onViewChange }) => {
                         </div>
                       </div>
                       
-                      <h3 className={styles.eventTitle}>{event.title || 'Evento sem título'}</h3>
+                      <h3 className={styles.eventTitle}>{event.title || 'Evento sem titulo'}</h3>
                       
                       <div className={styles.eventDetails}>
                         <div className={styles.detailItem}>
@@ -340,7 +325,7 @@ export const MyEvents: React.FC<MyEventsProps> = ({ onViewChange }) => {
                         {event.status === 'QUOTE' && (
                           <span className={styles.waitingBadge}>
                             <FiClock size={12} />
-                            Aguardando confirmação
+                            Aguardando confirmacao
                           </span>
                         )}
                         <button className={styles.viewButton}>
@@ -375,7 +360,6 @@ export const MyEvents: React.FC<MyEventsProps> = ({ onViewChange }) => {
                     >
                       <div className={styles.cardHeader}>
                         <div className={styles.eventType}>
-                          <span className={styles.typeIcon}>{getEventTypeIcon(event.eventType)}</span>
                           <span className={styles.typeLabel}>{getEventTypeLabel(event.eventType)}</span>
                         </div>
                         <div 
@@ -390,7 +374,7 @@ export const MyEvents: React.FC<MyEventsProps> = ({ onViewChange }) => {
                         </div>
                       </div>
                       
-                      <h3 className={styles.eventTitle}>{event.title || 'Evento sem título'}</h3>
+                      <h3 className={styles.eventTitle}>{event.title || 'Evento sem titulo'}</h3>
                       
                       <div className={styles.eventDetails}>
                         <div className={styles.detailItem}>
