@@ -187,8 +187,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </div>
             {!isCollapsed && (
               <div className={styles.logoText}>
-                <span className={styles.logoTitle}>{systemName}</span>
-                <span className={styles.logoSubtitle}>{systemSubtitle}</span>
+                <span className={styles.logoTitle}>E E M S</span>
+                <span className={styles.logoSubtitle}>EEMS</span>
               </div>
             )}
           </div>

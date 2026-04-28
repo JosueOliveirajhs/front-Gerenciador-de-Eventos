@@ -5,12 +5,14 @@ import {
   FiClock, FiMessageCircle, FiUsers, FiCalendar, FiPaperclip,
   FiMoreVertical, FiSmile, FiChevronLeft, FiPhone, FiVideo,
   FiStar, FiArchive, FiTrash2, FiDownload, FiImage, FiFile,
-  FiAlertCircle, FiInfo, FiUser, FiBell, FiBellOff
+  FiAlertCircle, FiInfo, FiUser, FiBell, FiBellOff, FiEdit2,
+  FiCornerUpLeft
 } from 'react-icons/fi';
 import { 
   MdChat, MdEvent, MdPerson, MdSend, MdAttachFile,
   MdOutlineEmojiEmotions, MdVerified, MdCheck, MdRefresh,
-  MdNotifications, MdNotificationsOff, MdOutlineInfo
+  MdNotifications, MdNotificationsOff, MdOutlineInfo, MdDelete,
+  MdEdit
 } from 'react-icons/md';
 import { messageService, Conversation } from '../../../services/message';
 import { eventService } from '../../../services/events';
@@ -27,6 +29,8 @@ interface DisplayMessage {
   status: string;
   isOwn: boolean;
   attachments?: any[];
+  isEdited?: boolean;
+  deletedAt?: string;
 }
 
 interface EventItem {
@@ -65,6 +69,14 @@ export const OwnerChat: React.FC = () => {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   
+  // ✅ Novos estados para editar/apagar
+  const [editMessageId, setEditMessageId] = useState<string | null>(null);
+  const [editContent, setEditContent] = useState('');
+  const [selectedMessageId, setSelectedMessageId] = useState<string | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [editLoading, setEditLoading] = useState(false);
+  
   // Modal nova conversa
   const [events, setEvents] = useState<EventItem[]>([]);
   const [eventsLoading, setEventsLoading] = useState(false);
@@ -76,6 +88,8 @@ export const OwnerChat: React.FC = () => {
   const pollingRef = useRef<NodeJS.Timeout | null>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const editInputRef = useRef<HTMLTextAreaElement>(null);
+  const contextMenuRef = useRef<HTMLDivElement>(null);
 
   // ============================================================
   // EFEITOS
@@ -125,6 +139,22 @@ export const OwnerChat: React.FC = () => {
     return () => window.removeEventListener('newMessage', handleNewMessageEvent);
   }, []);
 
+  // ✅ Fechar menu de contexto ao clicar fora
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (contextMenuRef.current && !contextMenuRef.current.contains(e.target as Node)) {
+        setSelectedMessageId(null);
+        setShowDeleteConfirm(null);
+      }
+    };
+    
+    if (selectedMessageId) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [selectedMessageId]);
+
   // ============================================================
   // CARREGAMENTO
   // ============================================================
@@ -158,7 +188,9 @@ export const OwnerChat: React.FC = () => {
         timestamp: msg.timestamp,
         status: msg.status,
         isOwn: String(msg.senderId) === String(user?.id),
-        attachments: msg.attachments
+        attachments: msg.attachments,
+        isEdited: msg.isEdited || false,
+        deletedAt: msg.deletedAt || undefined
       })));
     } catch (err) {
       if (!silent) setError('Erro ao carregar mensagens');
@@ -168,7 +200,7 @@ export const OwnerChat: React.FC = () => {
   };
 
   // ============================================================
-  // AÇÕES
+  // AÇÕES PRINCIPAIS
   // ============================================================
 
   const handleSendMessage = async () => {
@@ -205,10 +237,124 @@ export const OwnerChat: React.FC = () => {
     }
   };
 
+  // ============================================================
+  // AÇÕES DE EDIÇÃO E EXCLUSÃO DE MENSAGENS
+  // ============================================================
+
+  // ✅ Iniciar edição de mensagem
+  const handleStartEdit = (msg: DisplayMessage) => {
+    setEditMessageId(msg.id);
+    setEditContent(msg.content);
+    setSelectedMessageId(null);
+    setShowDeleteConfirm(null);
+    setTimeout(() => {
+      editInputRef.current?.focus();
+    }, 50);
+  };
+
+  // ✅ Cancelar edição
+  const handleCancelEdit = () => {
+    setEditMessageId(null);
+    setEditContent('');
+  };
+
+  // ✅ Confirmar edição
+  const handleConfirmEdit = async () => {
+    if (!editContent.trim() || !editMessageId || !selectedConversation) return;
+    
+    setEditLoading(true);
+    try {
+      await messageService.editMessage(selectedConversation.id, editMessageId, editContent.trim());
+      
+      // Atualizar mensagem localmente
+      setMessages(prev => prev.map(msg => 
+        msg.id === editMessageId 
+          ? { ...msg, content: editContent.trim(), isEdited: true }
+          : msg
+      ));
+      
+      await loadConversations(true);
+      setEditMessageId(null);
+      setEditContent('');
+      setSuccessMessage('Mensagem editada com sucesso');
+      setTimeout(() => setSuccessMessage(null), 2000);
+      
+    } catch (err) {
+      setError('Erro ao editar mensagem');
+      setTimeout(() => setError(null), 3000);
+    } finally {
+      setEditLoading(false);
+    }
+  };
+
+  // ✅ Confirmar exclusão
+  const handleConfirmDelete = async (messageId: string) => {
+    if (!selectedConversation) return;
+    
+    setDeleteLoading(true);
+    try {
+      await messageService.deleteMessage(selectedConversation.id, messageId);
+      
+      // Marcar como deletada localmente
+      setMessages(prev => prev.map(msg => 
+        msg.id === messageId 
+          ? { ...msg, content: 'Mensagem apagada', deletedAt: new Date().toISOString() }
+          : msg
+      ));
+      
+      await loadConversations(true);
+      setShowDeleteConfirm(null);
+      setSelectedMessageId(null);
+      setSuccessMessage('Mensagem apagada com sucesso');
+      setTimeout(() => setSuccessMessage(null), 2000);
+      
+    } catch (err) {
+      setError('Erro ao apagar mensagem');
+      setTimeout(() => setError(null), 3000);
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
+
+  // ✅ Abrir menu de contexto (clique na mensagem)
+  const handleMessageContextMenu = (e: React.MouseEvent, msg: DisplayMessage) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    // Não permitir ações em mensagens deletadas
+    if (msg.deletedAt) return;
+    
+    // Se já está selecionada, desseleciona; caso contrário, seleciona
+    setSelectedMessageId(prev => prev === msg.id ? null : msg.id);
+    setShowDeleteConfirm(null);
+    
+    // Se estava editando outra mensagem, cancela
+    if (editMessageId && editMessageId !== msg.id) {
+      setEditMessageId(null);
+      setEditContent('');
+    }
+  };
+
+  // ✅ Tecla ESC para cancelar edição
+  const handleEditKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Escape') {
+      handleCancelEdit();
+    } else if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleConfirmEdit();
+    }
+  };
+
+  // ✅ Verificar se mensagem está deletada
+  const isDeleted = (msg: DisplayMessage) => !!msg.deletedAt;
+
   const handleSelectConversation = (conv: Conversation) => {
     setSelectedConversation(conv);
     setShowConversationInfo(false);
     setShowMoreOptions(false);
+    setSelectedMessageId(null);
+    setEditMessageId(null);
+    setShowDeleteConfirm(null);
   };
 
   const handleOpenNewChat = async () => {
@@ -238,7 +384,6 @@ export const OwnerChat: React.FC = () => {
       setSuccessMessage('Conversa iniciada com sucesso!');
       setTimeout(() => setSuccessMessage(null), 3000);
       
-      // ✅ Atualizar notificações
       if (refreshUnreadCount) refreshUnreadCount();
       
     } catch (err: any) {
@@ -367,10 +512,9 @@ export const OwnerChat: React.FC = () => {
     return conv.participants?.find(p => p.role === 'CLIENT');
   };
 
-  // ✅ Verificar se o cliente está online (simulado - sempre online por enquanto)
   const isClientOnline = (conv: Conversation) => {
     const client = getClientInfo(conv);
-    return client?.online ?? true; // Sempre online para teste
+    return client?.online ?? true;
   };
 
   // ============================================================
@@ -585,7 +729,7 @@ export const OwnerChat: React.FC = () => {
                     onClick={() => { setShowConversationInfo(!showConversationInfo); setShowMoreOptions(false); }}
                     title="Informações"
                   >
-                    <FiInfo size={18} />
+                    <MdOutlineInfo size={18} />
                   </button>
                   <div className={styles.moreOptionsWrapper}>
                     <button 
@@ -659,7 +803,7 @@ export const OwnerChat: React.FC = () => {
                 </div>
               )}
 
-              {/* Mensagens */}
+              {/* ✅ LISTA DE MENSAGENS COM EDITAR/APAGAR */}
               <div className={styles.messagesList}>
                 {messagesLoading ? (
                   <div className={styles.loadingState}>
@@ -680,11 +824,16 @@ export const OwnerChat: React.FC = () => {
                       {group.messages.map((msg: DisplayMessage, mi: number) => {
                         const prevMsg = mi > 0 ? group.messages[mi - 1] : null;
                         const isConsecutive = prevMsg && prevMsg.senderId === msg.senderId;
+                        const isMessageSelected = selectedMessageId === msg.id;
+                        const isEditingThis = editMessageId === msg.id;
+                        const isMessageDeleted = isDeleted(msg);
                         
                         return (
                           <div 
                             key={msg.id} 
-                            className={`${styles.messageWrapper} ${msg.isOwn ? styles.own : ''} ${isConsecutive ? styles.consecutive : ''}`}
+                            className={`${styles.messageWrapper} ${msg.isOwn ? styles.own : ''} ${isConsecutive ? styles.consecutive : ''} ${isMessageSelected ? styles.selected : ''}`}
+                            onContextMenu={(e) => handleMessageContextMenu(e, msg)}
+                            onClick={(e) => !isMessageDeleted && msg.isOwn && handleMessageContextMenu(e, msg)}
                           >
                             {!msg.isOwn && !isConsecutive && (
                               <div className={styles.messageAvatar}>
@@ -697,27 +846,135 @@ export const OwnerChat: React.FC = () => {
                               {!msg.isOwn && !isConsecutive && (
                                 <span className={styles.messageSender}>{msg.senderName}</span>
                               )}
-                              <div className={`${styles.messageBubble} ${msg.isOwn ? styles.ownBubble : ''} ${isConsecutive ? styles.consecutiveBubble : ''}`}>
-                                <p>{msg.content}</p>
-                                {msg.attachments?.length > 0 && (
-                                  <div className={styles.attachmentList}>
-                                    {msg.attachments.map((att: any) => (
-                                      <a key={att.id} href={att.url} target="_blank" className={styles.attachmentItem} download>
-                                        <MdAttachFile size={14} />
-                                        <span>{att.name}</span>
-                                      </a>
-                                    ))}
+                              
+                              {/* ✅ Bolha da mensagem */}
+                              <div className={`${styles.messageBubble} ${msg.isOwn ? styles.ownBubble : ''} ${isConsecutive ? styles.consecutiveBubble : ''} ${isMessageDeleted ? styles.deleted : ''}`}>
+                                
+                                {/* ✅ Modo de edição */}
+                                {isEditingThis ? (
+                                  <div className={styles.editMode}>
+                                    <textarea
+                                      ref={editInputRef}
+                                      value={editContent}
+                                      onChange={(e) => setEditContent(e.target.value)}
+                                      onKeyDown={handleEditKeyDown}
+                                      className={styles.editTextarea}
+                                      rows={2}
+                                    />
+                                    <div className={styles.editActions}>
+                                      <span className={styles.editHint}>ESC para cancelar • Enter para salvar</span>
+                                      <div className={styles.editButtons}>
+                                        <button 
+                                          onClick={handleCancelEdit}
+                                          className={styles.cancelEditButton}
+                                          disabled={editLoading}
+                                        >
+                                          <FiX size={16} />
+                                        </button>
+                                        <button 
+                                          onClick={handleConfirmEdit}
+                                          className={styles.confirmEditButton}
+                                          disabled={editLoading || !editContent.trim()}
+                                        >
+                                          {editLoading ? (
+                                            <div className={styles.spinnerSmall} />
+                                          ) : (
+                                            <FiCheck size={16} />
+                                          )}
+                                        </button>
+                                      </div>
+                                    </div>
                                   </div>
+                                ) : (
+                                  <>
+                                    {/* ✅ Conteúdo normal ou deletado */}
+                                    <p className={isMessageDeleted ? styles.deletedText : ''}>
+                                      {isMessageDeleted ? 'Mensagem apagada' : msg.content}
+                                      {msg.isEdited && !isMessageDeleted && (
+                                        <span className={styles.editedTag}> (editada)</span>
+                                      )}
+                                    </p>
+                                    
+                                    {/* Anexos */}
+                                    {msg.attachments?.length > 0 && !isMessageDeleted && (
+                                      <div className={styles.attachmentList}>
+                                        {msg.attachments.map((att: any) => (
+                                          <a key={att.id} href={att.url} target="_blank" className={styles.attachmentItem} download>
+                                            <MdAttachFile size={14} />
+                                            <span>{att.name}</span>
+                                          </a>
+                                        ))}
+                                      </div>
+                                    )}
+
+                                    {/* ✅ Menu de contexto (WhatsApp Style) */}
+                                    {isMessageSelected && msg.isOwn && !isMessageDeleted && (
+                                      <div 
+                                        ref={contextMenuRef}
+                                        className={`${styles.contextMenu} ${msg.isOwn ? styles.contextMenuOwn : styles.contextMenuOther}`}
+                                        onClick={(e) => e.stopPropagation()}
+                                      >
+                                        <button 
+                                          onClick={() => handleStartEdit(msg)}
+                                          className={styles.contextMenuItem}
+                                        >
+                                          <FiEdit2 size={16} />
+                                          <span>Editar</span>
+                                        </button>
+                                        
+                                        {showDeleteConfirm === msg.id ? (
+                                          <div className={styles.deleteConfirm}>
+                                            <p>Apagar mensagem?</p>
+                                            <div className={styles.deleteConfirmActions}>
+                                              <button 
+                                                onClick={() => setShowDeleteConfirm(null)}
+                                                className={styles.cancelDeleteButton}
+                                              >
+                                                Não
+                                              </button>
+                                              <button 
+                                                onClick={() => handleConfirmDelete(msg.id)}
+                                                className={styles.confirmDeleteButton}
+                                                disabled={deleteLoading}
+                                              >
+                                                {deleteLoading ? '...' : 'Apagar'}
+                                              </button>
+                                            </div>
+                                          </div>
+                                        ) : (
+                                          <button 
+                                            onClick={() => setShowDeleteConfirm(msg.id)}
+                                            className={`${styles.contextMenuItem} ${styles.deleteItem}`}
+                                          >
+                                            <FiTrash2 size={16} />
+                                            <span>Apagar</span>
+                                          </button>
+                                        )}
+                                      </div>
+                                    )}
+                                  </>
                                 )}
                               </div>
-                              <div className={`${styles.messageMeta} ${msg.isOwn ? styles.ownMeta : ''}`}>
-                                <span className={styles.messageTime}>{formatTime(msg.timestamp)}</span>
-                                {msg.isOwn && (
-                                  <span className={styles.messageStatus} title={getStatusText(msg.status)}>
-                                    {getStatusIcon(msg.status)}
+
+                              {/* ✅ Metadados da mensagem */}
+                              {!isEditingThis && (
+                                <div className={`${styles.messageMeta} ${msg.isOwn ? styles.ownMeta : ''}`}>
+                                  <span className={styles.messageTime}>
+                                    {isMessageDeleted && <FiTrash2 size={10} className={styles.deletedIcon} />}
+                                    {formatTime(msg.timestamp)}
                                   </span>
-                                )}
-                              </div>
+                                  {msg.isOwn && !isMessageDeleted && (
+                                    <span className={styles.messageStatus} title={getStatusText(msg.status)}>
+                                      {getStatusIcon(msg.status)}
+                                    </span>
+                                  )}
+                                  {msg.isEdited && !isMessageDeleted && (
+                                    <span className={styles.editedIndicator} title="Editado">
+                                      <FiEdit2 size={10} />
+                                    </span>
+                                  )}
+                                </div>
+                              )}
                             </div>
                           </div>
                         );
@@ -728,8 +985,21 @@ export const OwnerChat: React.FC = () => {
                 <div ref={messagesEndRef} />
               </div>
 
-              {/* Input de Mensagem */}
+              {/* ✅ Input de Mensagem com barra de edição */}
               <div className={styles.inputArea}>
+                {/* ✅ Indicador de edição (WhatsApp Style) */}
+                {editMessageId && (
+                  <div className={styles.editingBar}>
+                    <div className={styles.editingInfo}>
+                      <FiEdit2 size={16} />
+                      <span>Editando mensagem</span>
+                    </div>
+                    <button onClick={handleCancelEdit} className={styles.cancelEditBarButton}>
+                      <FiX size={18} />
+                    </button>
+                  </div>
+                )}
+
                 {selectedAttachments.length > 0 && (
                   <div className={styles.attachmentPreview}>
                     {selectedAttachments.map((file, i) => (

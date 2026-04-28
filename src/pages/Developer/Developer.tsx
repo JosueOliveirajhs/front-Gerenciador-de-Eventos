@@ -26,12 +26,47 @@ import { NotificationsPage } from '../../components/OwnerCompoents/settings/Noti
 import { Settings } from '../../components/DeveloperCompents/Settings/Settings';
 import styles from './Developer.module.css';
 
+/**
+ * Interpreta a URL e extrai a view, subView e ID
+ * 
+ * Exemplos:
+ * /developer/organizations          -> { view: 'organizations', subView: 'list', id: null }
+ * /developer/organizations/1        -> { view: 'organizations', subView: '1', id: 1 }
+ * /developer/organizations/new      -> { view: 'organizations', subView: 'new', id: null }
+ * /developer/organizations/edit/1   -> { view: 'organizations', subView: 'edit', id: 1 }
+ */
 const parsePath = (pathname: string) => {
   const parts = pathname.split('/').filter(Boolean);
-  const view = parts[1] || 'dashboard';
-  const subView = parts[2] || 'list';
-  const id = parts[3] ? parseInt(parts[3]) : null;
+  // parts[0] = 'developer'
+  // parts[1] = view (dashboard, organizations, catalogo, etc.)
+  // parts[2] = subView (id numérico, 'new', 'edit')
+  // parts[3] = id numérico (quando subView é 'edit')
   
+  const view = parts[1] || 'dashboard';
+  let subView = 'list';
+  let id: number | null = null;
+  
+  if (parts.length > 2) {
+    const thirdPart = parts[2];
+    
+    if (thirdPart === 'new') {
+      subView = 'new';
+    } else if (thirdPart === 'edit') {
+      subView = 'edit';
+      // O ID está na 4ª posição: /developer/organizations/edit/1
+      if (parts.length > 3 && !isNaN(Number(parts[3]))) {
+        id = parseInt(parts[3]);
+      }
+    } else if (!isNaN(Number(thirdPart))) {
+      // É um número = ID de detalhes: /developer/organizations/1
+      subView = thirdPart;
+      id = parseInt(thirdPart);
+    } else {
+      subView = thirdPart;
+    }
+  }
+  
+  console.log('📍 parsePath:', { pathname, view, subView, id });
   return { view, subView, id };
 };
 
@@ -50,11 +85,14 @@ export const Developer: React.FC = () => {
     return saved === 'true';
   });
 
+  // Atualiza o estado quando a URL muda
   useEffect(() => {
-    const { view, subView: newSubView, id } = parsePath(location.pathname);
-    if (view !== activeView) setActiveView(view);
+    const { view: newView, subView: newSubView, id: newId } = parsePath(location.pathname);
+    console.log('🔄 Atualizando estado:', { newView, newSubView, newId });
+    
+    if (newView !== activeView) setActiveView(newView);
     if (newSubView !== subView) setSubView(newSubView);
-    if (id !== selectedId) setSelectedId(id);
+    if (newId !== selectedId) setSelectedId(newId);
   }, [location.pathname]);
 
   const handleMenuToggle = useCallback(() => {
@@ -80,42 +118,79 @@ export const Developer: React.FC = () => {
     };
     
     const route = routeMapping[view] || `/developer/${view}`;
+    console.log('🚀 Navegando para:', route);
     navigate(route, { state: params });
     setIsMobileMenuOpen(false);
   }, [navigate]);
 
+  /**
+   * Renderiza o conteúdo baseado na view e subView atuais
+   */
   const renderContent = () => {
     const stateParams = location.state as any;
+    console.log('🎨 Renderizando:', { activeView, subView, selectedId });
     
     switch (activeView) {
       case 'dashboard':
         return <DeveloperDashboard onNavigate={(path: string) => navigate(path)} />;
         
       case 'organizations':
+        // SubView = 'new' ou 'edit' -> Formulário
         if (subView === 'new' || subView === 'edit') {
+          console.log('📝 Mostrando formulário. ID:', selectedId);
           return (
             <OrganizationForm 
               organizationId={selectedId || stateParams?.organizationId} 
-              onSuccess={() => navigate('/developer/organizations')}
-              onCancel={() => navigate('/developer/organizations')}
+              onSuccess={() => {
+                console.log('✅ Formulário salvo, voltando para lista');
+                navigate('/developer/organizations');
+              }}
+              onCancel={() => {
+                console.log('❌ Formulário cancelado, voltando para lista');
+                navigate('/developer/organizations');
+              }}
             />
           );
         }
+        
+        // SubView é um número -> Detalhes
         if (subView && !isNaN(parseInt(subView))) {
+          const orgId = parseInt(subView);
+          console.log('👁️ Mostrando detalhes da organização:', orgId);
           return (
             <OrganizationDetails 
-              organizationId={parseInt(subView)}
-              onBack={() => navigate('/developer/organizations')}
-              onEdit={(id) => navigate(`/developer/organizations/edit/${id}`)}
+              organizationId={orgId}
+              onBack={() => {
+                console.log('⬅️ Voltando para lista');
+                navigate('/developer/organizations');
+              }}
+              onEdit={(id) => {
+                console.log('✏️ Editando organização:', id);
+                navigate(`/developer/organizations/edit/${id}`);
+              }}
             />
           );
         }
-        return <Organizations onNavigate={(view, id) => {
-          if (view === 'details') navigate(`/developer/organizations/${id}`);
-          if (view === 'form') navigate(`/developer/organizations/${id ? `edit/${id}` : 'new'}`);
-        }} />;
+        
+        // SubView = 'list' -> Lista de organizações
+        console.log('📋 Mostrando lista de organizações');
+        return (
+          <Organizations 
+            onNavigate={(view, id) => {
+              console.log('🧭 onNavigate chamado:', { view, id });
+              if (view === 'details' && id) {
+                navigate(`/developer/organizations/${id}`);
+              } else if (view === 'form' && id) {
+                navigate(`/developer/organizations/edit/${id}`);
+              } else if (view === 'form') {
+                navigate('/developer/organizations/new');
+              }
+            }} 
+          />
+        );
         
       case 'catalogo':
+        // SubView = 'new' ou 'edit' -> Formulário
         if (subView === 'new' || subView === 'edit') {
           return (
             <CatalogoForm 
@@ -125,6 +200,8 @@ export const Developer: React.FC = () => {
             />
           );
         }
+        
+        // SubView é um número -> Detalhes
         if (subView && !isNaN(parseInt(subView))) {
           return (
             <CatalogoDetails 
@@ -134,10 +211,17 @@ export const Developer: React.FC = () => {
             />
           );
         }
-        return <Catalogo onNavigate={(view, id) => {
-          if (view === 'details') navigate(`/developer/catalogo/${id}`);
-          if (view === 'form') navigate(`/developer/catalogo/${id ? `edit/${id}` : 'new'}`);
-        }} />;
+        
+        // Lista
+        return (
+          <Catalogo 
+            onNavigate={(view, id) => {
+              if (view === 'details' && id) navigate(`/developer/catalogo/${id}`);
+              if (view === 'form' && id) navigate(`/developer/catalogo/edit/${id}`);
+              if (view === 'form') navigate('/developer/catalogo/new');
+            }} 
+          />
+        );
         
       case 'settings':
       case 'configuracoes':
@@ -159,11 +243,11 @@ export const Developer: React.FC = () => {
   const getPageTitle = (): string => {
     const titles: Record<string, string> = {
       'dashboard': 'Dashboard do Desenvolvedor',
-      'organizations': 'Organizacoes - Empresas Assinantes',
-      'catalogo': 'Catalogo de Fornecedores',
-      'settings': 'Configuracoes',
+      'organizations': 'Organizações - Empresas Assinantes',
+      'catalogo': 'Catálogo de Fornecedores',
+      'settings': 'Configurações',
       'profile': 'Meu Perfil',
-      'notifications': 'Notificacoes',
+      'notifications': 'Notificações',
     };
     return titles[activeView] || 'Dashboard';
   };
@@ -215,7 +299,7 @@ export const Developer: React.FC = () => {
             <div className={styles.headerRight}>
               <div className={styles.environmentBadge}>
                 <span className={styles.environmentDot}></span>
-                <span>Producao</span>
+                <span>Produção</span>
               </div>
               <div className={styles.versionBadge}>
                 <FaShieldAlt size={12} />

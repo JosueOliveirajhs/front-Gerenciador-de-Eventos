@@ -18,6 +18,8 @@ export interface Message {
   timestamp: string;
   status: 'SENT' | 'DELIVERED' | 'READ';
   attachments?: Attachment[];
+  isEdited?: boolean;
+  deletedAt?: string;
 }
 
 export interface Participant {
@@ -59,6 +61,41 @@ export const messageService = {
     const response = await api.post(`/api/messages/conversations/${conversationId}`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' }
     });
+    return response.data;
+  },
+
+  // ✅ EDITAR MENSAGEM
+  async editMessage(
+    conversationId: number, 
+    messageId: string, 
+    content: string
+  ): Promise<Message> {
+    const response = await api.put(
+      `/api/messages/conversations/${conversationId}/messages/${messageId}`,
+      { content }
+    );
+    return response.data;
+  },
+
+  // ✅ APAGAR MENSAGEM (Soft Delete - só para o remetente)
+  async deleteMessage(
+    conversationId: number, 
+    messageId: string
+  ): Promise<{ success: boolean; message: string }> {
+    const response = await api.delete(
+      `/api/messages/conversations/${conversationId}/messages/${messageId}`
+    );
+    return response.data;
+  },
+
+  // ✅ APAGAR MENSAGEM PARA TODOS (Hard Delete)
+  async deleteMessageForEveryone(
+    conversationId: number, 
+    messageId: string
+  ): Promise<{ success: boolean; message: string }> {
+    const response = await api.delete(
+      `/api/messages/conversations/${conversationId}/messages/${messageId}/everyone`
+    );
     return response.data;
   },
 

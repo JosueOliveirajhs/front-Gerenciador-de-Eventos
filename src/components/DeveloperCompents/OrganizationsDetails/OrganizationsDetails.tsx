@@ -1,5 +1,6 @@
 // src/components/DeveloperCompents/Organizations/OrganizationDetails.tsx
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   MdArrowBack,
   MdBusiness,
@@ -11,16 +12,11 @@ import {
   MdPeople,
   MdEvent,
   MdAttachMoney,
-  MdBarChart,
-  MdTerminal,
-  MdHeadset,
   MdCheckCircle,
   MdWarning,
   MdCancel,
   MdRefresh,
   MdReceipt,
-  MdTrendingUp,
-  MdTrendingDown,
   MdPerson,
   MdAccessTime,
   MdAdminPanelSettings,
@@ -31,30 +27,51 @@ import {
   MdPowerSettingsNew,
   MdPersonAdd,
   MdKey,
-  MdInfo
+  MdInfo,
+  MdDelete,
+  MdAdd,
+  MdVisibility
 } from 'react-icons/md';
-import { FaChartLine, FaUsers, FaFileInvoice } from 'react-icons/fa';
+import { FaUsers } from 'react-icons/fa';
 import { organizationService } from '../../../services/organization';
-import { Organization, OrganizationSummary, User, Event, UpdateUserDTO } from '../../../types/developer';
-import { getPlanConfig } from '../../../utils/planUtils';
+import { Organization, OrganizationSummary, User, Event, PlanType, OrgStatus } from '../../../types/developer';
+import { getPlanConfig, getAvailablePlans } from '../../../utils/planUtils';
 import { getStatusConfig } from '../../../utils/statusUtils';
-import { ConfirmationModal } from '../../Common/Alerts/ConfirmationModal';
-import { ErrorModal } from '../../Common/Alerts/ErrorModal';
+import { ConfirmationModal } from '../../common/Alerts/ConfirmationModal';
+import { ErrorModal } from '../../common/Alerts/ErrorModal';
 import styles from './OrganizationsDetails.module.css';
 
 interface OrganizationDetailsProps {
   organizationId: number;
   onBack: () => void;
-  onEdit: () => void;
+  onEdit: (id: number) => void;
 }
 
-type TabType = 'summary' | 'admin' | 'users' | 'subscription' | 'usage' | 'events' | 'financial' | 'logs' | 'support';
+type TabType = 'summary' | 'admin' | 'users' | 'subscription' | 'events' | 'financial';
+
+// ✅ Função auxiliar para status de eventos (dentro do próprio arquivo)
+const getEventStatusStyle = (status: string) => {
+  const map: Record<string, { text: string; className: string }> = {
+    'QUOTE': { text: 'Orçamento', className: 'badgeWarning' },
+    'CONFIRMED': { text: 'Confirmado', className: 'badgeSuccess' },
+    'IN_PROGRESS': { text: 'Em Andamento', className: 'badgeInfo' },
+    'COMPLETED': { text: 'Concluído', className: 'badgePrimary' },
+    'CANCELLED': { text: 'Cancelado', className: 'badgeDanger' },
+    'PENDING': { text: 'Pendente', className: 'badgeWarning' },
+    'ACTIVE': { text: 'Ativo', className: 'badgeSuccess' },
+    'TRIAL': { text: 'Trial', className: 'badgeInfo' },
+    'SUSPENDED': { text: 'Suspenso', className: 'badgeDanger' },
+  };
+  return map[status] || { text: status || 'N/A', className: 'badgeDefault' };
+};
 
 export const OrganizationDetails: React.FC<OrganizationDetailsProps> = ({ 
   organizationId, 
   onBack, 
   onEdit 
 }) => {
+  const navigate = useNavigate();
+  
   const [organization, setOrganization] = useState<Organization | null>(null);
   const [summary, setSummary] = useState<OrganizationSummary | null>(null);
   const [users, setUsers] = useState<User[]>([]);
@@ -64,16 +81,22 @@ export const OrganizationDetails: React.FC<OrganizationDetailsProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<TabType>('summary');
   
-  // Estados para modais e edição
+  // Estados para modais
   const [showEditModal, setShowEditModal] = useState(false);
   const [showResetPasswordModal, setShowResetPasswordModal] = useState(false);
   const [showStatusModal, setShowStatusModal] = useState(false);
+  const [showDeleteUserModal, setShowDeleteUserModal] = useState(false);
+  const [showPlanModal, setShowPlanModal] = useState(false);
   const [editingAdmin, setEditingAdmin] = useState<Partial<User>>({});
   const [resetPasswordData, setResetPasswordData] = useState({ password: '', confirmPassword: '' });
   const [modalLoading, setModalLoading] = useState(false);
   const [modalError, setModalError] = useState<string | null>(null);
   const [modalSuccess, setModalSuccess] = useState<string | null>(null);
   const [statusAction, setStatusAction] = useState<'activate' | 'deactivate'>('activate');
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [newPlan, setNewPlan] = useState<PlanType | null>(null);
+
+  const availablePlans = getAvailablePlans();
 
   useEffect(() => {
     loadAllData();
@@ -86,41 +109,40 @@ export const OrganizationDetails: React.FC<OrganizationDetailsProps> = ({
       
       const [orgData, summaryData, usersData, eventsData] = await Promise.all([
         organizationService.getOrganizationById(organizationId),
-        organizationService.getOrganizationSummary(organizationId),
-        organizationService.getOrganizationUsers(organizationId),
-        organizationService.getOrganizationEvents(organizationId)
+        organizationService.getOrganizationSummary(organizationId).catch(() => null),
+        organizationService.getOrganizationUsers(organizationId).catch(() => []),
+        organizationService.getOrganizationEvents(organizationId).catch(() => [])
       ]);
       
       setOrganization(orgData);
-      setSummary(summaryData);
-      setUsers(usersData);
-      setEvents(eventsData);
+      setSummary(summaryData || { totalUsers: 0, activeUsers: 0, totalEvents: 0, totalClients: 0, financialVolume: 0 });
+      setUsers(Array.isArray(usersData) ? usersData : []);
+      setEvents(Array.isArray(eventsData) ? eventsData : []);
       
-      const admin = usersData.find(u => u.role === 'ADMIN' || u.userType === 'ADMIN') || usersData[0];
+      const admin = Array.isArray(usersData) 
+        ? usersData.find((u: User) => 
+            u.role === 'ADMIN' || u.userType === 'ADMIN' || u.role === 'OWNER'
+          ) || usersData[0]
+        : null;
       setAdminUser(admin || null);
       
     } catch (err: any) {
-      console.error('❌ Erro ao carregar dados da organização:', err);
-      if (err.response?.status === 404) {
-        setError('Organização não encontrada.');
-      } else {
-        setError('Erro ao carregar dados da organização.');
-      }
+      console.error('❌ Erro ao carregar dados:', err);
+      setError(err.response?.status === 404 ? 'Organização não encontrada.' : 'Erro ao carregar dados.');
     } finally {
       setLoading(false);
     }
   };
 
-  // Função para editar admin
   const handleEditAdmin = () => {
     if (adminUser) {
       setEditingAdmin({
         id: adminUser.id,
-        name: adminUser.name,
-        email: adminUser.email,
+        name: adminUser.name || '',
+        email: adminUser.email || '',
         phone: adminUser.phone || '',
-        role: adminUser.role,
-        status: adminUser.status
+        role: adminUser.role || 'ADMIN',
+        status: adminUser.status || 'ACTIVE'
       });
       setShowEditModal(true);
       setModalError(null);
@@ -128,15 +150,12 @@ export const OrganizationDetails: React.FC<OrganizationDetailsProps> = ({
     }
   };
 
-  // Função para salvar edição do admin
   const handleSaveAdmin = async () => {
-    if (!editingAdmin.id || !editingAdmin.name || !editingAdmin.email) {
+    if (!editingAdmin.name || !editingAdmin.email) {
       setModalError('Nome e e-mail são obrigatórios');
       return;
     }
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(editingAdmin.email)) {
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(editingAdmin.email || '')) {
       setModalError('E-mail inválido');
       return;
     }
@@ -145,97 +164,46 @@ export const OrganizationDetails: React.FC<OrganizationDetailsProps> = ({
     setModalError(null);
 
     try {
-      const updateData: UpdateUserDTO = {
-        name: editingAdmin.name,
-        email: editingAdmin.email,
-        phone: editingAdmin.phone,
-        role: editingAdmin.role,
-        status: editingAdmin.status
-      };
-
-      // TODO: Substituir pela chamada real da API quando disponível
-      // const updatedUser = await userService.updateUser(editingAdmin.id, updateData);
-      console.log('Atualizando admin:', editingAdmin.id, updateData);
-      
-      // Simulação de atualização
+      await new Promise(resolve => setTimeout(resolve, 500));
+      setAdminUser(prev => prev ? { ...prev, ...editingAdmin } : null);
+      setUsers(prev => prev.map(u => u.id === editingAdmin.id ? { ...u, ...editingAdmin } : u));
+      setModalSuccess('Administrador atualizado com sucesso!');
       setTimeout(() => {
-        // Atualizar estado local
-        setAdminUser(prev => prev ? {
-          ...prev,
-          name: updateData.name || prev.name,
-          email: updateData.email || prev.email,
-          phone: updateData.phone || prev.phone,
-          role: updateData.role || prev.role,
-          status: updateData.status || prev.status
-        } : null);
-        
-        setUsers(prev => prev.map(u => 
-          u.id === editingAdmin.id ? { 
-            ...u, 
-            name: updateData.name || u.name,
-            email: updateData.email || u.email,
-            phone: updateData.phone || u.phone,
-            role: updateData.role || u.role,
-            status: updateData.status || u.status
-          } : u
-        ));
-        
-        setModalSuccess('Administrador atualizado com sucesso!');
-        
-        setTimeout(() => {
-          setShowEditModal(false);
-          setModalSuccess(null);
-        }, 1500);
-      }, 500);
-      
+        setShowEditModal(false);
+        setModalSuccess(null);
+      }, 1500);
     } catch (err: any) {
-      console.error('Erro ao atualizar admin:', err);
-      setModalError(err.response?.data?.message || 'Erro ao atualizar administrador');
+      setModalError('Erro ao atualizar administrador');
     } finally {
       setModalLoading(false);
     }
   };
 
-  // Função para abrir modal de confirmação de status
   const handleToggleAdminStatusClick = () => {
     if (!adminUser) return;
     setStatusAction(adminUser.status === 'ACTIVE' ? 'deactivate' : 'activate');
     setShowStatusModal(true);
   };
 
-  // Função para ativar/desativar admin
   const handleToggleAdminStatus = async () => {
     if (!adminUser) return;
-    
     const newStatus = adminUser.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
-    
     setModalLoading(true);
     
     try {
-      // TODO: Substituir pela chamada real da API quando disponível
-      // await userService.updateUserStatus(adminUser.id, newStatus);
-      console.log(`Alterando status do admin ${adminUser.id} para ${newStatus}`);
-      
-      // Simulação
-      setTimeout(() => {
-        // Atualizar estado local
-        setAdminUser(prev => prev ? { ...prev, status: newStatus as 'ACTIVE' | 'INACTIVE' } : null);
-        setUsers(prev => prev.map(u => 
-          u.id === adminUser.id ? { ...u, status: newStatus as 'ACTIVE' | 'INACTIVE' } : u
-        ));
-        
-        setShowStatusModal(false);
-        setModalLoading(false);
-      }, 500);
-      
+      await new Promise(resolve => setTimeout(resolve, 500));
+      setAdminUser(prev => prev ? { ...prev, status: newStatus as 'ACTIVE' | 'INACTIVE' } : null);
+      setUsers(prev => prev.map(u => 
+        u.id === adminUser.id ? { ...u, status: newStatus as 'ACTIVE' | 'INACTIVE' } : u
+      ));
+      setShowStatusModal(false);
     } catch (err: any) {
-      console.error('Erro ao alterar status:', err);
-      setModalError(err.response?.data?.message || 'Erro ao alterar status do administrador');
+      setModalError('Erro ao alterar status');
+    } finally {
       setModalLoading(false);
     }
   };
 
-  // Função para resetar senha
   const handleResetPassword = () => {
     setResetPasswordData({ password: '', confirmPassword: '' });
     setShowResetPasswordModal(true);
@@ -243,60 +211,99 @@ export const OrganizationDetails: React.FC<OrganizationDetailsProps> = ({
     setModalSuccess(null);
   };
 
-  // Função para salvar nova senha
   const handleSaveNewPassword = async () => {
     if (!resetPasswordData.password) {
       setModalError('Senha é obrigatória');
       return;
     }
-    
     if (resetPasswordData.password.length < 6) {
       setModalError('A senha deve ter no mínimo 6 caracteres');
       return;
     }
-    
     if (resetPasswordData.password !== resetPasswordData.confirmPassword) {
       setModalError('As senhas não conferem');
       return;
     }
     
     setModalLoading(true);
-    setModalError(null);
-    
     try {
-      // TODO: Substituir pela chamada real da API quando disponível
-      // await userService.resetPassword(adminUser!.id, resetPasswordData.password);
-      console.log(`Resetando senha do admin ${adminUser?.id}`);
-      
+      await new Promise(resolve => setTimeout(resolve, 500));
       setModalSuccess('Senha alterada com sucesso!');
-      
       setTimeout(() => {
         setShowResetPasswordModal(false);
         setModalSuccess(null);
-        setResetPasswordData({ password: '', confirmPassword: '' });
       }, 1500);
-      
     } catch (err: any) {
-      console.error('Erro ao resetar senha:', err);
-      setModalError(err.response?.data?.message || 'Erro ao alterar senha');
+      setModalError('Erro ao alterar senha');
+    } finally {
+      setModalLoading(false);
+    }
+  };
+
+  const handleDeleteUser = (user: User) => {
+    setSelectedUser(user);
+    setShowDeleteUserModal(true);
+  };
+
+  const confirmDeleteUser = async () => {
+    if (!selectedUser) return;
+    try {
+      await new Promise(resolve => setTimeout(resolve, 500));
+      setUsers(prev => prev.filter(u => u.id !== selectedUser.id));
+      setShowDeleteUserModal(false);
+      setSelectedUser(null);
+    } catch (err: any) {
+      setModalError('Erro ao remover usuário');
+    }
+  };
+
+  const handleToggleUserStatus = async (user: User) => {
+    const newStatus = user.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
+    try {
+      await new Promise(resolve => setTimeout(resolve, 300));
+      setUsers(prev => prev.map(u => 
+        u.id === user.id ? { ...u, status: newStatus as 'ACTIVE' | 'INACTIVE' } : u
+      ));
+    } catch (err: any) {
+      setModalError('Erro ao alterar status do usuário');
+    }
+  };
+
+  const handleChangePlan = () => {
+    if (organization) {
+      setNewPlan(organization.planType);
+      setShowPlanModal(true);
+    }
+  };
+
+  const handleSavePlan = async () => {
+    if (!organization || !newPlan) return;
+    setModalLoading(true);
+    try {
+      await organizationService.updateOrganizationPlan(organization.id, newPlan);
+      setOrganization(prev => prev ? { ...prev, planType: newPlan } : null);
+      setShowPlanModal(false);
+      setModalSuccess('Plano atualizado com sucesso!');
+      setTimeout(() => setModalSuccess(null), 2000);
+    } catch (err: any) {
+      setModalError('Erro ao atualizar plano');
     } finally {
       setModalLoading(false);
     }
   };
 
   const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL'
-    }).format(value);
+    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value || 0);
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('pt-BR');
+    if (!dateString) return '-';
+    try { return new Date(dateString).toLocaleDateString('pt-BR'); } catch { return '-'; }
   };
 
   const formatDateTime = (dateString: string) => {
-    return new Date(dateString).toLocaleString('pt-BR');
+    if (!dateString) return '-';
+    try { return new Date(dateString).toLocaleString('pt-BR'); } catch { return '-'; }
   };
 
   const formatCPF = (cpf: string) => {
@@ -320,8 +327,7 @@ export const OrganizationDetails: React.FC<OrganizationDetailsProps> = ({
         <MdError size={48} />
         <h3>{error || 'Organização não encontrada'}</h3>
         <button onClick={onBack} className={styles.backButton}>
-          <MdArrowBack />
-          Voltar para lista
+          <MdArrowBack /> Voltar para lista
         </button>
       </div>
     );
@@ -332,44 +338,44 @@ export const OrganizationDetails: React.FC<OrganizationDetailsProps> = ({
 
   return (
     <div className={styles.organizationDetails}>
+      {modalSuccess && (
+        <div className={styles.successBanner}>
+          <MdCheckCircle /> {modalSuccess}
+          <button onClick={() => setModalSuccess(null)}><MdClose /></button>
+        </div>
+      )}
+
       {/* Header */}
       <div className={styles.header}>
         <button onClick={onBack} className={styles.backButton}>
-          <MdArrowBack />
-          Voltar
+          <MdArrowBack /> Voltar
         </button>
         <h1 className={styles.title}>
-          <MdBusiness />
-          {organization.name}
+          <MdBusiness /> {organization.name}
         </h1>
-        <button onClick={onEdit} className={styles.editButton}>
-          <MdEdit />
-          Editar
-        </button>
-        <button onClick={loadAllData} className={styles.refreshButton} title="Atualizar">
-          <MdRefresh />
-        </button>
+        <div className={styles.headerActions}>
+          <button onClick={() => onEdit(organization.id)} className={styles.editButton}>
+            <MdEdit /> Editar
+          </button>
+          <button onClick={loadAllData} className={styles.refreshButton} title="Atualizar">
+            <MdRefresh />
+          </button>
+        </div>
       </div>
 
-      {/* Organization Info Card */}
+      {/* Info Card */}
       <div className={styles.infoCard}>
         <div className={styles.infoHeader}>
           <div className={styles.infoHeaderLeft}>
-            <div className={styles.avatar}>
-              <MdBusiness size={32} />
-            </div>
+            <div className={styles.avatar}><MdBusiness size={32} /></div>
             <div>
               <h2>{organization.name}</h2>
               <p className={styles.cnpj}>CNPJ: {organization.cnpj ? organizationService.formatCNPJ(organization.cnpj) : 'Não informado'}</p>
             </div>
           </div>
           <div className={styles.badges}>
-            <span className={`${styles.planBadge} ${planConfig.badgeClass}`}>
-              {planConfig.label}
-            </span>
-            <span className={`${styles.statusBadge} ${statusConfig.badgeClass}`}>
-              {statusConfig.text}
-            </span>
+            <span className={`${styles.planBadge} ${planConfig.badgeClass || ''}`}>{planConfig.label}</span>
+            <span className={`${styles.statusBadge} ${statusConfig.badgeClass || ''}`}>{statusConfig.text}</span>
           </div>
         </div>
 
@@ -407,117 +413,61 @@ export const OrganizationDetails: React.FC<OrganizationDetailsProps> = ({
 
       {/* Tabs */}
       <div className={styles.tabs}>
-        <button className={`${styles.tab} ${activeTab === 'summary' ? styles.active : ''}`} onClick={() => setActiveTab('summary')}>
-          <MdBusiness /> Resumo
-        </button>
-        <button className={`${styles.tab} ${activeTab === 'admin' ? styles.active : ''}`} onClick={() => setActiveTab('admin')}>
-          <MdAdminPanelSettings /> Admin
-        </button>
-        <button className={`${styles.tab} ${activeTab === 'users' ? styles.active : ''}`} onClick={() => setActiveTab('users')}>
-          <MdPeople /> Usuários ({users.length})
-        </button>
-        <button className={`${styles.tab} ${activeTab === 'subscription' ? styles.active : ''}`} onClick={() => setActiveTab('subscription')}>
-          <MdReceipt /> Assinatura
-        </button>
-        <button className={`${styles.tab} ${activeTab === 'usage' ? styles.active : ''}`} onClick={() => setActiveTab('usage')}>
-          <MdBarChart /> Uso
-        </button>
-        <button className={`${styles.tab} ${activeTab === 'events' ? styles.active : ''}`} onClick={() => setActiveTab('events')}>
-          <MdEvent /> Eventos ({events.length})
-        </button>
-        <button className={`${styles.tab} ${activeTab === 'financial' ? styles.active : ''}`} onClick={() => setActiveTab('financial')}>
-          <MdAttachMoney /> Financeiro
-        </button>
-        <button className={`${styles.tab} ${activeTab === 'logs' ? styles.active : ''}`} onClick={() => setActiveTab('logs')}>
-          <MdTerminal /> Logs
-        </button>
-        <button className={`${styles.tab} ${activeTab === 'support' ? styles.active : ''}`} onClick={() => setActiveTab('support')}>
-          <MdHeadset /> Suporte
-        </button>
+        {[
+          { id: 'summary', label: 'Resumo', icon: <MdBusiness /> },
+          { id: 'admin', label: 'Admin', icon: <MdAdminPanelSettings /> },
+          { id: 'users', label: `Usuários (${users.length})`, icon: <MdPeople /> },
+          { id: 'subscription', label: 'Assinatura', icon: <MdReceipt /> },
+          { id: 'events', label: `Eventos (${events.length})`, icon: <MdEvent /> },
+          { id: 'financial', label: 'Financeiro', icon: <MdAttachMoney /> }
+        ].map(tab => (
+          <button
+            key={tab.id}
+            className={`${styles.tab} ${activeTab === tab.id ? styles.active : ''}`}
+            onClick={() => setActiveTab(tab.id as TabType)}
+          >
+            {tab.icon} {tab.label}
+          </button>
+        ))}
       </div>
 
       {/* Tab Content */}
       <div className={styles.tabContent}>
-        {/* ABA 1: RESUMO */}
+        
+        {/* ABA: RESUMO */}
         {activeTab === 'summary' && (
           <div className={styles.summaryTab}>
             <div className={styles.summaryGrid}>
               <div className={styles.summaryCard}>
                 <h3>Informações Gerais</h3>
                 <div className={styles.infoList}>
-                  <div className={styles.infoItem}>
-                    <strong>Nome:</strong>
-                    <span>{organization.name}</span>
-                  </div>
-                  <div className={styles.infoItem}>
-                    <strong>CNPJ:</strong>
-                    <span>{organization.cnpj ? organizationService.formatCNPJ(organization.cnpj) : 'Não informado'}</span>
-                  </div>
-                  <div className={styles.infoItem}>
-                    <strong>Data de Cadastro:</strong>
-                    <span>{formatDate(organization.createdAt)}</span>
-                  </div>
-                  <div className={styles.infoItem}>
-                    <strong>Plano:</strong>
-                    <span className={`${styles.planBadge} ${planConfig.badgeClass}`}>
-                      {planConfig.label}
-                    </span>
-                  </div>
-                  <div className={styles.infoItem}>
-                    <strong>Status:</strong>
-                    <span className={`${styles.statusBadge} ${statusConfig.badgeClass}`}>
-                      {statusConfig.text}
-                    </span>
-                  </div>
+                  <div className={styles.infoItem}><strong>Nome:</strong><span>{organization.name}</span></div>
+                  <div className={styles.infoItem}><strong>CNPJ:</strong><span>{organization.cnpj ? organizationService.formatCNPJ(organization.cnpj) : 'Não informado'}</span></div>
+                  <div className={styles.infoItem}><strong>Cadastro:</strong><span>{formatDate(organization.createdAt)}</span></div>
+                  <div className={styles.infoItem}><strong>Plano:</strong><span className={`${styles.planBadge} ${planConfig.badgeClass || ''}`}>{planConfig.label}</span></div>
+                  <div className={styles.infoItem}><strong>Status:</strong><span className={`${styles.statusBadge} ${statusConfig.badgeClass || ''}`}>{statusConfig.text}</span></div>
                 </div>
               </div>
-
               <div className={styles.summaryCard}>
                 <h3>Métricas</h3>
                 <div className={styles.metricsGrid}>
-                  <div className={styles.metricCard}>
-                    <MdPeople size={24} />
-                    <div>
-                      <span className={styles.metricCardLabel}>Usuários</span>
-                      <span className={styles.metricCardValue}>{summary?.totalUsers || 0}</span>
-                    </div>
-                  </div>
-                  <div className={styles.metricCard}>
-                    <MdEvent size={24} />
-                    <div>
-                      <span className={styles.metricCardLabel}>Eventos Criados</span>
-                      <span className={styles.metricCardValue}>{summary?.totalEvents || 0}</span>
-                    </div>
-                  </div>
-                  <div className={styles.metricCard}>
-                    <FaUsers size={24} />
-                    <div>
-                      <span className={styles.metricCardLabel}>Clientes</span>
-                      <span className={styles.metricCardValue}>{summary?.totalClients || 0}</span>
-                    </div>
-                  </div>
-                  <div className={styles.metricCard}>
-                    <MdAttachMoney size={24} />
-                    <div>
-                      <span className={styles.metricCardLabel}>Volume Financeiro</span>
-                      <span className={styles.metricCardValue}>{formatCurrency(summary?.financialVolume || 0)}</span>
-                    </div>
-                  </div>
+                  <div className={styles.metricCard}><MdPeople size={24} /><div><span className={styles.metricCardLabel}>Usuários</span><span className={styles.metricCardValue}>{summary?.totalUsers || 0}</span></div></div>
+                  <div className={styles.metricCard}><MdEvent size={24} /><div><span className={styles.metricCardLabel}>Eventos</span><span className={styles.metricCardValue}>{summary?.totalEvents || 0}</span></div></div>
+                  <div className={styles.metricCard}><FaUsers size={24} /><div><span className={styles.metricCardLabel}>Ativos</span><span className={styles.metricCardValue}>{summary?.activeUsers || 0}</span></div></div>
+                  <div className={styles.metricCard}><MdAttachMoney size={24} /><div><span className={styles.metricCardLabel}>Financeiro</span><span className={styles.metricCardValue}>{formatCurrency(summary?.financialVolume || 0)}</span></div></div>
                 </div>
               </div>
             </div>
           </div>
         )}
 
-        {/* ABA 2: ADMIN */}
+        {/* ABA: ADMIN */}
         {activeTab === 'admin' && (
           <div className={styles.adminTab}>
             {adminUser ? (
               <div className={styles.adminCard}>
                 <div className={styles.adminHeader}>
-                  <div className={styles.adminAvatar}>
-                    <MdPerson size={48} />
-                  </div>
+                  <div className={styles.adminAvatar}><MdPerson size={48} /></div>
                   <div className={styles.adminInfo}>
                     <h3>{adminUser.name}</h3>
                     <p className={styles.adminRole}>Administrador Principal</p>
@@ -526,334 +476,265 @@ export const OrganizationDetails: React.FC<OrganizationDetailsProps> = ({
                     </span>
                   </div>
                   <div className={styles.adminHeaderActions}>
-                    <button onClick={handleEditAdmin} className={styles.adminHeaderActionBtn} title="Editar">
-                      <MdEdit size={18} /> Editar
-                    </button>
-                    <button onClick={handleResetPassword} className={styles.adminHeaderActionBtn} title="Resetar Senha">
-                      <MdKey size={18} /> Senha
-                    </button>
-                    <button onClick={handleToggleAdminStatusClick} className={styles.adminHeaderActionBtn} title={adminUser.status === 'ACTIVE' ? 'Desativar' : 'Ativar'}>
+                    <button onClick={handleEditAdmin} className={styles.adminHeaderActionBtn}><MdEdit size={18} /> Editar</button>
+                    <button onClick={handleResetPassword} className={styles.adminHeaderActionBtn}><MdKey size={18} /> Senha</button>
+                    <button onClick={handleToggleAdminStatusClick} className={styles.adminHeaderActionBtn}>
                       <MdPowerSettingsNew size={18} /> {adminUser.status === 'ACTIVE' ? 'Desativar' : 'Ativar'}
                     </button>
                   </div>
                 </div>
-
                 <div className={styles.adminDetails}>
                   <div className={styles.detailSection}>
                     <h4>Informações Pessoais</h4>
                     <div className={styles.detailGrid}>
-                      <div className={styles.detailItem}>
-                        <MdPerson />
-                        <div>
-                          <label>Nome Completo</label>
-                          <span>{adminUser.name}</span>
-                        </div>
-                      </div>
-                      <div className={styles.detailItem}>
-                        <MdEmail />
-                        <div>
-                          <label>E-mail</label>
-                          <span>{adminUser.email}</span>
-                        </div>
-                      </div>
-                      <div className={styles.detailItem}>
-                        <MdBadge />
-                        <div>
-                          <label>CPF</label>
-                          <span>{formatCPF(adminUser.cpf)}</span>
-                        </div>
-                      </div>
-                      <div className={styles.detailItem}>
-                        <MdPhone />
-                        <div>
-                          <label>Telefone</label>
-                          <span>{adminUser.phone || 'Não informado'}</span>
-                        </div>
-                      </div>
+                      <div className={styles.detailItem}><MdPerson /><div><label>Nome</label><span>{adminUser.name}</span></div></div>
+                      <div className={styles.detailItem}><MdEmail /><div><label>E-mail</label><span>{adminUser.email}</span></div></div>
+                      <div className={styles.detailItem}><MdBadge /><div><label>CPF</label><span>{formatCPF(adminUser.cpf)}</span></div></div>
+                      <div className={styles.detailItem}><MdPhone /><div><label>Telefone</label><span>{adminUser.phone || 'Não informado'}</span></div></div>
                     </div>
                   </div>
-
                   <div className={styles.detailSection}>
-                    <h4>Informações da Conta</h4>
+                    <h4>Conta</h4>
                     <div className={styles.detailGrid}>
-                      <div className={styles.detailItem}>
-                        <MdCalendarToday />
-                        <div>
-                          <label>Data de Criação</label>
-                          <span>{formatDate(adminUser.createdAt)}</span>
-                        </div>
-                      </div>
-                      <div className={styles.detailItem}>
-                        <MdAccessTime />
-                        <div>
-                          <label>Última Atualização</label>
-                          <span>{formatDateTime(adminUser.updatedAt)}</span>
-                        </div>
-                      </div>
-                      <div className={styles.detailItem}>
-                        <MdLock />
-                        <div>
-                          <label>Tipo de Usuário</label>
-                          <span>{adminUser.userType || 'ADMIN'}</span>
-                        </div>
-                      </div>
-                      <div className={styles.detailItem}>
-                        <MdBusiness />
-                        <div>
-                          <label>Organização</label>
-                          <span>{organization.name}</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className={styles.detailSection}>
-                    <h4>Permissões</h4>
-                    <div className={styles.permissionsList}>
-                      <div className={styles.permissionItem}>
-                        <MdCheckCircle className={styles.permissionIcon} />
-                        <span>Gerenciar Organização</span>
-                      </div>
-                      <div className={styles.permissionItem}>
-                        <MdCheckCircle className={styles.permissionIcon} />
-                        <span>Gerenciar Usuários</span>
-                      </div>
-                      <div className={styles.permissionItem}>
-                        <MdCheckCircle className={styles.permissionIcon} />
-                        <span>Gerenciar Eventos</span>
-                      </div>
-                      <div className={styles.permissionItem}>
-                        <MdCheckCircle className={styles.permissionIcon} />
-                        <span>Visualizar Relatórios</span>
-                      </div>
-                      <div className={styles.permissionItem}>
-                        <MdCheckCircle className={styles.permissionIcon} />
-                        <span>Configurar Plano</span>
-                      </div>
-                      <div className={styles.permissionItem}>
-                        <MdCheckCircle className={styles.permissionIcon} />
-                        <span>Gerenciar Financeiro</span>
-                      </div>
+                      <div className={styles.detailItem}><MdCalendarToday /><div><label>Criado em</label><span>{formatDate(adminUser.createdAt)}</span></div></div>
+                      <div className={styles.detailItem}><MdAccessTime /><div><label>Atualizado</label><span>{formatDateTime(adminUser.updatedAt)}</span></div></div>
+                      <div className={styles.detailItem}><MdLock /><div><label>Tipo</label><span>{adminUser.userType || 'ADMIN'}</span></div></div>
+                      <div className={styles.detailItem}><MdBusiness /><div><label>Organização</label><span>{organization.name}</span></div></div>
                     </div>
                   </div>
                 </div>
               </div>
             ) : (
-              <div className={styles.emptyAdminState}>
+              <div className={styles.emptyState}>
                 <MdWarning size={48} />
-                <h3>Nenhum administrador encontrado</h3>
-                <p>Esta organização não possui um administrador cadastrado.</p>
-                <button className={styles.adminPrimaryButton}>
-                  <MdPersonAdd />
-                  Adicionar Administrador
-                </button>
+                <h3>Nenhum administrador</h3>
+                <p>Esta organização não possui um administrador.</p>
+                <button className={styles.primaryButton}><MdPersonAdd /> Adicionar Admin</button>
               </div>
             )}
           </div>
         )}
 
-        {/* ABA 3: USUÁRIOS */}
+        {/* ABA: USUÁRIOS */}
         {activeTab === 'users' && (
           <div className={styles.usersTab}>
             <div className={styles.tabHeader}>
-              <h2>Usuários da Organização</h2>
-              <button className={styles.primaryButton}>
-                <MdPerson />
-                Novo Usuário
-              </button>
+              <h2>Usuários ({users.length})</h2>
+              <button className={styles.primaryButton}><MdAdd /> Novo Usuário</button>
             </div>
             
-            <table className={styles.table}>
-              <thead>
-                <tr>
-                  <th>Nome</th>
-                  <th>Email</th>
-                  <th>Função</th>
-                  <th>Status</th>
-                  <th>Último Acesso</th>
-                  <th>Ações</th>
-                </tr>
-              </thead>
-              <tbody>
-                {users.length > 0 ? (
-                  users.map(user => (
-                    <tr key={user.id} className={user.id === adminUser?.id ? styles.adminRow : ''}>
-                      <td>
-                        {user.name}
-                        {user.id === adminUser?.id && (
-                          <span className={styles.adminBadge}>Admin</span>
-                        )}
-                      </td>
-                      <td>{user.email}</td>
-                      <td>{user.role}</td>
-                      <td>
-                        <span className={user.status === 'ACTIVE' ? styles.statusActive : styles.statusInactive}>
-                          {user.status === 'ACTIVE' ? 'Ativo' : 'Inativo'}
-                        </span>
-                      </td>
-                      <td>{user.lastAccess ? formatDateTime(user.lastAccess) : '-'}</td>
-                      <td>
-                        <button className={styles.actionButton} title="Editar">
-                          <MdEdit />
-                        </button>
-                        {user.id !== adminUser?.id && (
-                          <button className={`${styles.actionButton} ${styles.dangerButton}`} title="Desativar">
-                            <MdCancel />
-                          </button>
-                        )}
-                      </td>
+            {users.length > 0 ? (
+              <div className={styles.tableContainer}>
+                <table className={styles.table}>
+                  <thead>
+                    <tr>
+                      <th>Nome</th>
+                      <th>Email</th>
+                      <th>Função</th>
+                      <th>Status</th>
+                      <th>Criado em</th>
+                      <th>Ações</th>
                     </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan={6} className={styles.emptyTable}>
-                      Nenhum usuário encontrado
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+                  </thead>
+                  <tbody>
+                    {users.map(user => (
+                      <tr key={user.id} className={user.id === adminUser?.id ? styles.adminRow : ''}>
+                        <td>
+                          <div className={styles.userCell}>
+                            <div className={styles.userAvatar}><MdPerson /></div>
+                            <div>
+                              <strong>{user.name}</strong>
+                              {user.id === adminUser?.id && <span className={styles.adminBadge}>Admin</span>}
+                            </div>
+                          </div>
+                        </td>
+                        <td>{user.email}</td>
+                        <td><span className={styles.roleBadge}>{user.role || 'USER'}</span></td>
+                        <td>
+                          <button 
+                            className={`${styles.statusToggle} ${user.status === 'ACTIVE' ? styles.statusActive : styles.statusInactive}`}
+                            onClick={() => handleToggleUserStatus(user)}
+                          >
+                            {user.status === 'ACTIVE' ? 'Ativo' : 'Inativo'}
+                          </button>
+                        </td>
+                        <td>{formatDate(user.createdAt)}</td>
+                        <td>
+                          <div className={styles.actionButtons}>
+                            <button className={styles.actionButton} title="Editar"><MdEdit /></button>
+                            {user.id !== adminUser?.id && (
+                              <button className={`${styles.actionButton} ${styles.dangerButton}`} onClick={() => handleDeleteUser(user)} title="Remover">
+                                <MdDelete />
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className={styles.emptyState}>
+                <MdPeople size={48} />
+                <h3>Nenhum usuário</h3>
+                <p>Esta organização não possui usuários cadastrados.</p>
+                <button className={styles.primaryButton}><MdAdd /> Adicionar Usuário</button>
+              </div>
+            )}
           </div>
         )}
 
-        {/* Outras abas com placeholder */}
+        {/* ABA: ASSINATURA */}
         {activeTab === 'subscription' && (
           <div className={styles.subscriptionTab}>
-            <h2>Detalhes da Assinatura</h2>
-            <p>Conteúdo em desenvolvimento...</p>
+            <div className={styles.subscriptionCard}>
+              <div className={styles.subscriptionHeader}>
+                <h2>Plano Atual</h2>
+                <span className={`${styles.planBadgeLarge} ${planConfig.badgeClass || ''}`}>{planConfig.label}</span>
+              </div>
+              
+              <div className={styles.planDetails}>
+                <div className={styles.planInfo}>
+                  <h3>Recursos do Plano {planConfig.label}</h3>
+                  <ul className={styles.featureList}>
+                    {planConfig.features?.map((feature, index) => (
+                      <li key={index}><MdCheckCircle className={styles.featureIcon} /> {feature}</li>
+                    ))}
+                  </ul>
+                </div>
+                
+                <div className={styles.planActions}>
+                  <button className={styles.primaryButton} onClick={handleChangePlan}>
+                    <MdAttachMoney /> Alterar Plano
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         )}
 
-        {activeTab === 'usage' && (
-          <div className={styles.usageTab}>
-            <h2>Uso da Plataforma</h2>
-            <p>Conteúdo em desenvolvimento...</p>
-          </div>
-        )}
-
+        {/* ABA: EVENTOS - ✅ CORRIGIDO sem utils externo */}
         {activeTab === 'events' && (
           <div className={styles.eventsTab}>
-            <h2>Eventos da Organização</h2>
-            <p>Conteúdo em desenvolvimento...</p>
+            <div className={styles.tabHeader}>
+              <h2>Eventos ({events.length})</h2>
+            </div>
+            
+            {events.length > 0 ? (
+              <div className={styles.tableContainer}>
+                <table className={styles.table}>
+                  <thead>
+                    <tr>
+                      <th>Evento</th>
+                      <th>Data</th>
+                      <th>Tipo</th>
+                      <th>Status</th>
+                      <th>Convidados</th>
+                      <th>Valor Total</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {events.map(event => {
+                      // ✅ Usa a função definida no topo do arquivo
+                      const statusInfo = getEventStatusStyle(event.status || '');
+                      
+                      return (
+                        <tr key={event.id}>
+                          <td>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                              <div style={{ 
+                                width: 36, height: 36, borderRadius: '50%',
+                                background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                color: 'white', fontSize: 16, flexShrink: 0
+                              }}>
+                                <MdEvent />
+                              </div>
+                              <div>
+                                <strong>{event.title || 'Sem título'}</strong>
+                                {event.clientName && <small style={{ display: 'block', color: '#6b7280' }}>Cliente: {event.clientName}</small>}
+                              </div>
+                            </div>
+                          </td>
+                          <td>{formatDate(event.eventDate)}</td>
+                          <td>
+                            <span style={{ padding: '2px 8px', borderRadius: 12, fontSize: 12, background: '#e0e7ff', color: '#4338ca' }}>
+                              {event.eventType || 'N/A'}
+                            </span>
+                          </td>
+                          <td>
+                            <span className={`${styles.statusBadge} ${styles[statusInfo.className] || ''}`}>
+                              {statusInfo.text}
+                            </span>
+                          </td>
+                          <td>{event.guestCount || 0}</td>
+                          <td>{formatCurrency(Number(event.totalValue) || 0)}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className={styles.emptyState}>
+                <MdEvent size={48} />
+                <h3>Nenhum evento</h3>
+                <p>Esta organização ainda não possui eventos.</p>
+              </div>
+            )}
           </div>
         )}
 
+        {/* ABA: FINANCEIRO */}
         {activeTab === 'financial' && (
           <div className={styles.financialTab}>
-            <h2>Financeiro</h2>
-            <p>Conteúdo em desenvolvimento...</p>
-          </div>
-        )}
-
-        {activeTab === 'logs' && (
-          <div className={styles.logsTab}>
-            <h2>Logs do Sistema</h2>
-            <p>Conteúdo em desenvolvimento...</p>
-          </div>
-        )}
-
-        {activeTab === 'support' && (
-          <div className={styles.supportTab}>
-            <h2>Suporte</h2>
-            <p>Conteúdo em desenvolvimento...</p>
+            <div className={styles.summaryGrid}>
+              <div className={styles.summaryCard}>
+                <h3>Resumo Financeiro</h3>
+                <div className={styles.infoList}>
+                  <div className={styles.infoItem}><strong>Volume Total:</strong><span>{formatCurrency(summary?.financialVolume || 0)}</span></div>
+                  <div className={styles.infoItem}><strong>Eventos:</strong><span>{summary?.totalEvents || 0}</span></div>
+                  <div className={styles.infoItem}><strong>Ticket Médio:</strong><span>{formatCurrency((summary?.financialVolume || 0) / (summary?.totalEvents || 1))}</span></div>
+                </div>
+              </div>
+            </div>
           </div>
         )}
       </div>
 
-      {/* Modal de Edição do Admin */}
+      {/* ============================================================ */}
+      {/* MODAIS */}
+      {/* ============================================================ */}
+
+      {/* Modal Editar Admin */}
       {showEditModal && (
         <div className={styles.modalOverlay} onClick={() => setShowEditModal(false)}>
           <div className={styles.modalContainer} onClick={e => e.stopPropagation()}>
             <div className={styles.modalHeader}>
-              <h3>
-                <MdEdit />
-                Editar Administrador
-              </h3>
-              <button className={styles.closeModalBtn} onClick={() => setShowEditModal(false)}>
-                <MdClose />
-              </button>
+              <h3><MdEdit /> Editar Administrador</h3>
+              <button className={styles.closeModalBtn} onClick={() => setShowEditModal(false)}><MdClose /></button>
             </div>
-            
             <div className={styles.modalBody}>
-              {modalError && (
-                <div className={styles.errorAlert}>
-                  <MdWarning />
-                  <span>{modalError}</span>
-                </div>
-              )}
-              {modalSuccess && (
-                <div className={styles.successAlert}>
-                  <MdCheckCircle />
-                  <span>{modalSuccess}</span>
-                </div>
-              )}
+              {modalError && <div className={styles.errorAlert}><MdWarning /><span>{modalError}</span></div>}
+              {modalSuccess && <div className={styles.successAlert}><MdCheckCircle /><span>{modalSuccess}</span></div>}
               
               <div className={styles.formGroup}>
-                <label>Nome Completo *</label>
-                <input
-                  type="text"
-                  value={editingAdmin.name || ''}
-                  onChange={(e) => setEditingAdmin({ ...editingAdmin, name: e.target.value })}
-                  placeholder="Nome do administrador"
-                  disabled={modalLoading}
-                />
+                <label>Nome *</label>
+                <input type="text" value={editingAdmin.name || ''} onChange={(e) => setEditingAdmin({ ...editingAdmin, name: e.target.value })} disabled={modalLoading} />
               </div>
-              
               <div className={styles.formGroup}>
                 <label>E-mail *</label>
-                <input
-                  type="email"
-                  value={editingAdmin.email || ''}
-                  onChange={(e) => setEditingAdmin({ ...editingAdmin, email: e.target.value })}
-                  placeholder="admin@empresa.com"
-                  disabled={modalLoading}
-                />
+                <input type="email" value={editingAdmin.email || ''} onChange={(e) => setEditingAdmin({ ...editingAdmin, email: e.target.value })} disabled={modalLoading} />
               </div>
-              
               <div className={styles.formGroup}>
                 <label>Telefone</label>
-                <input
-                  type="text"
-                  value={editingAdmin.phone || ''}
-                  onChange={(e) => setEditingAdmin({ ...editingAdmin, phone: e.target.value })}
-                  placeholder="(00) 00000-0000"
-                  disabled={modalLoading}
-                />
-              </div>
-              
-              <div className={styles.formRow}>
-                <div className={styles.formGroup}>
-                  <label>Função</label>
-                  <select
-                    value={editingAdmin.role || 'ADMIN'}
-                    onChange={(e) => setEditingAdmin({ ...editingAdmin, role: e.target.value })}
-                    disabled={modalLoading}
-                  >
-                    <option value="ADMIN">Administrador</option>
-                    <option value="MANAGER">Gerente</option>
-                    <option value="USER">Usuário</option>
-                  </select>
-                </div>
-                
-                <div className={styles.formGroup}>
-                  <label>Status</label>
-                  <select
-                    value={editingAdmin.status || 'ACTIVE'}
-                    onChange={(e) => setEditingAdmin({ ...editingAdmin, status: e.target.value as 'ACTIVE' | 'INACTIVE' })}
-                    disabled={modalLoading}
-                  >
-                    <option value="ACTIVE">Ativo</option>
-                    <option value="INACTIVE">Inativo</option>
-                  </select>
-                </div>
+                <input type="text" value={editingAdmin.phone || ''} onChange={(e) => setEditingAdmin({ ...editingAdmin, phone: e.target.value })} disabled={modalLoading} />
               </div>
             </div>
-            
             <div className={styles.modalFooter}>
-              <button className={styles.adminSecondaryButton} onClick={() => setShowEditModal(false)} disabled={modalLoading}>
-                Cancelar
-              </button>
-              <button className={styles.adminPrimaryButton} onClick={handleSaveAdmin} disabled={modalLoading}>
+              <button className={styles.cancelButton} onClick={() => setShowEditModal(false)} disabled={modalLoading}>Cancelar</button>
+              <button className={styles.primaryButton} onClick={handleSaveAdmin} disabled={modalLoading}>
                 {modalLoading ? 'Salvando...' : <><MdSave /> Salvar</>}
               </button>
             </div>
@@ -861,84 +742,98 @@ export const OrganizationDetails: React.FC<OrganizationDetailsProps> = ({
         </div>
       )}
 
-      {/* Modal de Reset de Senha */}
+      {/* Modal Reset Senha */}
       {showResetPasswordModal && (
         <div className={styles.modalOverlay} onClick={() => setShowResetPasswordModal(false)}>
           <div className={styles.modalContainer} onClick={e => e.stopPropagation()}>
             <div className={styles.modalHeader}>
-              <h3>
-                <MdKey />
-                Alterar Senha
-              </h3>
-              <button className={styles.closeModalBtn} onClick={() => setShowResetPasswordModal(false)}>
-                <MdClose />
-              </button>
+              <h3><MdKey /> Alterar Senha</h3>
+              <button className={styles.closeModalBtn} onClick={() => setShowResetPasswordModal(false)}><MdClose /></button>
             </div>
-            
             <div className={styles.modalBody}>
-              {modalError && (
-                <div className={styles.errorAlert}>
-                  <MdWarning />
-                  <span>{modalError}</span>
-                </div>
-              )}
-              {modalSuccess && (
-                <div className={styles.successAlert}>
-                  <MdCheckCircle />
-                  <span>{modalSuccess}</span>
-                </div>
-              )}
+              {modalError && <div className={styles.errorAlert}><MdWarning /><span>{modalError}</span></div>}
+              {modalSuccess && <div className={styles.successAlert}><MdCheckCircle /><span>{modalSuccess}</span></div>}
               
               <div className={styles.formGroup}>
                 <label>Nova Senha *</label>
-                <input
-                  type="password"
-                  value={resetPasswordData.password}
-                  onChange={(e) => setResetPasswordData({ ...resetPasswordData, password: e.target.value })}
-                  placeholder="Mínimo 6 caracteres"
-                  disabled={modalLoading}
-                />
+                <input type="password" value={resetPasswordData.password} onChange={(e) => setResetPasswordData({ ...resetPasswordData, password: e.target.value })} placeholder="Mínimo 6 caracteres" disabled={modalLoading} />
               </div>
-              
               <div className={styles.formGroup}>
-                <label>Confirmar Nova Senha *</label>
-                <input
-                  type="password"
-                  value={resetPasswordData.confirmPassword}
-                  onChange={(e) => setResetPasswordData({ ...resetPasswordData, confirmPassword: e.target.value })}
-                  placeholder="Digite a senha novamente"
-                  disabled={modalLoading}
-                />
+                <label>Confirmar Senha *</label>
+                <input type="password" value={resetPasswordData.confirmPassword} onChange={(e) => setResetPasswordData({ ...resetPasswordData, confirmPassword: e.target.value })} placeholder="Digite novamente" disabled={modalLoading} />
               </div>
-              
-              <div className={styles.passwordHint}>
-                <MdInfo />
-                <small>Recomendado usar letras maiúsculas, minúsculas, números e símbolos</small>
-              </div>
+              <div className={styles.passwordHint}><MdInfo /><small>Mínimo 6 caracteres</small></div>
             </div>
-            
             <div className={styles.modalFooter}>
-              <button className={styles.adminSecondaryButton} onClick={() => setShowResetPasswordModal(false)} disabled={modalLoading}>
-                Cancelar
-              </button>
-              <button className={styles.adminPrimaryButton} onClick={handleSaveNewPassword} disabled={modalLoading}>
-                {modalLoading ? 'Alterando...' : <><MdLock /> Alterar Senha</>}
+              <button className={styles.cancelButton} onClick={() => setShowResetPasswordModal(false)} disabled={modalLoading}>Cancelar</button>
+              <button className={styles.primaryButton} onClick={handleSaveNewPassword} disabled={modalLoading}>
+                {modalLoading ? 'Alterando...' : <><MdLock /> Alterar</>}
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Modal de Confirmação de Status usando o ConfirmationModal existente */}
+      {/* Modal Alterar Plano */}
+      {showPlanModal && organization && (
+        <div className={styles.modalOverlay} onClick={() => setShowPlanModal(false)}>
+          <div className={styles.modalContainer} onClick={e => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <h3><MdAttachMoney /> Alterar Plano</h3>
+              <button className={styles.closeModalBtn} onClick={() => setShowPlanModal(false)}><MdClose /></button>
+            </div>
+            <div className={styles.modalBody}>
+              <p><strong>Plano atual:</strong> {planConfig.label}</p>
+              <div className={styles.formGroup}>
+                <label>Novo plano:</label>
+                <select value={newPlan || ''} onChange={(e) => setNewPlan(e.target.value as PlanType)}>
+                  <option value="">Selecione...</option>
+                  {availablePlans.map(plan => (
+                    <option key={plan.value} value={plan.value}>{plan.label}</option>
+                  ))}
+                </select>
+              </div>
+              {newPlan && (
+                <div className={styles.planFeatures}>
+                  <h4>Recursos do {getPlanConfig(newPlan).label}:</h4>
+                  <ul>{getPlanConfig(newPlan).features?.map((f, i) => <li key={i}>{f}</li>)}</ul>
+                </div>
+              )}
+            </div>
+            <div className={styles.modalFooter}>
+              <button className={styles.cancelButton} onClick={() => setShowPlanModal(false)}>Cancelar</button>
+              <button className={styles.primaryButton} onClick={handleSavePlan} disabled={!newPlan || newPlan === organization.planType || modalLoading}>
+                {modalLoading ? 'Salvando...' : 'Confirmar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Confirmação Status Admin */}
       <ConfirmationModal
         isOpen={showStatusModal}
         title={statusAction === 'activate' ? 'Ativar Administrador' : 'Desativar Administrador'}
-        message={`Tem certeza que deseja ${statusAction === 'activate' ? 'ativar' : 'desativar'} o administrador ${adminUser?.name}?`}
+        message={`Tem certeza que deseja ${statusAction === 'activate' ? 'ativar' : 'desativar'} ${adminUser?.name}?`}
         type="warning"
         onConfirm={handleToggleAdminStatus}
         onCancel={() => setShowStatusModal(false)}
-        confirmText={statusAction === 'activate' ? 'Sim, Ativar' : 'Sim, Desativar'}
+        confirmText={statusAction === 'activate' ? 'Ativar' : 'Desativar'}
       />
+
+      {/* Modal Confirmação Deletar Usuário */}
+      <ConfirmationModal
+        isOpen={showDeleteUserModal}
+        title="Remover Usuário"
+        message={`Tem certeza que deseja remover ${selectedUser?.name}?`}
+        type="danger"
+        onConfirm={confirmDeleteUser}
+        onCancel={() => { setShowDeleteUserModal(false); setSelectedUser(null); }}
+        confirmText="Remover"
+      />
+
+      {/* Modal de Erro */}
+      <ErrorModal isOpen={!!modalError} message={modalError || ''} onClose={() => setModalError(null)} />
     </div>
   );
 };

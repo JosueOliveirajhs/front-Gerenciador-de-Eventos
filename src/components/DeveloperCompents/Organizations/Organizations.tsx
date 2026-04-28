@@ -1,5 +1,6 @@
 // src/components/DeveloperCompents/Organizations/Organizations.tsx
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom'; // ✅ Import ESSENCIAL
 import { 
   MdAdd,
   MdSearch,
@@ -28,12 +29,14 @@ import { CreateOrganization } from '../CreateOrganization/CreateOrganization';
 import styles from './Organizations.module.css';
 
 interface OrganizationsProps {
-  onNavigate: (tab: string, view: string, id?: number) => void;
+  onNavigate?: (view: string, id?: number) => void; // Opcional agora
 }
 
 type ViewMode = 'table' | 'grid' | 'cards';
 
 export const Organizations: React.FC<OrganizationsProps> = ({ onNavigate }) => {
+  const navigate = useNavigate(); // ✅ Hook de navegação
+  
   // Estados principais
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [filteredOrganizations, setFilteredOrganizations] = useState<Organization[]>([]);
@@ -89,6 +92,7 @@ export const Organizations: React.FC<OrganizationsProps> = ({ onNavigate }) => {
   const loadOrganizations = async () => {
     try {
       setLoading(true);
+      setError(null);
       const response = await organizationService.getAllOrganizations(
         { busca: filters.busca, status: filters.status, plan: filters.plan },
         currentPage
@@ -147,15 +151,21 @@ export const Organizations: React.FC<OrganizationsProps> = ({ onNavigate }) => {
     loadOrganizations();
   };
 
+  // ✅ CORRIGIDO: Navegação direta com navigate
   const handleViewOrganization = (id: number) => {
-    onNavigate('organizations', 'details', id);
+    console.log('🔍 Visualizar organização:', id);
+    navigate(`/developer/organizations/${id}`);
   };
 
+  // ✅ CORRIGIDO: Navegação direta com navigate
   const handleEditOrganization = (id: number) => {
-    onNavigate('organizations', 'form', id);
+    console.log('✏️ Editar organização:', id);
+    navigate(`/developer/organizations/edit/${id}`);
   };
 
+  // ✅ CORRIGIDO: Navegação direta com navigate
   const handleNewOrganization = () => {
+    console.log('➕ Nova organização');
     setShowCreateModal(true);
   };
 
@@ -504,12 +514,24 @@ export const Organizations: React.FC<OrganizationsProps> = ({ onNavigate }) => {
                     </td>
                     <td>
                       <div className={styles.actionButtons}>
-                        <button className={styles.actionButton} onClick={() => handleViewOrganization(org.id)} title="Visualizar">
+                        {/* ✅ BOTÃO VISUALIZAR */}
+                        <button 
+                          className={styles.actionButton} 
+                          onClick={() => handleViewOrganization(org.id)} 
+                          title="Visualizar"
+                        >
                           <MdVisibility />
                         </button>
-                        <button className={styles.actionButton} onClick={() => handleEditOrganization(org.id)} title="Editar">
+                        
+                        {/* ✅ BOTÃO EDITAR */}
+                        <button 
+                          className={styles.actionButton} 
+                          onClick={() => handleEditOrganization(org.id)} 
+                          title="Editar"
+                        >
                           <MdEdit />
                         </button>
+                        
                         <div className={styles.actionDropdown}>
                           <button className={styles.actionButton} title="Mais ações">
                             <MdMoreVert />
@@ -543,6 +565,28 @@ export const Organizations: React.FC<OrganizationsProps> = ({ onNavigate }) => {
               })}
             </tbody>
           </table>
+
+          {filteredOrganizations.length === 0 && !loading && (
+            <div className={styles.emptyState}>
+              <MdBusiness size={48} />
+              <h3>Nenhuma organização encontrada</h3>
+              <p>
+                {filters.busca || filters.status || filters.plan
+                  ? 'Tente ajustar seus filtros para encontrar organizações.'
+                  : 'Comece cadastrando sua primeira organização.'}
+              </p>
+              {(filters.busca || filters.status || filters.plan) ? (
+                <button className={styles.secondaryButton} onClick={handleClearFilters}>
+                  Limpar filtros
+                </button>
+              ) : (
+                <button className={styles.primaryButton} onClick={handleNewOrganization}>
+                  <MdAdd />
+                  Nova Organização
+                </button>
+              )}
+            </div>
+          )}
 
           {totalPages > 1 && (
             <div className={styles.pagination}>
@@ -587,12 +631,16 @@ export const Organizations: React.FC<OrganizationsProps> = ({ onNavigate }) => {
                   </span>
                 </div>
                 <div className={styles.gridActions}>
+                  {/* ✅ BOTÃO VISUALIZAR */}
                   <button className={styles.gridActionButton} onClick={() => handleViewOrganization(org.id)} title="Visualizar">
                     <MdVisibility />
                   </button>
+                  
+                  {/* ✅ BOTÃO EDITAR */}
                   <button className={styles.gridActionButton} onClick={() => handleEditOrganization(org.id)} title="Editar">
                     <MdEdit />
                   </button>
+                  
                   {getNextStatusOptions(org.status).map(status => (
                     <button key={status} className={`${styles.gridActionButton} ${
                       status === 'ACTIVE' ? styles.successButton :
@@ -656,12 +704,16 @@ export const Organizations: React.FC<OrganizationsProps> = ({ onNavigate }) => {
                   </div>
                 </div>
                 <div className={styles.cardActions}>
+                  {/* ✅ BOTÃO VISUALIZAR */}
                   <button className={styles.cardAction} onClick={() => handleViewOrganization(org.id)}>
                     <MdVisibility /> Ver Detalhes
                   </button>
+                  
+                  {/* ✅ BOTÃO EDITAR */}
                   <button className={styles.cardAction} onClick={() => handleEditOrganization(org.id)}>
                     <MdEdit /> Editar
                   </button>
+                  
                   {getNextStatusOptions(org.status).map(status => (
                     <button key={status} className={`${styles.cardAction} ${
                       status === 'ACTIVE' ? styles.successButton :
@@ -685,7 +737,7 @@ export const Organizations: React.FC<OrganizationsProps> = ({ onNavigate }) => {
       )}
 
       {/* Empty State */}
-      {filteredOrganizations.length === 0 && !loading && (
+      {filteredOrganizations.length === 0 && !loading && viewMode !== 'table' && (
         <div className={styles.emptyState}>
           <MdBusiness size={48} />
           <h3>Nenhuma organização encontrada</h3>
@@ -694,7 +746,7 @@ export const Organizations: React.FC<OrganizationsProps> = ({ onNavigate }) => {
               ? 'Tente ajustar seus filtros para encontrar organizações.'
               : 'Comece cadastrando sua primeira organização.'}
           </p>
-          {filters.busca || filters.status || filters.plan ? (
+          {(filters.busca || filters.status || filters.plan) ? (
             <button className={styles.secondaryButton} onClick={handleClearFilters}>
               Limpar filtros
             </button>

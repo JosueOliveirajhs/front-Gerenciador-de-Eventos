@@ -437,7 +437,326 @@
 .modalEventButton:hover:not(:disabled) { background: var(--accent-primary-dark); transform: scale(1.05); }
 .modalEventButton:disabled { opacity: 0.6; cursor: not-allowed; }
 .modalEventButton.creating { background: var(--text-muted); }
+/* ============================================================ */
+/* NOVAS CLASSES - EDITAR E APAGAR MENSAGEM (WhatsApp Style) */
+/* ============================================================ */
 
+/* Menu de contexto da mensagem */
+.messageWrapper {
+  position: relative;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  border-radius: 8px;
+}
+
+.messageWrapper:hover {
+  background-color: rgba(0, 0, 0, 0.02);
+}
+
+.messageWrapper.selected {
+  background-color: rgba(0, 180, 216, 0.05);
+}
+
+.contextMenu {
+  position: absolute;
+  top: -5px;
+  z-index: 100;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+  animation: slideUp 0.2s ease;
+  min-width: 160px;
+  border: 1px solid var(--border-color);
+}
+
+.contextMenuOwn {
+  right: 10px;
+}
+
+.contextMenuOther {
+  left: 10px;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.contextMenuItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 10px 16px;
+  background: none;
+  border: none;
+  font-size: 13px;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: background 0.15s;
+  text-align: left;
+}
+
+.contextMenuItem:hover {
+  background: var(--bg-tertiary);
+}
+
+.deleteItem {
+  color: #ef4444;
+}
+
+.deleteItem:hover {
+  background: rgba(239, 68, 68, 0.08);
+}
+
+/* Confirmação de exclusão dentro do menu */
+.deleteConfirm {
+  padding: 10px 16px;
+  border-top: 1px solid var(--border-color);
+}
+
+.deleteConfirm p {
+  margin: 0 0 8px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.deleteConfirmActions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.cancelDeleteButton {
+  padding: 5px 12px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  font-size: 12px;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.cancelDeleteButton:hover {
+  background: var(--bg-secondary);
+}
+
+.confirmDeleteButton {
+  padding: 5px 12px;
+  background: #ef4444;
+  border: none;
+  border-radius: 6px;
+  font-size: 12px;
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.confirmDeleteButton:hover:not(:disabled) {
+  background: #dc2626;
+}
+
+.confirmDeleteButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Modo de edição inline */
+.editMode {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.editTextarea {
+  padding: 8px 12px;
+  border: 1px solid var(--accent-primary);
+  border-radius: 12px;
+  font-size: 14px;
+  font-family: inherit;
+  line-height: 1.45;
+  resize: none;
+  outline: none;
+  background: white;
+  color: var(--text-primary);
+  min-width: 200px;
+  box-shadow: 0 0 0 2px rgba(0, 180, 216, 0.1);
+}
+
+.editActions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 4px;
+}
+
+.editHint {
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+.editButtons {
+  display: flex;
+  gap: 4px;
+}
+
+.cancelEditButton {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-tertiary);
+  border: none;
+  border-radius: 50%;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.cancelEditButton:hover {
+  background: var(--border-color);
+  color: var(--text-primary);
+}
+
+.confirmEditButton {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--accent-primary);
+  border: none;
+  border-radius: 50%;
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.confirmEditButton:hover:not(:disabled) {
+  background: var(--accent-primary-dark);
+  transform: scale(1.05);
+}
+
+.confirmEditButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Barra de edição no input (WhatsApp Style) */
+.editingBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  margin-bottom: 8px;
+  background: #fff3cd;
+  border: 1px solid #ffc107;
+  border-radius: 10px;
+  animation: slideDown 0.2s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.editingInfo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #856404;
+  font-weight: 500;
+}
+
+.cancelEditBarButton {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.1);
+  border: none;
+  border-radius: 50%;
+  color: #856404;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.cancelEditBarButton:hover {
+  background: rgba(0, 0, 0, 0.2);
+}
+
+/* Mensagem deletada */
+.messageBubble.deleted {
+  background: var(--bg-tertiary) !important;
+  opacity: 0.7;
+  font-style: italic;
+}
+
+.ownBubble.deleted {
+  background: #f0f0f0 !important;
+}
+
+.deletedText {
+  color: var(--text-muted) !important;
+  font-style: italic;
+  font-size: 13px !important;
+}
+
+.deletedIcon {
+  margin-right: 2px;
+  color: var(--text-muted);
+}
+
+/* Indicador de editado */
+.editedTag {
+  font-size: 10px;
+  color: var(--text-muted);
+  font-style: italic;
+  margin-left: 4px;
+}
+
+.editedIndicator {
+  display: flex;
+  align-items: center;
+  color: var(--text-muted);
+  margin-left: 2px;
+}
+
+/* Ajustes responsivos */
+@media (max-width: 768px) {
+  .contextMenu {
+    min-width: 140px;
+  }
+  
+  .contextMenuOwn {
+    right: 5px;
+  }
+  
+  .contextMenuOther {
+    left: 5px;
+  }
+  
+  .editTextarea {
+    min-width: 150px;
+  }
+}
 /* ============================================================ */
 /* RESPONSIVE */
 /* ============================================================ */
