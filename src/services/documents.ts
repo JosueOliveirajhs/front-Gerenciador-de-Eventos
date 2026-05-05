@@ -28,7 +28,7 @@ export const documentService = {
     
     const response = await api.post('/api/documentos', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
-      timeout: 120000, // 2 minutos para arquivos grandes
+      timeout: 120000,
     });
     
     console.log('✅ Documento enviado:', response.data);
@@ -53,9 +53,27 @@ export const documentService = {
     console.log('✅ Download concluído:', fileName);
   },
 
-  viewDocument: (documentId: number): string => {
+  // ✅ CORRIGIDO: Busca o documento com token no header e retorna blob URL
+  viewDocument: async (documentId: number): Promise<string> => {
     const token = localStorage.getItem('token');
-    return `http://localhost:8080/api/documentos/${documentId}/view?token=${token}`;
+    const url = `http://localhost:8080/api/documentos/${documentId}/view`;
+    
+    console.log(`👁️ Visualizando documento ${documentId}...`);
+    
+    const response = await fetch(url, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    
+    if (!response.ok) {
+      throw new Error('Acesso negado ou documento não encontrado');
+    }
+    
+    const blob = await response.blob();
+    const blobUrl = URL.createObjectURL(blob);
+    console.log('✅ Documento carregado para visualização');
+    return blobUrl;
   },
 
   deleteDocument: async (documentId: number): Promise<void> => {
