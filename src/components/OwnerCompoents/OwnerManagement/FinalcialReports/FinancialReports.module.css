@@ -1403,8 +1403,8 @@
     flex-direction: column;
     gap: 16px;
   }
-}
-/* ========== RESPONSIVIDADE ========== */
+}/* ========== FINANCIAL REPORTS - RESPONSIVO ========== */
+
 @media (max-width: 1200px) {
   .financialSummary {
     grid-template-columns: repeat(2, 1fr);
@@ -1548,6 +1548,11 @@
   .expenseFilterToggle {
     width: 100%;
     justify-content: center;
+  }
+
+  .paginationWrapper {
+    flex-direction: column;
+    gap: 16px;
   }
 }
 

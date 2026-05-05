@@ -11,7 +11,7 @@
 }
 
 [data-theme="dark"] .organizations {
-  background: var(--bg-primary, #0f172a);
+  background: transparent;
 }
 
 /* ==================== HEADER ==================== */

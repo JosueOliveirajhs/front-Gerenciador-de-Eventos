@@ -81,6 +81,7 @@
 .headerCenter {
   flex: 1;
   max-width: 600px;
+  min-width: 0;
 }
 
 .searchContainer {
@@ -204,6 +205,7 @@
 
 .searchResultItem div {
   flex: 1;
+  min-width: 0;
 }
 
 .searchResultItem strong {
@@ -356,6 +358,7 @@
 
 .notificationContent {
   flex: 1;
+  min-width: 0;
 }
 
 .notificationText {
@@ -573,6 +576,7 @@
 .userInfoMd {
   display: flex;
   flex-direction: column;
+  min-width: 0;
 }
 
 .userNameMd {
@@ -638,6 +642,10 @@
 }
 
 @media (max-width: 768px) {
+  .headerContent {
+    gap: 12px;
+  }
+
   .menuToggleBtn {
     display: flex;
   }
@@ -647,6 +655,12 @@
   }
 
   .headerCenter {
+    flex: 1;
+    max-width: none;
+    min-width: 0;
+  }
+
+  .searchContainer {
     max-width: none;
   }
 
@@ -655,11 +669,20 @@
     font-size: 13px;
   }
 
-  .userInfoSm {
-    display: none;
+  .userTrigger {
+    padding: 4px 8px 4px 4px;
   }
 
   .notificationMenu {
+    position: fixed;
+    top: 60px;
+    left: 16px;
+    right: 16px;
+    width: auto;
+    max-width: none;
+  }
+
+  .dropdownMenu {
     position: fixed;
     top: 60px;
     left: 16px;
@@ -672,6 +695,7 @@
 @media (max-width: 480px) {
   .headerContent {
     gap: 8px;
+    padding: 10px 12px;
   }
 
   .headerRight {
@@ -693,11 +717,12 @@
     font-size: 12px;
   }
 
-  .dropdownMenu {
+  .searchResults {
     position: fixed;
-    top: 60px;
-    left: 16px;
-    right: 16px;
+    top: 56px;
+    left: 8px;
+    right: 8px;
     width: auto;
+    max-height: 50vh;
   }
 }

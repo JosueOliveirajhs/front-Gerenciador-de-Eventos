@@ -70,16 +70,83 @@ export const CreateOrganization: React.FC<CreateOrganizationProps> = ({ onSucces
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
     setError(null);
-    // Limpar erro do campo específico
     if (fieldErrors[name]) {
       setFieldErrors(prev => ({ ...prev, [name]: '' }));
     }
   };
 
+  // ✅ Função para extrair mensagem de erro amigável
+  const getErrorMessage = (err: any): string => {
+    // Tentar obter mensagem do backend
+    const backendMessage = err.response?.data?.message || err.response?.data || '';
+    const errorText = typeof backendMessage === 'string' ? backendMessage : JSON.stringify(backendMessage);
+    
+    return errorText;
+  };
+
+  // ✅ Função para verificar duplicação e retornar mensagem específica
+  const detectDuplicateField = (errorText: string): { field: string; message: string } | null => {
+    const lowerError = errorText.toLowerCase();
+    
+    // E-mail duplicado
+    if (lowerError.includes('email') && (lowerError.includes('duplicate') || lowerError.includes('já cadastrado') || lowerError.includes('uk_6dotkott'))) {
+      return {
+        field: 'adminEmail',
+        message: 'Este e-mail já está cadastrado no sistema. Por favor, utilize outro e-mail.'
+      };
+    }
+    
+    // CPF duplicado
+    if (lowerError.includes('cpf') && (lowerError.includes('duplicate') || lowerError.includes('já cadastrado') || lowerError.includes('uk_7kqluf'))) {
+      return {
+        field: 'adminCpf',
+        message: 'Este CPF já está cadastrado no sistema. Por favor, utilize outro CPF.'
+      };
+    }
+    
+    // CNPJ duplicado
+    if (lowerError.includes('cnpj') && (lowerError.includes('duplicate') || lowerError.includes('já cadastrado'))) {
+      return {
+        field: 'cnpj',
+        message: 'Este CNPJ já está cadastrado no sistema. Por favor, utilize outro CNPJ.'
+      };
+    }
+    
+    // Nome de organização duplicado
+    if (lowerError.includes('name') && lowerError.includes('duplicate')) {
+      return {
+        field: 'name',
+        message: 'Já existe uma organização com este nome. Por favor, escolha outro nome.'
+      };
+    }
+    
+    // Erro genérico de duplicação
+    if (lowerError.includes('duplicate entry') || lowerError.includes('already exists')) {
+      // Tentar identificar qual campo pela constraint
+      if (lowerError.includes('users.uk_') || lowerError.includes('users.email')) {
+        return {
+          field: 'adminEmail',
+          message: 'Este e-mail já está cadastrado no sistema. Por favor, utilize outro e-mail.'
+        };
+      }
+      if (lowerError.includes('users.cpf') || lowerError.includes('cpf')) {
+        return {
+          field: 'adminCpf',
+          message: 'Este CPF já está cadastrado no sistema. Por favor, utilize outro CPF.'
+        };
+      }
+      return {
+        field: '',
+        message: 'Já existe um registro com estes dados. Verifique as informações e tente novamente.'
+      };
+    }
+    
+    return null;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Limpar erros anteriores
     setError(null);
     setFieldErrors({});
     
@@ -136,7 +203,7 @@ export const CreateOrganization: React.FC<CreateOrganizationProps> = ({ onSucces
         adminPassword: formData.adminPassword
       };
 
-      console.log('📤 Enviando dados:', organizationData);
+      console.log('📤 Enviando dados:', { ...organizationData, adminPassword: '***' });
       
       const response = await organizationService.createOrganization(organizationData);
       
@@ -151,88 +218,60 @@ export const CreateOrganization: React.FC<CreateOrganizationProps> = ({ onSucces
       
       setTimeout(() => {
         onSuccess();
-      }, 2000);
+      }, 2500);
       
     } catch (err: any) {
       console.error('❌ Erro ao criar organização:', err);
       
-      // Tratamento específico para CPF duplicado
-      const errorMessage = err.response?.data?.message || err.message || '';
+      // ✅ Obter mensagem de erro completa
+      const errorText = getErrorMessage(err);
+      console.log('📝 Mensagem de erro:', errorText);
       
-      // Verificar se é erro de CPF duplicado
-      if (errorMessage.includes('CPF') && 
-          (errorMessage.includes('já cadastrado') || 
-           errorMessage.includes('Duplicate entry') ||
-           errorMessage.includes('UK_7kqluf7wl0oxs7n90fpya03ss'))) {
+      // ✅ Verificar se é erro de duplicação
+      const duplicateInfo = detectDuplicateField(errorText);
+      
+      if (duplicateInfo && duplicateInfo.field) {
+        // Erro específico de campo duplicado
+        setFieldErrors({ [duplicateInfo.field]: duplicateInfo.message });
+        setError(duplicateInfo.message);
         
-        // Marcar erro específico no campo CPF
-        setFieldErrors({
-          adminCpf: 'Este CPF já está cadastrado em outra organização. Por favor, utilize outro CPF.'
-        });
+        // Focar no campo com erro
+        setTimeout(() => {
+          const input = document.getElementById(duplicateInfo.field);
+          if (input) {
+            input.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            input.focus();
+            input.classList.add(styles.errorInput);
+          }
+        }, 100);
         
-        setError('CPF já cadastrado! Este CPF pertence a outra organização.');
+      } else if (duplicateInfo && !duplicateInfo.field) {
+        // Erro de duplicação genérico
+        setError(duplicateInfo.message);
         
-        // Rolar para o campo CPF
-        const cpfInput = document.getElementById('adminCpf');
-        if (cpfInput) {
-          cpfInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          cpfInput.focus();
+      } else if (err.response?.status === 403) {
+        setError('Acesso negado. Você não tem permissão para criar organizações.');
+        
+      } else if (err.response?.status === 400) {
+        // Erro de validação
+        const msg = errorText || 'Dados inválidos. Verifique as informações e tente novamente.';
+        setError(msg);
+        
+        // Tentar extrair erros de campos
+        if (err.response?.data?.errors) {
+          const errors = err.response.data.errors;
+          const fieldErrorMap: { [key: string]: string } = {};
+          Object.keys(errors).forEach(key => {
+            fieldErrorMap[key] = Array.isArray(errors[key]) ? errors[key].join(', ') : errors[key];
+          });
+          setFieldErrors(fieldErrorMap);
         }
-        
-      } 
-      // Verificar se é erro de CNPJ duplicado
-      else if (errorMessage.includes('CNPJ') && errorMessage.includes('já cadastrado')) {
-        setFieldErrors({
-          cnpj: 'Este CNPJ já está cadastrado em outra organização.'
-        });
-        setError('CNPJ já cadastrado!');
-        
-        const cnpjInput = document.getElementById('cnpj');
-        if (cnpjInput) {
-          cnpjInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          cnpjInput.focus();
-        }
-      }
-      // Verificar se é erro de e-mail duplicado
-      else if (errorMessage.includes('email') && errorMessage.includes('já cadastrado')) {
-        setFieldErrors({
-          adminEmail: 'Este e-mail já está cadastrado em outra organização.'
-        });
-        setError('E-mail já cadastrado!');
-        
-        const emailInput = document.getElementById('adminEmail');
-        if (emailInput) {
-          emailInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          emailInput.focus();
-        }
-      }
-      // Tratar outros erros de validação do backend
-      else if (err.response?.data?.errors) {
-        const errors = err.response.data.errors;
-        const fieldErrorMap: { [key: string]: string } = {};
-        
-        Object.keys(errors).forEach(key => {
-          // Mapear nomes dos campos do backend para o frontend
-          let frontendField = key;
-          if (key === 'adminCpf') frontendField = 'adminCpf';
-          if (key === 'adminEmail') frontendField = 'adminEmail';
-          if (key === 'adminName') frontendField = 'adminName';
-          if (key === 'name') frontendField = 'name';
-          if (key === 'cnpj') frontendField = 'cnpj';
-          
-          fieldErrorMap[frontendField] = Array.isArray(errors[key]) 
-            ? errors[key].join(', ') 
-            : errors[key];
-        });
-        
-        setFieldErrors(fieldErrorMap);
-        
-        const errorMessages = Object.values(fieldErrorMap).join(', ');
-        setError(errorMessages);
         
       } else {
-        setError('Erro ao criar organização. Verifique os dados e tente novamente.');
+        // Erro genérico - mostrar o que veio do backend
+        setError(errorText || 'Erro ao criar organização. Tente novamente.');
       }
+      
     } finally {
       setLoading(false);
     }
@@ -258,22 +297,16 @@ export const CreateOrganization: React.FC<CreateOrganizationProps> = ({ onSucces
   const handleCNPJChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const formatted = formatCNPJ(e.target.value);
     setFormData(prev => ({ ...prev, cnpj: formatted }));
-    if (fieldErrors.cnpj) {
-      setFieldErrors(prev => ({ ...prev, cnpj: '' }));
-    }
+    if (fieldErrors.cnpj) setFieldErrors(prev => ({ ...prev, cnpj: '' }));
   };
 
   const handleCPFChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const formatted = formatCPF(e.target.value);
     setFormData(prev => ({ ...prev, adminCpf: formatted }));
-    if (fieldErrors.adminCpf) {
-      setFieldErrors(prev => ({ ...prev, adminCpf: '' }));
-    }
+    if (fieldErrors.adminCpf) setFieldErrors(prev => ({ ...prev, adminCpf: '' }));
   };
 
-  const getSelectedPlan = () => {
-    return planOptions.find(p => p.value === formData.planType);
-  };
+  const selectedPlan = planOptions.find(p => p.value === formData.planType);
 
   if (success) {
     return (
@@ -297,22 +330,16 @@ export const CreateOrganization: React.FC<CreateOrganizationProps> = ({ onSucces
     );
   }
 
-  const selectedPlan = getSelectedPlan();
-
   return (
     <div className={styles.modalOverlay}>
       <div className={styles.modal}>
         <div className={styles.modalHeader}>
-          <h2>
-            <MdBusiness />
-            Nova Organização
-          </h2>
-          <button onClick={onCancel} className={styles.closeButton}>
-            <MdClose />
-          </button>
+          <h2><MdBusiness /> Nova Organização</h2>
+          <button onClick={onCancel} className={styles.closeButton}><MdClose /></button>
         </div>
 
         <form onSubmit={handleSubmit} className={styles.form}>
+          {/* ✅ Erro geral */}
           {error && (
             <div className={styles.errorAlert}>
               <MdError size={20} />
@@ -320,69 +347,38 @@ export const CreateOrganization: React.FC<CreateOrganizationProps> = ({ onSucces
             </div>
           )}
 
+          {/* Dados da Organização */}
           <div className={styles.section}>
             <h3>Dados da Organização</h3>
             
             <div className={styles.formGroup}>
-              <label htmlFor="name">
-                <MdBusiness />
-                Nome da Organização *
-              </label>
+              <label htmlFor="name"><MdBusiness /> Nome da Organização *</label>
               <input
-                type="text"
-                id="name"
-                name="name"
-                value={formData.name}
-                onChange={handleChange}
-                placeholder="Ex: Eventos Faceis Ltda"
-                required
-                disabled={loading}
+                type="text" id="name" name="name" value={formData.name}
+                onChange={handleChange} placeholder="Ex: Eventos Faceis Ltda"
+                required disabled={loading}
                 className={fieldErrors.name ? styles.errorInput : ''}
               />
-              {fieldErrors.name && (
-                <span className={styles.fieldError}>{fieldErrors.name}</span>
-              )}
+              {fieldErrors.name && <span className={styles.fieldError}>{fieldErrors.name}</span>}
             </div>
 
             <div className={styles.formGroup}>
-              <label htmlFor="cnpj">
-                <MdBadge />
-                CNPJ
-              </label>
+              <label htmlFor="cnpj"><MdBadge /> CNPJ</label>
               <input
-                type="text"
-                id="cnpj"
-                name="cnpj"
-                value={formData.cnpj}
-                onChange={handleCNPJChange}
-                placeholder="00.000.000/0000-00"
-                maxLength={18}
-                disabled={loading}
+                type="text" id="cnpj" name="cnpj" value={formData.cnpj}
+                onChange={handleCNPJChange} placeholder="00.000.000/0000-00"
+                maxLength={18} disabled={loading}
                 className={fieldErrors.cnpj ? styles.errorInput : ''}
               />
-              {fieldErrors.cnpj && (
-                <span className={styles.fieldError}>{fieldErrors.cnpj}</span>
-              )}
+              {fieldErrors.cnpj && <span className={styles.fieldError}>{fieldErrors.cnpj}</span>}
               <small>Opcional. Pode ser informado depois.</small>
             </div>
 
             <div className={styles.formGroup}>
-              <label htmlFor="planType">
-                <MdAttachMoney />
-                Plano *
-              </label>
-              <select
-                id="planType"
-                name="planType"
-                value={formData.planType}
-                onChange={handleChange}
-                required
-                disabled={loading}
-              >
+              <label htmlFor="planType"><MdAttachMoney /> Plano *</label>
+              <select id="planType" name="planType" value={formData.planType} onChange={handleChange} required disabled={loading}>
                 {planOptions.map(plan => (
-                  <option key={plan.value} value={plan.value}>
-                    {plan.label} - {plan.price}
-                  </option>
+                  <option key={plan.value} value={plan.value}>{plan.label} - {plan.price}</option>
                 ))}
               </select>
             </div>
@@ -399,6 +395,7 @@ export const CreateOrganization: React.FC<CreateOrganizationProps> = ({ onSucces
             )}
           </div>
 
+          {/* Administrador */}
           <div className={styles.section}>
             <h3>Administrador Principal</h3>
             <p className={styles.sectionDescription}>
@@ -406,115 +403,58 @@ export const CreateOrganization: React.FC<CreateOrganizationProps> = ({ onSucces
             </p>
 
             <div className={styles.formGroup}>
-              <label htmlFor="adminName">
-                <MdPerson />
-                Nome Completo *
-              </label>
+              <label htmlFor="adminName"><MdPerson /> Nome Completo *</label>
               <input
-                type="text"
-                id="adminName"
-                name="adminName"
-                value={formData.adminName}
-                onChange={handleChange}
-                placeholder="Nome do administrador"
-                required
-                disabled={loading}
+                type="text" id="adminName" name="adminName" value={formData.adminName}
+                onChange={handleChange} placeholder="Nome do administrador"
+                required disabled={loading}
                 className={fieldErrors.adminName ? styles.errorInput : ''}
               />
-              {fieldErrors.adminName && (
-                <span className={styles.fieldError}>{fieldErrors.adminName}</span>
-              )}
+              {fieldErrors.adminName && <span className={styles.fieldError}>{fieldErrors.adminName}</span>}
             </div>
 
             <div className={styles.formGroup}>
-              <label htmlFor="adminEmail">
-                <MdEmail />
-                E-mail *
-              </label>
+              <label htmlFor="adminEmail"><MdEmail /> E-mail *</label>
               <input
-                type="email"
-                id="adminEmail"
-                name="adminEmail"
-                value={formData.adminEmail}
-                onChange={handleChange}
-                placeholder="admin@empresa.com"
-                required
-                disabled={loading}
+                type="email" id="adminEmail" name="adminEmail" value={formData.adminEmail}
+                onChange={handleChange} placeholder="admin@empresa.com"
+                required disabled={loading}
                 className={fieldErrors.adminEmail ? styles.errorInput : ''}
               />
-              {fieldErrors.adminEmail && (
-                <span className={styles.fieldError}>{fieldErrors.adminEmail}</span>
-              )}
+              {fieldErrors.adminEmail && <span className={styles.fieldError}>{fieldErrors.adminEmail}</span>}
               <small>Será usado para login e comunicação.</small>
             </div>
 
             <div className={styles.formGroup}>
-              <label htmlFor="adminCpf">
-                <MdBadge />
-                CPF *
-              </label>
+              <label htmlFor="adminCpf"><MdBadge /> CPF *</label>
               <input
-                type="text"
-                id="adminCpf"
-                name="adminCpf"
-                value={formData.adminCpf}
-                onChange={handleCPFChange}
-                placeholder="000.000.000-00"
-                maxLength={14}
-                required
-                disabled={loading}
+                type="text" id="adminCpf" name="adminCpf" value={formData.adminCpf}
+                onChange={handleCPFChange} placeholder="000.000.000-00"
+                maxLength={14} required disabled={loading}
                 className={fieldErrors.adminCpf ? styles.errorInput : ''}
               />
-              {fieldErrors.adminCpf && (
-                <span className={styles.fieldError}>{fieldErrors.adminCpf}</span>
-              )}
+              {fieldErrors.adminCpf && <span className={styles.fieldError}>{fieldErrors.adminCpf}</span>}
             </div>
 
             <div className={styles.formGroup}>
-              <label htmlFor="adminPassword">
-                <MdLock />
-                Senha *
-              </label>
+              <label htmlFor="adminPassword"><MdLock /> Senha *</label>
               <input
-                type="password"
-                id="adminPassword"
-                name="adminPassword"
-                value={formData.adminPassword}
-                onChange={handleChange}
-                placeholder="Mínimo 6 caracteres"
-                required
-                disabled={loading}
+                type="password" id="adminPassword" name="adminPassword" value={formData.adminPassword}
+                onChange={handleChange} placeholder="Mínimo 6 caracteres"
+                required disabled={loading}
                 className={fieldErrors.adminPassword ? styles.errorInput : ''}
               />
-              {fieldErrors.adminPassword && (
-                <span className={styles.fieldError}>{fieldErrors.adminPassword}</span>
-              )}
-              <small>Mínimo 6 caracteres. Recomendado usar letras, números e símbolos.</small>
+              {fieldErrors.adminPassword && <span className={styles.fieldError}>{fieldErrors.adminPassword}</span>}
+              <small>Mínimo 6 caracteres.</small>
             </div>
           </div>
 
           <div className={styles.modalFooter}>
-            <button 
-              type="button" 
-              onClick={onCancel} 
-              className={styles.cancelButton}
-              disabled={loading}
-            >
+            <button type="button" onClick={onCancel} className={styles.cancelButton} disabled={loading}>
               Cancelar
             </button>
-            <button 
-              type="submit" 
-              disabled={loading} 
-              className={styles.saveButton}
-            >
-              {loading ? (
-                <>
-                  <span className={styles.spinner}></span>
-                  Criando...
-                </>
-              ) : (
-                'Criar Organização'
-              )}
+            <button type="submit" disabled={loading} className={styles.saveButton}>
+              {loading ? <><span className={styles.spinner}></span> Criando...</> : 'Criar Organização'}
             </button>
           </div>
         </form>

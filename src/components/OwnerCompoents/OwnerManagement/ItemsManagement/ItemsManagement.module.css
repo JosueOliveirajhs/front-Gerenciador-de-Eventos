@@ -746,21 +746,32 @@
   color: var(--error-500);
   font-weight: 500;
 }
+/* ========== ITEMS MANAGEMENT - RESPONSIVO ========== */
 
-/* ========== RESPONSIVIDADE ========== */
 @media (max-width: 1200px) {
-  .summaryCards {
+  .itemsGrid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  
+  .statsGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 1024px) {
+  .itemsGrid {
     grid-template-columns: repeat(2, 1fr);
   }
 }
 
 @media (max-width: 768px) {
-  .clientManagement {
+  .itemsManagement {
     padding: 16px;
   }
 
-  .headerContent {
+  .pageHeader {
     flex-direction: column;
+    gap: 12px;
   }
 
   .headerActions {
@@ -768,11 +779,28 @@
     flex-direction: column;
   }
 
-  .searchBox,
+  .searchContainer,
   .filterSelect,
-  .checkboxLabel,
   .primaryButton {
     width: 100%;
+  }
+
+  .itemsGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .statsGrid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .itemCard {
+    flex-direction: column;
+  }
+
+  .itemImage {
+    width: 100%;
+    height: 200px;
   }
 
   .formGrid {
@@ -782,22 +810,9 @@
   .modal {
     margin: 16px;
     max-height: calc(100vh - 32px);
+    width: auto;
   }
 
-  .table td {
-    min-width: 120px;
-  }
-
-  .actionsCell {
-    flex-wrap: wrap;
-  }
-
-  .summaryCards {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 480px) {
   .modalActions {
     flex-direction: column;
   }
@@ -807,32 +822,50 @@
     justify-content: center;
   }
 
-  .formActions {
+  .filtersBar {
     flex-direction: column;
   }
 
-  .formActions button {
+  .filterGroup {
     width: 100%;
-    justify-content: center;
+  }
+
+  .categoryFilters {
+    flex-wrap: wrap;
+  }
+
+  .paginationWrapper {
+    flex-direction: column;
+    gap: 16px;
   }
 }
 
-.reservationItem {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
+@media (max-width: 480px) {
+  .itemCard {
+    padding: 12px;
+  }
 
-.editReservationBtn {
-  background: none;
-  border: none;
-  color: var(--text-muted);
-  cursor: pointer;
-  padding: 4px;
-  border-radius: 4px;
-}
+  .itemImage {
+    height: 150px;
+  }
 
-.editReservationBtn:hover {
-  background-color: var(--bg-tertiary);
-  color: var(--text-primary);
+  .itemTitle {
+    font-size: 16px;
+  }
+
+  .itemPrice {
+    font-size: 18px;
+  }
+
+  .statCard {
+    padding: 12px;
+  }
+
+  .statValue {
+    font-size: 20px;
+  }
+
+  .emptyState {
+    padding: 32px 16px;
+  }
 }

@@ -16,7 +16,7 @@ export interface UpdateMemberDTO {
   email?: string;
   phone?: string;
   role?: string;
-  status?: 'ACTIVE' | 'BLOCKED' | 'TERMINATED';  // ✅ CORRIGIDO
+  status?: 'ACTIVE' | 'BLOCKED' | 'TERMINATED';
 }
 
 const getCurrentUser = () => {
@@ -46,7 +46,7 @@ export const teamService = {
   // ✅ Buscar membros da equipe (OWNER)
   getTeamMembers: async (): Promise<User[]> => {
     try {
-      console.log('👥 Buscando membros da equipe (OWNER)...');
+      console.log('👥 Buscando membros da equipe...');
       const response = await api.get('/api/users/team');
       
       const members = (response.data || []).map((user: any) => ({
@@ -64,14 +64,15 @@ export const teamService = {
         lastAccess: user.lastAccess
       }));
       
-      console.log(`✅ ${members.length} membros da equipe encontrados`);
+      console.log(`✅ ${members.length} membros encontrados`);
       return members;
     } catch (error) {
-      console.error('❌ Erro ao buscar membros da equipe:', error);
+      console.error('❌ Erro ao buscar membros:', error);
       throw error;
     }
   },
 
+  // ✅ Buscar membro por ID
   getTeamMemberById: async (id: number): Promise<User> => {
     try {
       const response = await api.get(`/api/users/${id}`);
@@ -97,6 +98,7 @@ export const teamService = {
     }
   },
 
+  // ✅ CORRIGIDO: Criar membro da equipe (usa /api/users/clients)
   createTeamMember: async (data: CreateMemberDTO): Promise<User> => {
     try {
       const currentUser = getCurrentUser();
@@ -106,24 +108,25 @@ export const teamService = {
         throw new Error('Usuário não está associado a uma organização');
       }
       
-      console.log('🏢 Criando membro da equipe para organização ID:', organizationId);
+      console.log('🏢 Criando membro para organização ID:', organizationId);
       
       const userData = {
         name: data.name,
         email: data.email,
         cpf: data.cpf.replace(/\D/g, ''),
         phone: data.phone ? data.phone.replace(/\D/g, '') : '',
-        password: data.password,
+        password: data.password || '123456',
         role: data.role || 'MANAGER',
         userType: 'OWNER',
         status: 'ACTIVE',
-        organizationId: organizationId
+        organization: { id: organizationId }
       };
       
-      console.log('📤 Enviando dados:', { ...userData, password: '***' });
+      console.log('📤 Enviando:', { ...userData, password: '***' });
       
-      const response = await api.post('/api/users/team', userData);
-      console.log('✅ Resposta do servidor:', response.data);
+      // ✅ Usa o mesmo endpoint de criação de clientes
+      const response = await api.post('/api/users/clients', userData);
+      console.log('✅ Membro criado:', response.data);
       
       return {
         id: response.data.id,
@@ -155,6 +158,7 @@ export const teamService = {
     }
   },
 
+  // ✅ Atualizar membro
   updateTeamMember: async (id: number, data: UpdateMemberDTO): Promise<User> => {
     try {
       const userData: any = {};
@@ -162,7 +166,10 @@ export const teamService = {
       if (data.email) userData.email = data.email;
       if (data.phone) userData.phone = data.phone.replace(/\D/g, '');
       if (data.role) userData.role = data.role;
-      if (data.status) userData.status = data.status;
+      if (data.status) {
+        // Mapear status do frontend para o backend
+        userData.status = data.status === 'INACTIVE' ? 'BLOCKED' : data.status;
+      }
       
       const response = await api.put(`/api/users/${id}`, userData);
       
@@ -188,16 +195,14 @@ export const teamService = {
     }
   },
 
-  // ✅ CORRIGIDO: Mapear status do frontend para o backend
+  // ✅ Atualizar apenas status do membro
   updateMemberStatus: async (id: number, status: string): Promise<User> => {
     try {
-      // Mapear status do frontend para o backend
-      let backendStatus = status;
-      if (status === 'INACTIVE') {
-        backendStatus = 'BLOCKED';
-      }
+      // Mapear INACTIVE para BLOCKED (status do backend)
+      const backendStatus = status === 'INACTIVE' ? 'BLOCKED' : status;
       
       const response = await api.put(`/api/users/${id}`, { status: backendStatus });
+      
       return {
         id: response.data.id,
         name: response.data.name,
@@ -220,6 +225,7 @@ export const teamService = {
     }
   },
 
+  // ✅ Deletar membro
   deleteTeamMember: async (id: number): Promise<void> => {
     try {
       await api.delete(`/api/users/${id}`);
@@ -230,6 +236,10 @@ export const teamService = {
       throw error;
     }
   },
+
+  // ============================================================
+  // UTILITÁRIOS
+  // ============================================================
 
   formatCPF: (cpf: string): string => {
     if (!cpf) return '';
@@ -277,12 +287,11 @@ export const teamService = {
   },
 
   validateEmail: (email: string): boolean => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   },
 
   getRoleLabel: (role: string): string => {
-    const labels: { [key: string]: string } = {
+    const labels: Record<string, string> = {
       'ADMIN': 'Administrador',
       'DIRECTOR': 'Diretor',
       'MANAGER': 'Gerente',
@@ -294,33 +303,33 @@ export const teamService = {
   },
 
   getRoleColor: (role: string): string => {
-    const colors: { [key: string]: string } = {
-      'ADMIN': '#dc2626',
-      'DIRECTOR': '#ea580c',
-      'MANAGER': '#0284c7',
-      'ANALYST': '#16a34a',
-      'DEVELOPER': '#3b82f6',
-      'OWNER': '#00B4D8'
+    const colors: Record<string, string> = {
+      'ADMIN': '#ef4444',
+      'DIRECTOR': '#f97316',
+      'MANAGER': '#3b82f6',
+      'ANALYST': '#10b981',
+      'DEVELOPER': '#8b5cf6',
+      'OWNER': '#06b6d4'
     };
     return colors[role] || '#6b7280';
   },
 
-  // ✅ Função auxiliar para mapear status para exibição
   getStatusLabel: (status: string): string => {
-    const labels: { [key: string]: string } = {
+    const labels: Record<string, string> = {
       'ACTIVE': 'Ativo',
       'BLOCKED': 'Bloqueado',
-      'TERMINATED': 'Desligado'
+      'TERMINATED': 'Desligado',
+      'INACTIVE': 'Inativo'
     };
     return labels[status] || status;
   },
 
-  // ✅ Função auxiliar para cor de status
   getStatusColor: (status: string): string => {
-    const colors: { [key: string]: string } = {
+    const colors: Record<string, string> = {
       'ACTIVE': '#10b981',
       'BLOCKED': '#f59e0b',
-      'TERMINATED': '#ef4444'
+      'TERMINATED': '#ef4444',
+      'INACTIVE': '#f59e0b'
     };
     return colors[status] || '#6b7280';
   }

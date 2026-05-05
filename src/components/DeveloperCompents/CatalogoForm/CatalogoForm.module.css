@@ -1,9 +1,9 @@
 /* src/components/DeveloperCompents/Catalogo/CatalogoForm.module.css */
 
 .formContainer {
-  background: white;
+  background: var(--card-bg, white);
   border-radius: 16px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--border-color, #e2e8f0);
   padding: 24px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
 }
@@ -11,7 +11,7 @@
 .formHeader {
   margin-bottom: 24px;
   padding-bottom: 16px;
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid var(--border-color, #e2e8f0);
 }
 
 .formHeader h1 {
@@ -20,12 +20,12 @@
   gap: 8px;
   font-size: 24px;
   font-weight: 600;
-  color: #0f172a;
+  color: var(--text-primary, #0f172a);
   margin: 0;
 }
 
 .formHeader h1 svg {
-  color: #00B4D8;
+  color: var(--accent-primary, #6366f1);
 }
 
 .errorMessage {
@@ -33,28 +33,25 @@
   align-items: center;
   gap: 8px;
   padding: 12px 16px;
-  background: #fee2e2;
-  border: 1px solid #fecaca;
+  background: var(--error-bg, #fee2e2);
+  border: 1px solid var(--error-border, #fecaca);
   border-radius: 8px;
-  color: #991b1b;
+  color: var(--error-text, #991b1b);
   font-size: 14px;
   margin-bottom: 20px;
 }
 
-.errorMessage svg {
-  color: #dc2626;
-  font-size: 18px;
-}
+.errorMessage svg { color: #dc2626; font-size: 18px; }
 
 .successMessage {
   display: flex;
   align-items: center;
   gap: 8px;
   padding: 12px 16px;
-  background: #d1fae5;
-  border: 1px solid #a7f3d0;
+  background: var(--success-bg, #d1fae5);
+  border: 1px solid var(--success-border, #a7f3d0);
   border-radius: 8px;
-  color: #065f46;
+  color: var(--success-text, #065f46);
   font-size: 14px;
   margin-bottom: 20px;
 }
@@ -77,11 +74,11 @@
   gap: 6px;
   font-size: 14px;
   font-weight: 500;
-  color: #475569;
+  color: var(--text-muted, #475569);
 }
 
 .formGroup label svg {
-  color: #00B4D8;
+  color: var(--accent-primary, #6366f1);
   font-size: 16px;
 }
 
@@ -90,11 +87,11 @@
 .formGroup textarea {
   width: 100%;
   padding: 10px 12px;
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
+  background: var(--bg-tertiary, #f8fafc);
+  border: 1px solid var(--border-color, #e2e8f0);
   border-radius: 8px;
   font-size: 14px;
-  color: #0f172a;
+  color: var(--text-primary, #0f172a);
   outline: none;
   transition: all 0.2s;
   font-family: inherit;
@@ -103,14 +100,14 @@
 .formGroup input:focus,
 .formGroup select:focus,
 .formGroup textarea:focus {
-  border-color: #00B4D8;
-  box-shadow: 0 0 0 3px rgba(0, 180, 216, 0.1);
+  border-color: var(--accent-primary, #6366f1);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
 }
 
 .formGroup input:disabled,
 .formGroup select:disabled,
 .formGroup textarea:disabled {
-  background: #f1f5f9;
+  background: var(--bg-secondary, #f1f5f9);
   cursor: not-allowed;
   opacity: 0.7;
 }
@@ -137,7 +134,7 @@
   gap: 12px;
   margin-top: 24px;
   padding-top: 20px;
-  border-top: 1px solid #e2e8f0;
+  border-top: 1px solid var(--border-color, #e2e8f0);
 }
 
 .cancelButton {
@@ -145,32 +142,29 @@
   align-items: center;
   gap: 8px;
   padding: 10px 20px;
-  background: white;
-  border: 1px solid #e2e8f0;
+  background: var(--card-bg, white);
+  border: 1px solid var(--border-color, #e2e8f0);
   border-radius: 8px;
   font-size: 14px;
   font-weight: 500;
-  color: #64748b;
+  color: var(--text-muted, #64748b);
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .cancelButton:hover:not(:disabled) {
-  background: #f1f5f9;
-  color: #475569;
+  background: var(--bg-tertiary, #f1f5f9);
+  color: var(--text-primary, #475569);
 }
 
-.cancelButton:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
+.cancelButton:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .saveButton {
   display: flex;
   align-items: center;
   gap: 8px;
   padding: 10px 24px;
-  background: #00B4D8;
+  background: var(--accent-primary, #6366f1);
   border: none;
   border-radius: 8px;
   font-size: 14px;
@@ -181,15 +175,12 @@
 }
 
 .saveButton:hover:not(:disabled) {
-  background: #0096b0;
+  background: var(--accent-primary-dark, #4f46e5);
   transform: translateY(-2px);
-  box-shadow: 0 4px 6px -1px rgba(0, 180, 216, 0.3);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
 }
 
-.saveButton:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
+.saveButton:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .loadingContainer {
   display: flex;
@@ -203,8 +194,8 @@
 .spinner {
   width: 48px;
   height: 48px;
-  border: 4px solid #e2e8f0;
-  border-top: 4px solid #00B4D8;
+  border: 4px solid var(--border-color, #e2e8f0);
+  border-top: 4px solid var(--accent-primary, #6366f1);
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
@@ -214,23 +205,60 @@
   100% { transform: rotate(360deg); }
 }
 
+/* ==================== DARK MODE ==================== */
+:global([data-theme="dark"]) .formContainer,
+:global(.dark) .formContainer {
+  background: var(--card-bg, #1e293b);
+}
+
+:global([data-theme="dark"]) .formHeader h1,
+:global(.dark) .formHeader h1 {
+  color: var(--text-primary, #f1f5f9);
+}
+
+:global([data-theme="dark"]) .formGroup label,
+:global(.dark) .formGroup label {
+  color: var(--text-muted, #94a3b8);
+}
+
+:global([data-theme="dark"]) .formGroup input,
+:global([data-theme="dark"]) .formGroup select,
+:global([data-theme="dark"]) .formGroup textarea,
+:global(.dark) .formGroup input,
+:global(.dark) .formGroup select,
+:global(.dark) .formGroup textarea {
+  background: var(--bg-tertiary, #0f172a);
+  border-color: var(--border-color, #334155);
+  color: var(--text-primary, #f1f5f9);
+}
+
+:global([data-theme="dark"]) .formGroup input:focus,
+:global([data-theme="dark"]) .formGroup select:focus,
+:global([data-theme="dark"]) .formGroup textarea:focus,
+:global(.dark) .formGroup input:focus,
+:global(.dark) .formGroup select:focus,
+:global(.dark) .formGroup textarea:focus {
+  border-color: var(--accent-primary, #818cf8);
+  box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.15);
+}
+
+:global([data-theme="dark"]) .cancelButton,
+:global(.dark) .cancelButton {
+  background: var(--card-bg, #1e293b);
+  border-color: var(--border-color, #334155);
+  color: var(--text-muted, #94a3b8);
+}
+
+:global([data-theme="dark"]) .cancelButton:hover:not(:disabled),
+:global(.dark) .cancelButton:hover:not(:disabled) {
+  background: var(--bg-tertiary, #0f172a);
+  color: var(--text-primary, #e2e8f0);
+}
+
 /* Responsive */
 @media (max-width: 768px) {
-  .formContainer {
-    padding: 16px;
-  }
-
-  .formRow {
-    grid-template-columns: 1fr;
-  }
-
-  .formActions {
-    flex-direction: column-reverse;
-  }
-
-  .cancelButton,
-  .saveButton {
-    width: 100%;
-    justify-content: center;
-  }
+  .formContainer { padding: 16px; }
+  .formRow { grid-template-columns: 1fr; }
+  .formActions { flex-direction: column-reverse; }
+  .cancelButton, .saveButton { width: 100%; justify-content: center; }
 }

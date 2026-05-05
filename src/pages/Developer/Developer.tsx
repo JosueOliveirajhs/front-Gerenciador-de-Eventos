@@ -23,7 +23,6 @@ import { CatalogoDetails } from '../../components/DeveloperCompents/CatalogoDeta
 import { SettingsPage } from '../../components/OwnerCompoents/settings/SettingsPage';
 import { ProfilePage } from '../../components/OwnerCompoents/settings/ProfilePage';
 import { NotificationsPage } from '../../components/OwnerCompoents/settings/NotificationsPage';
-import { Settings } from '../../components/DeveloperCompents/Settings/Settings';
 import styles from './Developer.module.css';
 
 /**
@@ -34,6 +33,10 @@ import styles from './Developer.module.css';
  * /developer/organizations/1        -> { view: 'organizations', subView: '1', id: 1 }
  * /developer/organizations/new      -> { view: 'organizations', subView: 'new', id: null }
  * /developer/organizations/edit/1   -> { view: 'organizations', subView: 'edit', id: 1 }
+ * /developer/catalogo               -> { view: 'catalogo', subView: 'list', id: null }
+ * /developer/catalogo/1             -> { view: 'catalogo', subView: '1', id: 1 }
+ * /developer/catalogo/new           -> { view: 'catalogo', subView: 'new', id: null }
+ * /developer/catalogo/edit/1        -> { view: 'catalogo', subView: 'edit', id: 1 }
  */
 const parsePath = (pathname: string) => {
   const parts = pathname.split('/').filter(Boolean);
@@ -131,13 +134,19 @@ export const Developer: React.FC = () => {
     console.log('🎨 Renderizando:', { activeView, subView, selectedId });
     
     switch (activeView) {
+      // ============================================================
+      // DASHBOARD
+      // ============================================================
       case 'dashboard':
         return <DeveloperDashboard onNavigate={(path: string) => navigate(path)} />;
         
+      // ============================================================
+      // ORGANIZATIONS
+      // ============================================================
       case 'organizations':
         // SubView = 'new' ou 'edit' -> Formulário
         if (subView === 'new' || subView === 'edit') {
-          console.log('📝 Mostrando formulário. ID:', selectedId);
+          console.log('📝 Organizations - Formulário. ID:', selectedId);
           return (
             <OrganizationForm 
               organizationId={selectedId || stateParams?.organizationId} 
@@ -156,28 +165,22 @@ export const Developer: React.FC = () => {
         // SubView é um número -> Detalhes
         if (subView && !isNaN(parseInt(subView))) {
           const orgId = parseInt(subView);
-          console.log('👁️ Mostrando detalhes da organização:', orgId);
+          console.log('👁️ Organizations - Detalhes:', orgId);
           return (
             <OrganizationDetails 
               organizationId={orgId}
-              onBack={() => {
-                console.log('⬅️ Voltando para lista');
-                navigate('/developer/organizations');
-              }}
-              onEdit={(id) => {
-                console.log('✏️ Editando organização:', id);
-                navigate(`/developer/organizations/edit/${id}`);
-              }}
+              onBack={() => navigate('/developer/organizations')}
+              onEdit={(id) => navigate(`/developer/organizations/edit/${id}`)}
             />
           );
         }
         
-        // SubView = 'list' -> Lista de organizações
-        console.log('📋 Mostrando lista de organizações');
+        // SubView = 'list' -> Lista
+        console.log('📋 Organizations - Lista');
         return (
           <Organizations 
             onNavigate={(view, id) => {
-              console.log('🧭 onNavigate chamado:', { view, id });
+              console.log('🧭 Organizations onNavigate:', { view, id });
               if (view === 'details' && id) {
                 navigate(`/developer/organizations/${id}`);
               } else if (view === 'form' && id) {
@@ -189,52 +192,85 @@ export const Developer: React.FC = () => {
           />
         );
         
+      // ============================================================
+      // CATALOGO
+      // ============================================================
       case 'catalogo':
         // SubView = 'new' ou 'edit' -> Formulário
         if (subView === 'new' || subView === 'edit') {
+          console.log('📝 Catálogo - Formulário. ID:', selectedId);
           return (
             <CatalogoForm 
               empresaId={selectedId || stateParams?.empresaId} 
-              onSuccess={() => navigate('/developer/catalogo')}
-              onCancel={() => navigate('/developer/catalogo')}
+              onSuccess={() => {
+                console.log('✅ Catálogo - Formulário salvo');
+                navigate('/developer/catalogo');
+              }}
+              onCancel={() => {
+                console.log('❌ Catálogo - Formulário cancelado');
+                navigate('/developer/catalogo');
+              }}
             />
           );
         }
         
         // SubView é um número -> Detalhes
         if (subView && !isNaN(parseInt(subView))) {
+          const empresaId = parseInt(subView);
+          console.log('👁️ Catálogo - Detalhes:', empresaId);
           return (
             <CatalogoDetails 
-              empresaId={parseInt(subView)}
+              empresaId={empresaId}
               onBack={() => navigate('/developer/catalogo')}
-              onEdit={(id) => navigate(`/developer/catalogo/edit/${id}`)}
+              onEdit={(id) => {
+                console.log('✏️ Catálogo - Editando:', id);
+                navigate(`/developer/catalogo/edit/${id}`);
+              }}
             />
           );
         }
         
-        // Lista
+        // SubView = 'list' -> Lista
+        console.log('📋 Catálogo - Lista');
         return (
           <Catalogo 
             onNavigate={(view, id) => {
-              if (view === 'details' && id) navigate(`/developer/catalogo/${id}`);
-              if (view === 'form' && id) navigate(`/developer/catalogo/edit/${id}`);
-              if (view === 'form') navigate('/developer/catalogo/new');
+              console.log('🧭 Catálogo onNavigate:', { view, id });
+              if (view === 'details' && id) {
+                navigate(`/developer/catalogo/${id}`);
+              } else if (view === 'form' && id) {
+                navigate(`/developer/catalogo/edit/${id}`);
+              } else if (view === 'form') {
+                navigate('/developer/catalogo/new');
+              }
             }} 
           />
         );
         
+      // ============================================================
+      // SETTINGS
+      // ============================================================
       case 'settings':
       case 'configuracoes':
         return <SettingsPage />;
         
+      // ============================================================
+      // PROFILE
+      // ============================================================
       case 'profile':
       case 'perfil':
         return <ProfilePage />;
         
+      // ============================================================
+      // NOTIFICATIONS
+      // ============================================================
       case 'notifications':
       case 'notificacoes':
         return <NotificationsPage />;
         
+      // ============================================================
+      // DEFAULT
+      // ============================================================
       default:
         return <DeveloperDashboard onNavigate={(path: string) => navigate(path)} />;
     }
