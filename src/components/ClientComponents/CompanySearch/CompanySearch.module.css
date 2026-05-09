@@ -1,0 +1,366 @@
+/* src/components/ClientComponents/CompanySearch/CompanySearch.module.css */
+
+.companySearch {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.searchHeader {
+  margin-bottom: 24px;
+}
+
+.searchHeader h2 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text-primary, #1a1a2e);
+  margin: 0 0 6px;
+}
+
+.searchHeader p {
+  color: var(--text-muted, #6b7280);
+  font-size: 14px;
+  margin: 0;
+}
+
+.searchSection {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.searchBox {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  background: var(--card-bg, #fff);
+  border: 1px solid var(--border-color, #e5e7eb);
+  border-radius: 12px;
+}
+
+.searchBox input {
+  flex: 1;
+  border: none;
+  outline: none;
+  font-size: 14px;
+  background: none;
+  color: var(--text-primary, #1a1a2e);
+}
+
+.searchBox input::placeholder {
+  color: var(--text-muted, #9ca3af);
+}
+
+.filterButton {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  background: var(--card-bg, #fff);
+  border: 1px solid var(--border-color, #e5e7eb);
+  border-radius: 12px;
+  font-size: 14px;
+  color: var(--text-muted, #6b7280);
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+}
+
+.filterButton:hover {
+  background: var(--bg-tertiary, #f1f5f9);
+}
+
+.filterActive {
+  border-color: var(--accent-primary, #00B4D8);
+  color: var(--accent-primary, #00B4D8);
+}
+
+.filterBadge {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  color: var(--accent-primary, #00B4D8);
+  font-size: 10px;
+}
+
+.filtersPanel {
+  display: flex;
+  gap: 16px;
+  padding: 16px;
+  background: var(--card-bg, #fff);
+  border: 1px solid var(--border-color, #e5e7eb);
+  border-radius: 12px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  align-items: flex-end;
+}
+
+.filterGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.filterGroup label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-muted, #6b7280);
+}
+
+.filterGroup select {
+  padding: 8px 12px;
+  border: 1px solid var(--border-color, #e5e7eb);
+  border-radius: 8px;
+  font-size: 13px;
+  background: var(--bg-primary, #fff);
+  color: var(--text-primary, #1a1a2e);
+  cursor: pointer;
+  outline: none;
+}
+
+.clearFiltersButton {
+  padding: 8px 16px;
+  background: none;
+  border: 1px solid var(--border-color, #e5e7eb);
+  border-radius: 8px;
+  font-size: 13px;
+  color: var(--text-muted, #6b7280);
+  cursor: pointer;
+}
+
+.clearFiltersButton:hover {
+  background: var(--bg-tertiary, #f1f5f9);
+}
+
+.resultsInfo {
+  margin-bottom: 16px;
+  font-size: 13px;
+  color: var(--text-muted, #6b7280);
+}
+
+.companiesList {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.companyCard {
+  background: var(--card-bg, #fff);
+  border: 1px solid var(--border-color, #e5e7eb);
+  border-radius: 16px;
+  padding: 20px 24px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.companyCard:hover {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  border-color: var(--accent-primary, #00B4D8);
+  transform: translateY(-2px);
+}
+
+.companyHeader {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.companyLogo {
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+  background: var(--bg-tertiary, #f1f5f9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted, #6b7280);
+  flex-shrink: 0;
+}
+
+.companyInfo {
+  flex: 1;
+}
+
+.companyNameRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.companyNameRow h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary, #1a1a2e);
+  margin: 0;
+}
+
+.verifiedIcon {
+  color: #10b981;
+}
+
+.companyRating {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text-muted, #6b7280);
+}
+
+.companyDescription {
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text-secondary, #64748b);
+  margin: 0 0 12px;
+}
+
+.companyMeta {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.location, .availability {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  color: var(--text-muted, #6b7280);
+}
+
+.specialties {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.specialtyTag {
+  padding: 4px 12px;
+  background: var(--bg-secondary, #f8f9fa);
+  border-radius: 20px;
+  font-size: 12px;
+  color: var(--text-secondary, #64748b);
+  font-weight: 500;
+}
+
+.viewButton {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: var(--accent-primary, #00B4D8);
+  border: none;
+  border-radius: 8px;
+  color: white;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.viewButton:hover {
+  background: #0096b4;
+}
+
+.emptyState {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--text-muted, #6b7280);
+}
+
+.emptyState svg {
+  margin-bottom: 12px;
+  opacity: 0.4;
+}
+
+.emptyState h3 {
+  margin: 0 0 8px;
+  color: var(--text-primary, #1a1a2e);
+  font-size: 18px;
+}
+
+.emptyState p {
+  font-size: 14px;
+}
+
+.loadingContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+  gap: 16px;
+  color: var(--text-muted, #6b7280);
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--border-color, #e5e7eb);
+  border-top-color: var(--accent-primary, #00B4D8);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.errorContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+  gap: 12px;
+  text-align: center;
+  color: var(--text-muted, #6b7280);
+}
+
+.errorContainer h3 {
+  color: var(--text-primary, #1a1a2e);
+  margin: 0;
+}
+
+.retryButton {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: var(--accent-primary, #00B4D8);
+  border: none;
+  border-radius: 8px;
+  color: white;
+  font-weight: 500;
+  cursor: pointer;
+  margin-top: 8px;
+}
+
+.retryButton:hover {
+  background: #0096b4;
+}
+
+@media (max-width: 768px) {
+  .companySearch {
+    padding: 16px;
+  }
+  
+  .searchSection {
+    flex-direction: column;
+  }
+  
+  .filtersPanel {
+    flex-direction: column;
+  }
+  
+  .companyCard {
+    padding: 16px;
+  }
+}

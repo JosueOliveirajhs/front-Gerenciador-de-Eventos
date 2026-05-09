@@ -1,0 +1,960 @@
+/* src/pages/OwnerCompoents/settings/NotificationsPage.module.css */
+
+.notificationsPage {
+  padding: 24px;
+  max-width: 1400px;
+  margin: 0 auto;
+  background-color: var(--bg-secondary);
+  min-height: 100vh;
+}
+
+/* ========== HEADER ========== */
+.pageHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.pageTitle {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 8px 0;
+}
+
+.pageTitle svg {
+  color: var(--primary-500);
+}
+
+.unreadBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 24px;
+  padding: 0 8px;
+  background: var(--error-500);
+  color: white;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: 9999px;
+}
+
+.pageSubtitle {
+  font-size: 14px;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.headerActions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* ========== BOTÕES ========== */
+.primaryButton {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: #00B4D8;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.primaryButton:hover:not(:disabled) {
+  background: #0096b4;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 180, 216, 0.3);
+}
+
+.primaryButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.secondaryButton {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.secondaryButton:hover {
+  background: var(--bg-secondary);
+  border-color: var(--primary-500);
+  color: var(--primary-500);
+}
+
+.secondaryButton.active {
+  background: var(--primary-50);
+  border-color: var(--primary-500);
+  color: var(--primary-500);
+}
+
+/* ========== PAINÉIS ========== */
+.preferencesPanel,
+.managerPanel {
+  background: var(--card-bg);
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 24px;
+  border: 1px solid var(--card-border);
+  box-shadow: var(--shadow-md);
+}
+
+.panelTitle {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 20px 0;
+}
+
+.managerHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.toggleRecipientList {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.toggleRecipientList:hover {
+  background: var(--bg-secondary);
+  border-color: var(--primary-500);
+  color: var(--primary-500);
+}
+
+.preferencesGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+.preferencesColumn h4 {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin: 0 0 16px 0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* ========== FORMULÁRIOS ========== */
+.managerGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+.managerForm {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.formLabel {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.formInput,
+.formTextarea,
+.formSelect {
+  padding: 10px 12px;
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-size: 14px;
+  transition: all 0.2s;
+  width: 100%;
+}
+
+.formInput:focus,
+.formTextarea:focus,
+.formSelect:focus {
+  outline: none;
+  border-color: var(--primary-500);
+  box-shadow: 0 0 0 3px rgba(0, 180, 216, 0.1);
+}
+
+.formTextarea {
+  resize: vertical;
+  min-height: 100px;
+}
+
+.formRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.selectedCount {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  background: var(--primary-50);
+  border-radius: 8px;
+  color: var(--primary-600);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+/* ========== LISTA DE DESTINATÁRIOS ========== */
+.managerUsers {
+  background: var(--bg-tertiary);
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  max-height: 400px;
+}
+
+.recipientHeader {
+  margin-bottom: 16px;
+}
+
+.managerUsersTitle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 12px 0;
+}
+
+.recipientFilters {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.filterChip {
+  padding: 6px 12px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.filterChip:hover {
+  background: var(--bg-primary);
+  border-color: var(--primary-500);
+}
+
+.filterChip.active {
+  background: var(--primary-500);
+  border-color: var(--primary-500);
+  color: white;
+}
+
+.recipientSearch {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  border-radius: 8px;
+  margin-bottom: 12px;
+}
+
+.recipientSearch svg {
+  color: var(--text-muted);
+}
+
+.recipientSearchInput {
+  flex: 1;
+  border: none;
+  background: transparent;
+  color: var(--text-primary);
+  font-size: 13px;
+  outline: none;
+  min-width: 0;
+}
+
+.recipientSearchInput::placeholder {
+  color: var(--text-muted);
+}
+
+.clearSearch {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 2px;
+  border-radius: 4px;
+}
+
+.clearSearch:hover {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+.selectAllLabel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0;
+  margin-bottom: 8px;
+  border-bottom: 1px solid var(--border-color);
+  cursor: pointer;
+}
+
+.selectAllLabel input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--primary-500);
+}
+
+.filteredCount {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-left: auto;
+}
+
+.usersListContainer {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.usersListContainer::-webkit-scrollbar {
+  width: 6px;
+}
+
+.usersListContainer::-webkit-scrollbar-track {
+  background: var(--bg-secondary);
+  border-radius: 4px;
+}
+
+.usersListContainer::-webkit-scrollbar-thumb {
+  background: var(--gray-400);
+  border-radius: 4px;
+}
+
+.recipientItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 8px;
+  background: var(--bg-secondary);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.recipientItem:hover {
+  background: var(--bg-primary);
+}
+
+.recipientItem input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--primary-500);
+  flex-shrink: 0;
+}
+
+.recipientInfo {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.recipientName {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.recipientEmail {
+  font-size: 11px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.employeeBadge {
+  padding: 2px 8px;
+  background: var(--primary-100);
+  color: var(--primary-600);
+  font-size: 10px;
+  font-weight: 600;
+  border-radius: 4px;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+
+.clientBadge {
+  padding: 2px 8px;
+  background: var(--success-100);
+  color: var(--success-600);
+  font-size: 10px;
+  font-weight: 600;
+  border-radius: 4px;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+
+.noRecipients {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.noRecipients svg {
+  margin-bottom: 8px;
+  opacity: 0.5;
+}
+
+/* ========== CHECKBOX ========== */
+.checkboxLabel {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--text-primary);
+}
+
+.checkboxLabel input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--primary-500);
+}
+
+.quietHoursInputs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.quietHoursInputs input {
+  flex: 1;
+  min-width: 0;
+}
+
+.quietHoursInputs span {
+  color: var(--text-muted);
+}
+
+/* ========== RESERVATION CARD ========== */
+.reservationCard {
+  border-left: 4px solid #3b82f6 !important;
+  background: linear-gradient(90deg, rgba(59, 130, 246, 0.05) 0%, transparent 100%);
+}
+
+.reservationActions {
+  display: flex;
+  gap: 12px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #e5e7eb;
+  flex-wrap: wrap;
+}
+
+.acceptButton {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: #10b981;
+  border: none;
+  border-radius: 8px;
+  color: white;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.acceptButton:hover {
+  background: #059669;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.acceptButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.rejectButton {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: white;
+  border: 1px solid #ef4444;
+  border-radius: 8px;
+  color: #ef4444;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.rejectButton:hover {
+  background: #fef2f2;
+}
+
+.rejectButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.viewDetailsButton {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: white;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  color: #6b7280;
+  font-weight: 500;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-left: auto;
+}
+
+.viewDetailsButton:hover {
+  background: #f9fafb;
+  border-color: #9ca3af;
+}
+
+.processedStatus {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: #f3f4f6;
+  border-radius: 20px;
+  font-size: 12px;
+  color: #6b7280;
+}
+
+/* ========== PAINEL ACTIONS ========== */
+.panelActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border-color);
+  flex-wrap: wrap;
+}
+
+/* ========== FILTROS ========== */
+.filtersBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 20px;
+  padding: 16px;
+  background: var(--card-bg);
+  border-radius: 12px;
+  border: 1px solid var(--card-border);
+}
+
+.filterGroup {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.filterButton {
+  padding: 8px 16px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.filterButton:hover {
+  background: var(--bg-secondary);
+  border-color: var(--primary-500);
+}
+
+.filterButton.activeFilter {
+  background: var(--primary-500);
+  border-color: var(--primary-500);
+  color: white;
+}
+
+.filterSelect {
+  padding: 8px 16px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+/* ========== LISTA DE NOTIFICAÇÕES ========== */
+.notificationsList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.notificationCard {
+  display: flex;
+  gap: 16px;
+  padding: 20px;
+  background: var(--card-bg);
+  border-radius: 16px;
+  border: 1px solid var(--card-border);
+  transition: all 0.2s;
+}
+
+.notificationCard:hover {
+  box-shadow: var(--shadow-md);
+  border-color: var(--primary-500);
+}
+
+.notificationCard.unread {
+  background: var(--primary-50);
+  border-color: var(--primary-200);
+}
+
+.notificationIcon {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  flex-shrink: 0;
+}
+
+.notificationContent {
+  flex: 1;
+  min-width: 0;
+}
+
+.notificationHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.notificationTitle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.unreadDot {
+  width: 8px;
+  height: 8px;
+  background: var(--primary-500);
+  border-radius: 50%;
+}
+
+.notificationMeta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.priorityBadge {
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: white;
+  text-transform: uppercase;
+}
+
+.notificationTime {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.notificationMessage {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin: 0 0 12px 0;
+  line-height: 1.5;
+}
+
+.notificationSender {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin: 0 0 12px 0;
+}
+
+.notificationSender strong {
+  color: var(--text-primary);
+}
+
+.notificationFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.notificationAction {
+  font-size: 13px;
+  color: var(--primary-500);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.notificationAction:hover {
+  text-decoration: underline;
+}
+
+.notificationActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.markReadButton {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  background: var(--bg-tertiary);
+  border: none;
+  border-radius: 6px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.markReadButton:hover {
+  background: var(--primary-50);
+  color: var(--primary-500);
+}
+
+.deleteButton {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.deleteButton:hover {
+  background: var(--error-50);
+  color: var(--error-500);
+}
+
+/* ========== RESPONSIVO ========== */
+@media (max-width: 1024px) {
+  .preferencesGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .managerGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .notificationsPage {
+    padding: 16px;
+  }
+  
+  .pageHeader {
+    flex-direction: column;
+  }
+  
+  .headerActions {
+    width: 100%;
+    flex-direction: column;
+  }
+  
+  .headerActions button {
+    flex: 1;
+    justify-content: center;
+    width: 100%;
+  }
+  
+  .preferencesGrid {
+    grid-template-columns: 1fr;
+  }
+  
+  .filtersBar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .filterGroup {
+    justify-content: center;
+  }
+  
+  .filterButton {
+    flex: 1;
+    text-align: center;
+  }
+  
+  .notificationCard {
+    flex-direction: column;
+  }
+  
+  .notificationHeader {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .notificationFooter {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .notificationActions {
+    margin-left: 0;
+    width: 100%;
+    justify-content: flex-end;
+  }
+  
+  .panelActions {
+    flex-direction: column;
+  }
+  
+  .panelActions button {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .quietHoursInputs {
+    flex-direction: column;
+  }
+
+  .reservationActions {
+    flex-direction: column;
+  }
+
+  .reservationActions button {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .viewDetailsButton {
+    margin-left: 0;
+  }
+}
+
+@media (max-width: 480px) {
+  .pageTitle {
+    font-size: 24px;
+  }
+  
+  .recipientFilters {
+    flex-direction: column;
+  }
+  
+  .filterChip {
+    text-align: center;
+  }
+
+  .notificationIcon {
+    width: 40px;
+    height: 40px;
+  }
+
+  .notificationTitle {
+    font-size: 14px;
+  }
+
+  .notificationMessage {
+    font-size: 13px;
+  }
+}

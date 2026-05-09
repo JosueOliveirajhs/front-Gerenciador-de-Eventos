@@ -1,0 +1,152 @@
+/* src/components/admin/events/EventConflictChecker.module.css */
+
+.container {
+    margin: 16px 0;
+    padding: 12px;
+    border-radius: 8px;
+    background-color: var(--bg-tertiary);
+}
+
+.loading {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: var(--text-muted);
+    font-size: 14px;
+}
+
+.spinner {
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--border-color);
+    border-top-color: var(--primary-500);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.conflictsList {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.conflict {
+    padding: 12px;
+    border-radius: 6px;
+    background-color: var(--card-bg);
+    border-left: 4px solid;
+}
+
+.conflict.time {
+    border-left-color: var(--warning-500);
+    background-color: var(--warning-50);
+}
+
+.conflict.date {
+    border-left-color: var(--error-500);
+    background-color: var(--error-50);
+}
+
+.conflict.resource {
+    border-left-color: #8b5cf6;
+    background-color: #f5f3ff;
+}
+
+.conflictHeader {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.conflictIcon {
+    font-size: 18px;
+}
+
+.conflictMessage {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.conflictEvents {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.conflictEvent {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px;
+    background-color: var(--card-bg);
+    border-radius: 4px;
+    font-size: 13px;
+}
+
+.conflictEventInfo {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.conflictEventInfo strong {
+    color: var(--text-primary);
+}
+
+.conflictEventTime {
+    color: var(--text-muted);
+    font-size: 12px;
+}
+
+.conflictEventClient {
+    color: var(--text-secondary);
+    font-size: 12px;
+}
+
+.conflictEventStatus {
+    padding: 2px 8px;
+    border-radius: 9999px;
+    font-size: 11px;
+    font-weight: 500;
+}
+
+.conflictEventStatus.quote {
+    background-color: var(--warning-100);
+    color: var(--warning-700);
+}
+
+.conflictEventStatus.confirmed {
+    background-color: var(--primary-100);
+    color: var(--primary-700);
+}
+
+.conflictEventStatus.completed {
+    background-color: var(--success-100);
+    color: var(--success-700);
+}
+
+.conflictEventStatus.cancelled {
+    background-color: var(--error-100);
+    color: var(--error-700);
+}
+
+.noConflicts {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--success-500);
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.successIcon {
+    font-size: 18px;
+}

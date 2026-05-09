@@ -1,0 +1,439 @@
+/* src/components/client/Notifications.module.css */
+
+.notifications {
+  max-width: 800px;
+  margin: 0 auto;
+  background: white;
+  border-radius: 16px;
+  border: 1px solid #e2e8f0;
+  overflow: hidden;
+}
+
+/* ========== HEADER ========== */
+.notificationsHeader {
+  padding: 20px 24px;
+  border-bottom: 1px solid #e2e8f0;
+  background: #f8fafc;
+}
+
+.headerLeft {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.headerLeft h2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 20px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+}
+
+.unreadCount {
+  padding: 4px 10px;
+  background: #ef4444;
+  color: white;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.headerActions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.filterTabs {
+  display: flex;
+  gap: 4px;
+  background: #e2e8f0;
+  padding: 4px;
+  border-radius: 10px;
+}
+
+.filterTab {
+  padding: 6px 16px;
+  background: none;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.filterTab:hover {
+  color: #0f172a;
+}
+
+.filterTab.active {
+  background: white;
+  color: #00B4D8;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.settingsButton {
+  padding: 8px;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.settingsButton:hover {
+  background: #00B4D8;
+  border-color: #00B4D8;
+  color: white;
+}
+
+.markAllButton {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.markAllButton:hover {
+  background: #10b981;
+  border-color: #10b981;
+  color: white;
+}
+
+/* ========== SETTINGS PANEL ========== */
+.settingsPanel {
+  padding: 24px;
+  border-bottom: 1px solid #e2e8f0;
+  background: #fafbfc;
+}
+
+.settingsPanel h3 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #0f172a;
+  margin: 0 0 16px 0;
+}
+
+.settingsPanel h4 {
+  font-size: 14px;
+  font-weight: 600;
+  color: #0f172a;
+  margin: 24px 0 16px 0;
+}
+
+.settingsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 16px;
+}
+
+.settingItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: white;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+}
+
+.settingInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.settingInfo strong {
+  font-size: 14px;
+  color: #0f172a;
+}
+
+.settingInfo span {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 24px;
+}
+
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #cbd5e1;
+  transition: 0.2s;
+  border-radius: 24px;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: 0.2s;
+  border-radius: 50%;
+}
+
+input:checked + .slider {
+  background-color: #00B4D8;
+}
+
+input:checked + .slider:before {
+  transform: translateX(20px);
+}
+
+/* ========== NOTIFICATIONS LIST ========== */
+.notificationsList {
+  max-height: 500px;
+  overflow-y: auto;
+}
+
+.notificationItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 20px 24px;
+  border-bottom: 1px solid #f1f5f9;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+}
+
+.notificationItem:hover {
+  background: #f8fafc;
+}
+
+.notificationItem.unread {
+  background: #f0fdff;
+}
+
+.notificationItem.highPriority {
+  border-left: 3px solid #ef4444;
+}
+
+.notificationIcon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.notificationContent {
+  flex: 1;
+}
+
+.notificationHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.notificationHeader h4 {
+  font-size: 15px;
+  font-weight: 600;
+  color: #0f172a;
+  margin: 0;
+}
+
+.unreadItem .notificationHeader h4 {
+  color: #00B4D8;
+}
+
+.priorityBadge {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  background: #fef2f2;
+  border-radius: 20px;
+  font-size: 10px;
+  font-weight: 600;
+  color: #ef4444;
+}
+
+.unreadDot {
+  width: 8px;
+  height: 8px;
+  background: #00B4D8;
+  border-radius: 50%;
+  margin-left: auto;
+}
+
+.notificationMessage {
+  margin: 0 0 8px 0;
+  font-size: 14px;
+  color: #475569;
+  line-height: 1.5;
+}
+
+.notificationFooter {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.notificationTime {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+.actionLink {
+  font-size: 13px;
+  font-weight: 500;
+  color: #00B4D8;
+}
+
+.deleteButton {
+  padding: 6px;
+  background: none;
+  border: none;
+  border-radius: 6px;
+  color: #94a3b8;
+  cursor: pointer;
+  opacity: 0;
+  transition: all 0.2s;
+}
+
+.notificationItem:hover .deleteButton {
+  opacity: 1;
+}
+
+.deleteButton:hover {
+  background: #fee2e2;
+  color: #ef4444;
+}
+
+/* ========== EMPTY STATE ========== */
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 64px 24px;
+  color: #94a3b8;
+  text-align: center;
+}
+
+.emptyState svg {
+  margin-bottom: 16px;
+  opacity: 0.5;
+}
+
+.emptyState h3 {
+  font-size: 18px;
+  color: #64748b;
+  margin: 0 0 8px 0;
+}
+
+.emptyState p {
+  margin: 0;
+  font-size: 14px;
+}
+
+/* ========== LOADING ========== */
+.loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+}
+
+.spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid #e2e8f0;
+  border-top-color: #00B4D8;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 16px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ========== RESPONSIVIDADE ========== */
+@media (max-width: 768px) {
+  .notificationsHeader {
+    padding: 16px;
+  }
+
+  .headerActions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .filterTabs {
+    justify-content: center;
+  }
+
+  .filterTab {
+    flex: 1;
+    text-align: center;
+  }
+
+  .markAllButton {
+    justify-content: center;
+  }
+
+  .settingsGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .notificationItem {
+    padding: 16px;
+  }
+
+  .notificationFooter {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .deleteButton {
+    opacity: 1;
+    position: absolute;
+    top: 16px;
+    right: 16px;
+  }
+}

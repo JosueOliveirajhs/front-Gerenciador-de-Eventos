@@ -1,0 +1,899 @@
+/* src/pages/Settings/SettingsPage.module.css */
+
+/* ========== CONTAINER PRINCIPAL ========== */
+.settingsPage {
+  min-height: 100vh;
+  background-color: var(--bg-secondary);
+  padding: 1.5rem;
+}
+
+/* ========== HEADER ========== */
+.pageHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  background: var(--card-bg);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--card-border);
+  box-shadow: var(--shadow-sm);
+}
+
+.pageTitle {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 0.5rem;
+}
+
+.pageTitle svg {
+  color: var(--primary-500);
+}
+
+.pageSubtitle {
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+  margin-left: 2.75rem;
+}
+
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.unsavedBadge {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: var(--warning-50);
+  color: var(--warning-600);
+  border-radius: var(--radius-full);
+  font-size: 0.875rem;
+  font-weight: 500;
+  border: 1px solid var(--warning-100);
+}
+
+/* ========== BOTÕES ========== */
+.primaryButton,
+.secondaryButton,
+.retryButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1.25rem;
+  border-radius: var(--radius-md);
+  font-weight: 500;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
+}
+
+.primaryButton {
+  background: #00B4D8;
+  color: white;
+}
+
+.primaryButton:hover:not(:disabled) {
+  background: #0096b0;
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.primaryButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.secondaryButton {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+}
+
+.secondaryButton:hover:not(:disabled) {
+  background: var(--bg-primary);
+  border-color: var(--gray-400);
+}
+
+.retryButton {
+  background: var(--primary-600);
+  color: white;
+  margin-top: 1rem;
+}
+
+.buttonSpinner {
+  width: 1rem;
+  height: 1rem;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ========== LAYOUT PRINCIPAL ========== */
+.settingsContainer {
+  display: flex;
+  gap: 1.5rem;
+  background: var(--card-bg);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--card-border);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+
+/* ========== SIDEBAR ========== */
+.settingsSidebar {
+  width: 280px;
+  background: var(--bg-tertiary);
+  padding: 1.5rem 0;
+  border-right: 1px solid var(--border-color);
+}
+
+.tabButton {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.875rem 1.5rem;
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: left;
+  border-left: 3px solid transparent;
+}
+
+.tabButton:hover {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+.tabButton svg {
+  color: var(--text-muted);
+  transition: color 0.2s;
+}
+
+.activeTab {
+  background: var(--primary-50);
+  color: var(--primary-600);
+  border-left-color: var(--primary-500);
+}
+
+.activeTab svg {
+  color: var(--primary-500);
+}
+
+/* ========== CONTEÚDO ========== */
+.settingsContent {
+  flex: 1;
+  padding: 2rem;
+  background: var(--card-bg);
+  min-height: 600px;
+}
+
+.settingsSection {
+  max-width: 800px;
+}
+
+.sectionTitle {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid var(--border-color);
+}
+
+.sectionDescription {
+  color: var(--text-secondary);
+  margin-bottom: 2rem;
+  font-size: 0.95rem;
+}
+
+/* ========== TEMA - SEÇÃO APARÊNCIA ========== */
+.themeSection {
+  padding: 1rem 0;
+}
+
+.themeOptions {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+  margin: 2rem 0;
+}
+
+.themeOption {
+  cursor: pointer;
+}
+
+.radioLabel {
+  display: block;
+  cursor: pointer;
+}
+
+.radioLabel input[type="radio"] {
+  display: none;
+}
+
+.themeCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 2rem 1rem;
+  background: var(--bg-secondary);
+  border: 2px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  transition: all 0.2s;
+}
+
+.radioLabel input[type="radio"]:checked + .themeCard {
+  border-color: var(--primary-500);
+  background: var(--primary-50);
+  box-shadow: var(--shadow-md);
+}
+
+.themeCard svg {
+  color: var(--text-primary);
+  margin-bottom: 1rem;
+}
+
+.themeCard span {
+  display: block;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 0.5rem;
+}
+
+.themeCard small {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+.themeNote {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+  background: var(--info-50);
+  border: 1px solid var(--info-100);
+  border-radius: var(--radius-md);
+  color: var(--info-600);
+  margin-top: 1.5rem;
+}
+
+.themeNote svg {
+  flex-shrink: 0;
+  color: var(--info-500);
+}
+
+.themeNote span {
+  font-size: 0.875rem;
+}
+
+/* Seção de Cores do Tema */
+.colorPickerSection {
+  margin-top: 2.5rem;
+  padding-top: 2rem;
+  border-top: 1px solid var(--border-color);
+}
+
+.colorPickerSection h3 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 1.5rem;
+}
+
+.colorOptions {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.5rem;
+}
+
+.colorOption label {
+  display: block;
+  font-weight: 500;
+  color: var(--text-secondary);
+  margin-bottom: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.colorInput {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+}
+
+.colorInput input[type="color"] {
+  width: 60px;
+  height: 40px;
+  padding: 0;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  background: transparent;
+}
+
+.colorInput span {
+  font-family: monospace;
+  font-size: 0.875rem;
+  color: var(--text-primary);
+}
+
+.previewSection {
+  margin-top: 2rem;
+}
+
+.previewSection h3 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 1rem;
+}
+
+.previewCard {
+  display: flex;
+  gap: 1rem;
+  padding: 1.5rem;
+  background: var(--bg-secondary);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-color);
+}
+
+.previewButton {
+  padding: 0.625rem 1.5rem;
+  border-radius: var(--radius-md);
+  color: white;
+  font-weight: 500;
+  font-size: 0.875rem;
+  cursor: default;
+}
+
+/* ========== FORMULÁRIOS ========== */
+.formGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.25rem;
+}
+
+.formGroup {
+  margin-bottom: 0;
+}
+
+.formGroupFull {
+  grid-column: span 2;
+}
+
+.formLabel {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+}
+
+.formLabel svg {
+  color: var(--text-muted);
+}
+
+.formInput {
+  width: 100%;
+  padding: 0.625rem 0.75rem;
+  background: var(--input-bg) !important;
+  border: 1px solid var(--input-border) !important;
+  border-radius: var(--radius-md) !important;
+  color: var(--text-primary) !important;
+  font-size: 0.875rem;
+  transition: all 0.2s;
+}
+
+.formInput:focus {
+  outline: none;
+  border-color: var(--primary-500) !important;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.formInput:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background: var(--bg-tertiary) !important;
+}
+
+.helpText {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+/* ========== INFO BOX ========== */
+.infoBox {
+  display: flex;
+  gap: 1rem;
+  padding: 1.25rem;
+  background: var(--info-50);
+  border: 1px solid var(--info-100);
+  border-radius: var(--radius-lg);
+  margin-top: 2rem;
+}
+
+.infoBox svg {
+  flex-shrink: 0;
+  color: var(--info-500);
+}
+
+.infoBox strong {
+  display: block;
+  color: var(--text-primary);
+  margin-bottom: 0.25rem;
+}
+
+.infoBox p {
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  margin-bottom: 1rem;
+}
+
+.uploadButton {
+  padding: 0.5rem 1rem;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.uploadButton:hover {
+  background: var(--bg-tertiary);
+}
+
+/* ========== SWITCHES E CHECKBOXES ========== */
+.switchLabel,
+.checkboxLabel {
+  display: flex;
+  align-items: center;
+  padding: 1rem;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  margin-bottom: 1rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.switchLabel:hover,
+.checkboxLabel:hover {
+  background: var(--bg-tertiary);
+}
+
+.switchInfo {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  flex: 1;
+}
+
+.switchInfo svg {
+  flex-shrink: 0;
+  color: var(--text-muted);
+  margin-top: 0.125rem;
+}
+
+.switchInfo strong {
+  display: block;
+  color: var(--text-primary);
+  margin-bottom: 0.25rem;
+}
+
+.switchInfo p {
+  color: var(--text-muted);
+  font-size: 0.813rem;
+  margin: 0;
+}
+
+.switchLabel input[type="checkbox"] {
+  display: none;
+}
+
+.switchSlider {
+  position: relative;
+  width: 48px;
+  height: 24px;
+  background: var(--border-color);
+  border-radius: 12px;
+  transition: background 0.2s;
+  flex-shrink: 0;
+}
+
+.switchSlider::before {
+  content: '';
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  background: white;
+  border-radius: 50%;
+  top: 2px;
+  left: 2px;
+  transition: transform 0.2s;
+}
+
+.switchLabel input[type="checkbox"]:checked + .switchSlider {
+  background: var(--primary-500);
+}
+
+.switchLabel input[type="checkbox"]:checked + .switchSlider::before {
+  transform: translateX(24px);
+}
+
+.checkboxLabel {
+  gap: 0.75rem;
+}
+
+.checkboxLabel input[type="checkbox"] {
+  width: 1.125rem;
+  height: 1.125rem;
+  margin: 0;
+  accent-color: var(--primary-500);
+}
+
+.checkboxLabel svg {
+  color: var(--text-muted);
+}
+
+.checkboxLabel span {
+  flex: 1;
+  color: var(--text-primary);
+}
+
+/* ========== SEÇÕES DE NOTIFICAÇÕES ========== */
+.notificationsSection {
+  margin-bottom: 2.5rem;
+}
+
+.notificationsSection h3 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 1.25rem;
+}
+
+/* ========== SEGURANÇA ========== */
+.securityNotice {
+  display: flex;
+  gap: 1rem;
+  padding: 1.25rem;
+  background: var(--warning-50);
+  border: 1px solid var(--warning-100);
+  border-radius: var(--radius-lg);
+  margin-top: 2rem;
+}
+
+.securityNotice svg {
+  flex-shrink: 0;
+  color: var(--warning-500);
+}
+
+.securityNotice p {
+  color: var(--warning-700);
+  margin: 0;
+  font-size: 0.875rem;
+}
+
+/* ========== INTEGRAÇÕES ========== */
+.integrationsGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.5rem;
+}
+
+.integrationCard {
+  padding: 1.5rem;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  text-align: center;
+}
+
+.integrationIcon {
+  width: 48px;
+  height: 48px;
+  margin-bottom: 1rem;
+}
+
+.integrationCard h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 0.5rem;
+}
+
+.integrationCard p {
+  font-size: 0.813rem;
+  color: var(--text-muted);
+  margin-bottom: 1.25rem;
+}
+
+/* ========== LOADING E ERROR ========== */
+.loadingContainer,
+.errorContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  color: var(--text-primary);
+}
+
+.loadingContainer p {
+  margin-top: 1rem;
+  color: var(--text-muted);
+}
+
+.errorContainer svg {
+  color: var(--error-500);
+  margin-bottom: 1rem;
+}
+
+.errorContainer h3 {
+  color: var(--text-primary);
+  margin-bottom: 0.5rem;
+}
+
+.spinner {
+  width: 2.5rem;
+  height: 2.5rem;
+  border: 3px solid var(--border-color);
+  border-top-color: var(--primary-500);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+/* Adicione ao final do SettingsPage.module.css */
+
+/* ========== INTEGRAÇÕES ========== */
+.integrationsGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.integrationCard {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  transition: all 0.2s;
+}
+
+.integrationCard:hover {
+  background: var(--bg-secondary);
+  border-color: var(--primary-500);
+  box-shadow: var(--shadow-sm);
+}
+
+.integrationHeader {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex: 1;
+}
+
+.integrationIcon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  object-fit: contain;
+}
+
+.integrationHeader h3 {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 4px 0;
+}
+
+.integrationHeader p {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.integrationStatus {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-right: 16px;
+}
+
+.statusConnected {
+  padding: 4px 10px;
+  background: var(--success-100);
+  color: var(--success-600);
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.statusDisconnected {
+  padding: 4px 10px;
+  background: var(--gray-200);
+  color: var(--text-muted);
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.configureButton {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.configureButton:hover {
+  background: var(--primary-50);
+  border-color: var(--primary-500);
+  color: var(--primary-600);
+}
+
+.integrationNote {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 24px;
+  padding: 14px 18px;
+  background: var(--info-50);
+  border: 1px solid var(--info-100);
+  border-radius: var(--radius-md);
+  color: var(--info-600);
+  font-size: 13px;
+}
+
+.integrationNote svg {
+  flex-shrink: 0;
+  color: var(--info-500);
+}
+
+/* Responsivo para Integrações */
+@media (max-width: 768px) {
+  .integrationCard {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 16px;
+  }
+
+  .integrationStatus {
+    justify-content: space-between;
+    margin-right: 0;
+  }
+
+  .configureButton {
+    width: 100%;
+    justify-content: center;
+  }
+}
+/* ========== RESPONSIVO ========== */
+@media (max-width: 1024px) {
+  .settingsContainer {
+    flex-direction: column;
+  }
+
+  .settingsSidebar {
+    width: 100%;
+    padding: 0.5rem;
+    border-right: none;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    overflow-x: auto;
+  }
+
+  .tabButton {
+    white-space: nowrap;
+    border-left: none;
+    border-bottom: 3px solid transparent;
+  }
+
+  .activeTab {
+    border-left-color: transparent;
+    border-bottom-color: var(--primary-500);
+  }
+
+  .themeOptions {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .settingsPage {
+    padding: 1rem;
+  }
+
+  .pageHeader {
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .headerActions {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .primaryButton,
+  .secondaryButton {
+    flex: 1;
+  }
+
+  .settingsContent {
+    padding: 1.5rem;
+  }
+
+  .formGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .formGroupFull {
+    grid-column: span 1;
+  }
+
+  .themeOptions {
+    grid-template-columns: 1fr;
+  }
+
+  .colorOptions {
+    grid-template-columns: 1fr;
+  }
+
+  .integrationsGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .pageTitle {
+    font-size: 1.5rem;
+  }
+
+  .unsavedBadge {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .previewCard {
+    flex-direction: column;
+  }
+}

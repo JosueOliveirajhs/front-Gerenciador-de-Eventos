@@ -1,0 +1,520 @@
+/* src/components/admin/clients/components/BoletoModal.module.css */
+
+.modalOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 20px;
+    backdrop-filter: blur(4px);
+    animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.modal {
+    max-width: 900px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+    background: var(--card-bg);
+    border-radius: 24px;
+    box-shadow: var(--shadow-2xl);
+    animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.modalHeader {
+    padding: 24px 32px;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    background: linear-gradient(to right, var(--card-bg), var(--bg-tertiary));
+    border-radius: 24px 24px 0 0;
+    position: sticky;
+    top: 0;
+    background: var(--card-bg);
+    z-index: 10;
+}
+
+.headerContent {
+    flex: 1;
+}
+
+.modalTitle {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0 0 8px 0;
+}
+
+.titleIcon {
+    font-size: 28px;
+}
+
+.modalSubtitle {
+    color: var(--text-muted);
+    font-size: 15px;
+    margin: 0;
+    line-height: 1.5;
+}
+
+.closeButton {
+    background: none;
+    border: none;
+    font-size: 32px;
+    color: var(--gray-400);
+    cursor: pointer;
+    padding: 0;
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    transition: all 0.2s ease;
+    line-height: 1;
+}
+
+.closeButton:hover {
+    background: var(--bg-tertiary);
+    color: var(--error-500);
+    transform: rotate(90deg);
+}
+
+.modalBody {
+    padding: 32px;
+}
+
+.generateButton {
+    width: 100%;
+    padding: 16px;
+    background: #00B4D8;
+    border: none;
+    border-radius: 16px;
+    color: white;
+    font-size: 16px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-bottom: 32px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.generateButton:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0, 180, 216, 0.4);
+}
+
+.buttonIcon {
+    font-size: 20px;
+}
+
+.formContainer {
+    background: var(--bg-tertiary);
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 32px;
+    border: 1px solid var(--border-color);
+}
+
+.formTitle {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0 0 20px 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.formRow {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.formGroup {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.formLabel {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.required {
+    color: var(--error-500);
+}
+
+.formInput {
+    padding: 12px 16px;
+    border: 1px solid var(--input-border);
+    border-radius: 12px;
+    font-size: 15px;
+    transition: all 0.2s ease;
+    background: var(--input-bg);
+    color: var(--text-primary);
+}
+
+.formInput:focus {
+    outline: none;
+    border-color: #00B4D8;
+    box-shadow: 0 0 0 3px rgba(0, 180, 216, 0.1);
+}
+
+.inputError {
+    border-color: var(--error-500);
+    background: var(--error-50);
+}
+
+.inputError:focus {
+    border-color: var(--error-500);
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+
+.errorMessage {
+    font-size: 12px;
+    color: var(--error-500);
+    margin-top: 4px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.formActions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 8px;
+}
+
+.cancelButton {
+    padding: 12px 24px;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    color: var(--text-secondary);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.cancelButton:hover {
+    background: var(--bg-tertiary);
+    border-color: var(--gray-400);
+}
+
+.submitButton {
+    padding: 12px 24px;
+    background: #00B4D8;
+    border: none;
+    border-radius: 10px;
+    color: white;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.submitButton:hover:not(:disabled) {
+    background: #0096b0;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 180, 216, 0.3);
+}
+
+.submitButton:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.boletosList {
+    margin-top: 16px;
+}
+
+.listTitle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0 0 20px 0;
+}
+
+.listCount {
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.boletosGrid {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.boletoCard {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 20px;
+    transition: all 0.2s ease;
+}
+
+.boletoCard:hover {
+    box-shadow: var(--shadow-lg);
+    border-color: var(--gray-300);
+    transform: translateY(-2px);
+}
+
+.boletoHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 16px;
+}
+
+.boletoDescription {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0 0 8px 0;
+}
+
+.boletoStatus {
+    display: inline-block;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.statusPending {
+    background: var(--warning-50);
+    color: var(--warning-700);
+}
+
+.statusPaid {
+    background: var(--success-50);
+    color: var(--success-700);
+}
+
+.statusOverdue {
+    background: var(--error-50);
+    color: var(--error-700);
+}
+
+.statusCancelled {
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
+}
+
+.boletoValue {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.boletoInfo {
+    background: var(--bg-tertiary);
+    padding: 16px;
+    border-radius: 12px;
+    margin-bottom: 16px;
+}
+
+.infoRow {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.infoRow:last-child {
+    border-bottom: none;
+}
+
+.infoLabel {
+    font-size: 14px;
+    color: var(--text-muted);
+}
+
+.infoValue {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.barcodeSection {
+    background: var(--bg-secondary);
+    padding: 16px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+}
+
+.barcodeLabel {
+    display: block;
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.barcodeCode {
+    display: block;
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+    color: var(--text-primary);
+    background: var(--card-bg);
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    word-break: break-all;
+}
+
+.boletoActions {
+    display: flex;
+    gap: 12px;
+}
+
+.actionButton {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 16px;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    color: var(--text-secondary);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.actionButton:hover:not(:disabled) {
+    background: var(--bg-tertiary);
+    border-color: #00B4D8;
+    color: #00B4D8;
+    transform: translateY(-2px);
+}
+
+.actionButton:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.paidButton:hover:not(:disabled) {
+    background: var(--success-50);
+    border-color: var(--success-600);
+    color: var(--success-600);
+}
+
+.actionIcon {
+    font-size: 16px;
+}
+
+@media (max-width: 768px) {
+    .modal {
+        margin: 16px;
+        max-height: calc(100vh - 32px);
+    }
+
+    .modalHeader {
+        padding: 20px;
+    }
+
+    .modalTitle {
+        font-size: 20px;
+    }
+
+    .modalBody {
+        padding: 20px;
+    }
+
+    .formRow {
+        grid-template-columns: 1fr;
+    }
+
+    .boletoHeader {
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .boletoValue {
+        font-size: 18px;
+    }
+
+    .boletoActions {
+        flex-direction: column;
+    }
+}
+
+@media (max-width: 480px) {
+    .modalHeader {
+        padding: 16px;
+    }
+
+    .modalTitle {
+        font-size: 18px;
+    }
+
+    .modalSubtitle {
+        font-size: 13px;
+    }
+
+    .generateButton {
+        padding: 14px;
+        font-size: 15px;
+    }
+}

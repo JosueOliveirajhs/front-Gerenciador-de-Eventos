@@ -1,0 +1,801 @@
+.agendaCalendar {
+  padding: 0;
+}
+
+.pageHeader {
+  margin-bottom: 2rem;
+}
+
+.headerContent {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.pageTitle {
+  font-size: 1.875rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.headerActions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.viewSelect,
+.filterSelect {
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--input-border);
+  border-radius: 8px;
+  font-size: 0.875rem;
+  color: var(--text-primary);
+  background: var(--input-bg);
+  cursor: pointer;
+  transition: all 0.2s;
+  min-width: 120px;
+}
+
+.viewSelect:focus,
+.filterSelect:focus {
+  outline: none;
+  border-color: #00B4D8;
+  box-shadow: 0 0 0 3px rgba(0, 180, 216, 0.1);
+}
+
+.secondaryButton {
+  background: var(--card-bg);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  font-weight: 500;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.secondaryButton:hover {
+  background: var(--bg-tertiary);
+  border-color: var(--gray-300);
+}
+
+.secondaryButton.active {
+  background: var(--primary-50);
+  border-color: #00B4D8;
+  color: #00B4D8;
+}
+
+.alertBadge {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: var(--error-50);
+  border: 1px solid var(--error-100);
+  border-radius: 8px;
+  color: var(--error-600);
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+.alertBadge:hover .alertDropdown {
+  display: block;
+}
+
+.alertIcon {
+  font-size: 1.125rem;
+}
+
+.alertDropdown {
+  display: none;
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 0.5rem;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  box-shadow: var(--shadow-lg);
+  min-width: 250px;
+  z-index: 100;
+}
+
+.alertItem {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--border-color);
+  font-size: 0.875rem;
+}
+
+.alertItem:last-child {
+  border-bottom: none;
+}
+
+.alertItem strong {
+  display: block;
+  color: var(--text-primary);
+  margin-bottom: 0.25rem;
+}
+
+.alertItem span {
+  color: var(--text-muted);
+  font-size: 0.75rem;
+}
+
+/* Calendar Styles */
+.calendarContainer {
+  display: grid;
+  grid-template-columns: 350px 1fr;
+  gap: 2rem;
+  background: var(--card-bg);
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+  padding: 1.5rem;
+}
+
+.calendarSection {
+  border-right: 1px solid var(--border-color);
+  padding-right: 1.5rem;
+}
+
+/* Override react-calendar styles */
+.calendarSection :global(.react-calendar) {
+  width: 100%;
+  border: none;
+  font-family: inherit;
+  background: transparent;
+}
+
+.calendarSection :global(.react-calendar__navigation) {
+  margin-bottom: 1rem;
+}
+
+.calendarSection :global(.react-calendar__navigation button) {
+  color: var(--text-secondary);
+  font-size: 1rem;
+  background: none;
+  border: none;
+  border-radius: 6px;
+  padding: 0.5rem;
+}
+
+.calendarSection :global(.react-calendar__navigation button:hover) {
+  background: var(--bg-tertiary);
+}
+
+.calendarSection :global(.react-calendar__month-view__weekdays__weekday) {
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  text-decoration: none;
+}
+
+.calendarSection :global(.react-calendar__month-view__weekdays__weekday abbr) {
+  text-decoration: none;
+  cursor: default;
+}
+
+.calendarSection :global(.react-calendar__tile) {
+  position: relative;
+  padding: 0.75rem 0.5rem;
+  background: none;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  color: var(--text-primary);
+}
+
+.calendarSection :global(.react-calendar__tile:hover) {
+  background: var(--bg-tertiary);
+}
+
+.calendarSection :global(.react-calendar__tile--active) {
+  background: var(--primary-50) !important;
+  color: #00B4D8 !important;
+  font-weight: 600;
+}
+
+.calendarSection :global(.react-calendar__tile--now) {
+  background: var(--warning-100);
+  color: var(--warning-700);
+}
+
+.blockedTile {
+  background: var(--error-50) !important;
+  color: var(--error-500) !important;
+  position: relative;
+}
+
+.blockedTile::after {
+  content: "🔒";
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  font-size: 0.625rem;
+}
+
+.tileContent {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 0.25rem;
+  font-size: 0.625rem;
+}
+
+.blockedIndicator {
+  color: var(--error-500);
+}
+
+.eventIndicator {
+  background: var(--primary-50);
+  color: #00B4D8;
+  padding: 0.125rem 0.25rem;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+/* Events Section */
+.eventsSection {
+  flex: 1;
+}
+
+.eventsHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+}
+
+.eventsHeader h3 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.eventCount {
+  background: var(--bg-tertiary);
+  color: var(--text-muted);
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+/* Hourly View */
+.hourlyView {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-height: 500px;
+  overflow-y: auto;
+}
+
+.hourRow {
+  display: flex;
+  gap: 1rem;
+  min-height: 60px;
+  border-bottom: 1px solid var(--border-color);
+  padding: 0.5rem 0;
+}
+
+.hourRow:last-child {
+  border-bottom: none;
+}
+
+.hourLabel {
+  width: 60px;
+  font-weight: 600;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  flex-shrink: 0;
+}
+
+.hourEvents {
+  flex: 1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.eventCard {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  min-width: 200px;
+}
+
+.eventCard:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.eventCard.quote {
+  border-left: 3px solid var(--warning-500);
+}
+
+.eventCard.confirmed {
+  border-left: 3px solid var(--success-500);
+}
+
+.eventCard.completed {
+  border-left: 3px solid var(--primary-500);
+}
+
+.eventCard.cancelled {
+  border-left: 3px solid var(--error-500);
+  opacity: 0.6;
+}
+
+.eventTime {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-bottom: 0.25rem;
+}
+
+.eventTitle {
+  font-weight: 600;
+  color: var(--text-primary);
+  font-size: 0.875rem;
+  margin-bottom: 0.25rem;
+}
+
+.eventClient {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+/* Events List */
+.eventsList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-height: 500px;
+  overflow-y: auto;
+}
+
+.eventListItem {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+
+.eventListItem:hover {
+  background: var(--card-bg);
+  box-shadow: var(--shadow-md);
+}
+
+.eventListItem.quote {
+  border-left: 3px solid var(--warning-500);
+}
+
+.eventListItem.confirmed {
+  border-left: 3px solid var(--success-500);
+}
+
+.eventListItem.completed {
+  border-left: 3px solid var(--primary-500);
+}
+
+.eventListItem.cancelled {
+  border-left: 3px solid var(--error-500);
+  opacity: 0.6;
+}
+
+.eventDate {
+  min-width: 100px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+}
+
+.eventInfo {
+  flex: 1;
+}
+
+.eventInfo strong {
+  display: block;
+  color: var(--text-primary);
+  margin-bottom: 0.25rem;
+}
+
+.eventInfo span {
+  color: var(--text-muted);
+  font-size: 0.75rem;
+}
+
+.eventTime {
+  min-width: 80px;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+}
+
+.eventStatus {
+  min-width: 100px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+/* Blocked Dates List */
+.blockedDatesList {
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border-color);
+}
+
+.blockedDatesList h4 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 1rem 0;
+}
+
+.blockedDateItem {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.5rem;
+  background: var(--error-50);
+  border: 1px solid var(--error-100);
+  border-radius: 6px;
+  margin-bottom: 0.5rem;
+}
+
+.blockedDate {
+  font-weight: 600;
+  color: var(--error-500);
+  min-width: 100px;
+}
+
+.blockedReason {
+  flex: 1;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+}
+
+.unblockButton {
+  background: none;
+  border: none;
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 4px;
+  transition: all 0.2s;
+  color: var(--text-muted);
+}
+
+.unblockButton:hover {
+  background: var(--error-100);
+}
+
+/* Integration Bar */
+.integrationBar {
+  margin-top: 2rem;
+  padding: 1rem;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+}
+
+.integrationButton {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  cursor: not-allowed;
+  opacity: 0.6;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.integrationButton img {
+  width: 16px;
+  height: 16px;
+}
+
+/* Modal Overrides */
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.modal {
+  background: var(--card-bg);
+  border-radius: 12px;
+  width: 100%;
+  max-width: 500px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.conflictModal {
+  max-width: 400px;
+}
+
+.modalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.5rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.modalHeader h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.closeButton {
+  background: none;
+  border: none;
+  font-size: 1.25rem;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 4px;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+}
+
+.closeButton:hover {
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+}
+
+.modalContent {
+  padding: 1.5rem;
+}
+
+.formGroup {
+  margin-bottom: 1.5rem;
+}
+
+.formGroup label {
+  display: block;
+  font-weight: 600;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  margin-bottom: 0.5rem;
+}
+
+.formInput {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid var(--input-border);
+  border-radius: 6px;
+  font-size: 0.875rem;
+  transition: all 0.2s;
+  background: var(--input-bg);
+  color: var(--text-primary);
+}
+
+.formInput:focus {
+  outline: none;
+  border-color: #00B4D8;
+  box-shadow: 0 0 0 3px rgba(0, 180, 216, 0.1);
+}
+
+.checkboxLabel {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  color: var(--text-secondary);
+}
+
+.checkboxLabel input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+.modalActions {
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+  padding: 1.5rem;
+  border-top: 1px solid var(--border-color);
+}
+
+.primaryButton {
+  background: #00B4D8;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.primaryButton:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 180, 216, 0.3);
+}
+
+.primaryButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.secondaryButton {
+  background: var(--card-bg);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.secondaryButton:hover:not(:disabled) {
+  background: var(--bg-tertiary);
+  border-color: var(--gray-400);
+}
+
+/* Conflict Item */
+.conflictItem {
+  padding: 1rem;
+  background: var(--error-50);
+  border: 1px solid var(--error-100);
+  border-radius: 6px;
+  margin-bottom: 0.5rem;
+}
+
+.conflictItem strong {
+  display: block;
+  color: var(--error-600);
+  margin-bottom: 0.25rem;
+}
+
+.conflictItem span {
+  display: block;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  margin-bottom: 0.125rem;
+}
+
+/* Empty State */
+.emptyState {
+  text-align: center;
+  padding: 3rem 2rem;
+}
+
+.emptyIcon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  opacity: 0.5;
+}
+
+.emptyState h4 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin: 0 0 0.5rem 0;
+}
+
+.emptyState p {
+  color: var(--text-muted);
+  margin: 0 0 1.5rem 0;
+}
+
+/* Loading */
+.loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem;
+  color: var(--text-muted);
+}
+
+.spinner {
+  width: 2rem;
+  height: 2rem;
+  border: 2px solid var(--border-color);
+  border-top: 2px solid #00B4D8;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 1rem;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .calendarContainer {
+    grid-template-columns: 1fr;
+  }
+  
+  .calendarSection {
+    border-right: none;
+    padding-right: 0;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 1.5rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .headerContent {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .headerActions {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+  
+  .eventListItem {
+    flex-wrap: wrap;
+  }
+  
+  .eventDate {
+    min-width: auto;
+  }
+  
+  .eventTime {
+    min-width: auto;
+  }
+  
+  .modalActions {
+    flex-direction: column;
+  }
+  
+  .integrationBar {
+    flex-wrap: wrap;
+  }
+}
