@@ -28,6 +28,8 @@ export interface Receipt {
     description?: string;
     mimeType?: string;
     fileSize?: number;
+    paymentId?: number;
+    paymentStatus?: string;
 }
 
 export interface Boleto {

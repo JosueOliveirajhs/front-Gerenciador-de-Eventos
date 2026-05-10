@@ -5,12 +5,14 @@ import {
   FiAlertCircle, FiCheckCircle, FiX, FiRefreshCw,
   FiSearch, FiImage
 } from 'react-icons/fi';
-import { MdInsertDriveFile, MdPictureAsPdf, MdImage, MdEvent } from 'react-icons/md';
+import { MdInsertDriveFile, MdPictureAsPdf, MdImage, MdEvent, MdPayment } from 'react-icons/md';
 import { documentService, Document } from '../../services/documents';
 import { useAuth } from '../../context/AuthContext';
 import { ConfirmationModal } from '../common/Alerts/ConfirmationModal';
 import { ErrorModal } from '../common/Alerts/ErrorModal';
 import { LoadingSpinner } from '../common/Loading/LoadingSpinner';
+import { boletoService } from '../../services/boletos';
+import { Boleto } from '../OwnerCompoents/types';
 import styles from './ClientDocuments.module.css';
 
 export const ClientDocuments: React.FC = () => {
@@ -23,6 +25,8 @@ export const ClientDocuments: React.FC = () => {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState<string>('all');
+  const [activeTab, setActiveTab] = useState<'documents' | 'boletos'>('documents');
+  const [boletos, setBoletos] = useState<Boleto[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Preview state
@@ -40,7 +44,20 @@ export const ClientDocuments: React.FC = () => {
 
   useEffect(() => {
     loadDocuments();
-  }, []);
+    if (user?.id) {
+      loadBoletos();
+    }
+  }, [user]);
+
+  const loadBoletos = async () => {
+    if (!user?.id) return;
+    try {
+      const data = await boletoService.getClientBoletos(user.id);
+      setBoletos(data);
+    } catch (error) {
+      console.error('Erro ao carregar boletos:', error);
+    }
+  };
 
   const loadDocuments = useCallback(async () => {
     try {
@@ -215,7 +232,27 @@ export const ClientDocuments: React.FC = () => {
 
   return (
     <div className={styles.documents}>
-      {/* Header */}
+      {/* Tabs */}
+      <div className={styles.tabs}>
+        <button 
+          className={`${styles.tab} ${activeTab === 'documents' ? styles.activeTab : ''}`}
+          onClick={() => setActiveTab('documents')}
+        >
+          <FiFile size={18} />
+          Meus Documentos
+        </button>
+        <button 
+          className={`${styles.tab} ${activeTab === 'boletos' ? styles.activeTab : ''}`}
+          onClick={() => setActiveTab('boletos')}
+        >
+          <MdPayment size={18} />
+          Meus Boletos
+        </button>
+      </div>
+
+      {activeTab === 'documents' ? (
+        <>
+          {/* Header */}
       <div className={styles.header}>
         <div>
           <h2 className={styles.title}><FiFile size={28} /> Meus Documentos</h2>
@@ -291,6 +328,61 @@ export const ClientDocuments: React.FC = () => {
               </div>
             </div>
           ))}
+        </div>
+          )}
+        </>
+      ) : (
+        <div className={styles.boletosSection}>
+          <div className={styles.header}>
+            <div>
+              <h2 className={styles.title}><MdPayment size={28} /> Meus Boletos</h2>
+              <p className={styles.subtitle}>{boletos.length} boleto(s) encontrado(s)</p>
+            </div>
+            <button className={styles.refreshButton} onClick={loadBoletos} title="Atualizar">
+              <FiRefreshCw size={18} />
+            </button>
+          </div>
+
+          {boletos.length === 0 ? (
+            <div className={styles.emptyState}>
+              <MdPayment size={48} />
+              <p>Nenhum boleto encontrado</p>
+            </div>
+          ) : (
+            <div className={styles.documentsGrid}>
+              {boletos.map(boleto => (
+                <div key={boleto.id} className={styles.documentCard}>
+                  <div className={styles.documentIcon}><MdPictureAsPdf size={24} color="#ef4444" /></div>
+                  <div className={styles.documentInfo}>
+                    <h4 title={boleto.description}>{boleto.description}</h4>
+                    <div className={styles.documentMeta}>
+                      <span style={{ fontWeight: 'bold', color: '#1e40af' }}>
+                        {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(boleto.value)}
+                      </span>
+                      <span>•</span>
+                      <span>Venc: {new Date(boleto.dueDate).toLocaleDateString('pt-BR')}</span>
+                    </div>
+                    <div style={{ marginTop: '5px' }}>
+                      <span className={`${styles.statusBadge} ${boleto.status === 'paid' ? styles.paid : styles.pending}`}>
+                        {boleto.status === 'paid' ? 'Pago' : 'Pendente'}
+                      </span>
+                    </div>
+                  </div>
+                  <div className={styles.documentActions}>
+                    <a 
+                      href={boleto.pdfUrl?.startsWith('http') ? boleto.pdfUrl : `http://localhost:8080${boleto.pdfUrl}`} 
+                      target="_blank" 
+                      rel="noreferrer"
+                      className={styles.actionButton}
+                      title="Visualizar"
+                    >
+                      <FiEye size={16} />
+                    </a>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 

@@ -1,5 +1,7 @@
 // src/components/common/Header/Header.tsx
 import React, { useState, useEffect, useRef } from 'react';
+import { Client } from '@stomp/stompjs';
+import SockJS from 'sockjs-client';
 import { useAuth } from '../../../context/AuthContext';
 import { 
   FiLogOut, 
@@ -124,8 +126,46 @@ export const Header: React.FC<HeaderProps> = ({
 
   useEffect(() => {
     loadNotifications();
-    const interval = setInterval(loadNotifications, 30000);
-    return () => clearInterval(interval);
+    
+    // Conectar ao WebSocket
+    const token = localStorage.getItem('@EventosFaceis:token');
+    
+    const client = new Client({
+      // Usa SockJS como fallback caso WebSockets nativos não estejam disponíveis
+      webSocketFactory: () => new SockJS('http://localhost:8080/ws-notifications'),
+      connectHeaders: {
+        Authorization: `Bearer ${token}`
+      },
+      debug: function (str) {
+        console.log('STOMP: ', str);
+      },
+      reconnectDelay: 5000,
+      heartbeatIncoming: 4000,
+      heartbeatOutgoing: 4000,
+    });
+
+    client.onConnect = function (frame) {
+      console.log('STOMP connected', frame);
+      
+      // Inscreve-se na fila de usuário para notificações
+      client.subscribe('/user/queue/notifications', (message) => {
+        if (message.body) {
+          const newNotification = JSON.parse(message.body);
+          setNotifications(prev => [newNotification, ...prev]);
+        }
+      });
+    };
+
+    client.onStompError = function (frame) {
+      console.error('Broker reported error: ' + frame.headers['message']);
+      console.error('Additional details: ' + frame.body);
+    };
+
+    client.activate();
+
+    return () => {
+      client.deactivate();
+    };
   }, []);
 
   useEffect(() => {

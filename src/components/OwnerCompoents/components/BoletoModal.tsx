@@ -1,4 +1,4 @@
-// src/components/admin/clients/components/BoletoModal.tsx
+// src/components/OwnerCompoents/components/BoletoModal.tsx
 
 import React, { useState, useEffect } from 'react';
 import { 
@@ -7,7 +7,8 @@ import {
   FiDownload,
   FiDollarSign,
   FiCalendar,
-  FiFileText
+  FiFileText,
+  FiUpload
 } from 'react-icons/fi';
 import { 
   MdPayment, 
@@ -27,6 +28,7 @@ interface BoletoModalProps {
     client: User;
     onClose: () => void;
     onGenerate: (data: GenerateBoletoData) => Promise<void>;
+    onUpload: (clientId: number, description: string, value: number, dueDate: Date, file: File) => Promise<void>;
     onSendEmail?: (boletoId: number) => Promise<void>;
     onMarkAsPaid?: (boletoId: number) => Promise<void>;
 }
@@ -35,6 +37,7 @@ export const BoletoModal: React.FC<BoletoModalProps> = ({
     client,
     onClose,
     onGenerate,
+    onUpload,
     onSendEmail,
     onMarkAsPaid
 }) => {
@@ -46,6 +49,7 @@ export const BoletoModal: React.FC<BoletoModalProps> = ({
         value: '',
         dueDate: ''
     });
+    const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [formErrors, setFormErrors] = useState<{[key: string]: string}>({});
     const [submitting, setSubmitting] = useState(false);
 
@@ -93,6 +97,10 @@ export const BoletoModal: React.FC<BoletoModalProps> = ({
             }
         }
 
+        if (!selectedFile) {
+            errors.file = 'Arquivo do boleto é obrigatório';
+        }
+
         setFormErrors(errors);
         return Object.keys(errors).length === 0;
     };
@@ -104,30 +112,62 @@ export const BoletoModal: React.FC<BoletoModalProps> = ({
 
         setSubmitting(true);
         try {
-            await onGenerate({
-                clientId: client.id,
-                description: formData.description,
-                value: parseFloat(formData.value),
-                dueDate: new Date(formData.dueDate)
-            });
+            if (selectedFile) {
+                if (typeof onUpload === 'function') {
+                    await onUpload(
+                        client.id,
+                        formData.description,
+                        parseFloat(formData.value),
+                        new Date(formData.dueDate),
+                        selectedFile
+                    );
+                } else {
+                    console.error('onUpload is not a function in BoletoModal. Props:', { onUpload });
+                    alert('Erro: Função de upload não configurada corretamente.');
+                    throw new Error('onUpload is not a function');
+                }
+            } else {
+                await onGenerate({
+                    clientId: client.id,
+                    description: formData.description,
+                    value: parseFloat(formData.value),
+                    dueDate: new Date(formData.dueDate)
+                });
+            }
             
             setShowGenerateForm(false);
             setFormData({ description: '', value: '', dueDate: '' });
+            setSelectedFile(null);
             await loadBoletos();
         } catch (error) {
-            console.error('Erro ao gerar boleto:', error);
+            console.error('Erro ao processar boleto:', error);
+            alert('Erro ao processar o boleto. Verifique os dados e tente novamente.');
         } finally {
             setSubmitting(false);
         }
     };
 
-    const handleDownloadPDF = async (boletoId: number) => {
+    const getValidUrl = (url: string | undefined | null): string => {
+        if (!url) return '';
+        if (url.startsWith('http')) return url;
+        return `http://localhost:8080${url.startsWith('/') ? '' : '/'}${url}`;
+    };
+
+    const handleDownloadPDF = async (boleto: Boleto) => {
+        // Se tem pdfUrl, abrir diretamente no navegador
+        if (boleto.pdfUrl) {
+            const url = getValidUrl(boleto.pdfUrl);
+            window.open(url, '_blank', 'noopener,noreferrer');
+            return;
+        }
+
+        // Fallback: tentar download via API
         try {
-            const blob = await boletoService.downloadBoletoPDF(boletoId);
+            const blob = await boletoService.downloadBoletoPDF(boleto.id);
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `boleto-${boletoId}.pdf`;
+            a.download = `boleto-${boleto.id}.pdf`;
             document.body.appendChild(a);
             a.click();
             window.URL.revokeObjectURL(url);
@@ -229,12 +269,12 @@ export const BoletoModal: React.FC<BoletoModalProps> = ({
                             className={styles.generateButton}
                             onClick={() => setShowGenerateForm(true)}
                         >
-                            <FiFileText className={styles.buttonIcon} />
-                            Gerar Novo Boleto
+                            <FiUpload className={styles.buttonIcon} />
+                            Anexar Novo Boleto
                         </button>
                     ) : (
                         <div className={styles.formContainer}>
-                            <h3 className={styles.formTitle}>Gerar Novo Boleto</h3>
+                            <h3 className={styles.formTitle}>Anexar Novo Boleto</h3>
                             <form onSubmit={handleSubmit} className={styles.form}>
                                 <div className={styles.formGroup}>
                                     <label className={styles.formLabel}>
@@ -299,6 +339,25 @@ export const BoletoModal: React.FC<BoletoModalProps> = ({
                                     </div>
                                 </div>
 
+                                <div className={styles.formGroup}>
+                                    <label className={styles.formLabel}>
+                                        <FiUpload size={16} />
+                                        Arquivo do Boleto (PDF) <span className={styles.required}>*</span>
+                                    </label>
+                                    <input
+                                        type="file"
+                                        accept="application/pdf"
+                                        className={`${styles.formInput} ${formErrors.file ? styles.inputError : ''}`}
+                                        onChange={(e) => setSelectedFile(e.target.files ? e.target.files[0] : null)}
+                                    />
+                                    {formErrors.file && (
+                                        <span className={styles.errorMessage}>
+                                            <MdWarning size={14} />
+                                            {formErrors.file}
+                                        </span>
+                                    )}
+                                </div>
+
                                 <div className={styles.formActions}>
                                     <button 
                                         type="button" 
@@ -312,7 +371,7 @@ export const BoletoModal: React.FC<BoletoModalProps> = ({
                                         className={styles.submitButton}
                                         disabled={submitting}
                                     >
-                                        {submitting ? 'Gerando...' : 'Gerar Boleto'}
+                                        {submitting ? 'Enviando...' : 'Anexar Boleto'}
                                     </button>
                                 </div>
                             </form>
@@ -399,8 +458,8 @@ export const BoletoModal: React.FC<BoletoModalProps> = ({
                                         <div className={styles.boletoActions}>
                                             <button
                                                 className={styles.actionButton}
-                                                onClick={() => handleDownloadPDF(boleto.id)}
-                                                title="Baixar PDF"
+                                                onClick={() => handleDownloadPDF(boleto)}
+                                                title="Visualizar/Baixar PDF"
                                             >
                                                 <FiDownload size={16} />
                                                 <span>PDF</span>

@@ -22,6 +22,7 @@ import { userService } from '../../../../services/users';
 import { receiptService } from '../../../../services/receipts';
 import { boletoService } from '../../../../services/boletos';
 import { eventService } from '../../../../services/events';
+import { paymentService } from '../../../../services/payments';
 import { Pagination } from '../../../common/Pagination/Pagination';
 
 import { LoadingSpinner } from '../../../common/Loading/LoadingSpinner';
@@ -600,6 +601,60 @@ export const ClientManagement: React.FC = () => {
     }
   };
 
+  const handleApprovePayment = async (paymentId: number) => {
+    if (window.confirm('Tem certeza que deseja aprovar este pagamento?')) {
+      try {
+        await paymentService.approvePayment(paymentId);
+        alert('Pagamento aprovado com sucesso!');
+        // Recarregar os comprovantes para atualizar o status
+        if (selectedClient) {
+          const receiptsData = await receiptService.getClientReceipts(selectedClient.id);
+          setReceipts(receiptsData);
+        }
+      } catch (error) {
+        console.error('Erro ao aprovar pagamento:', error);
+        setErrorMessage('Erro ao aprovar pagamento.');
+        setShowError(true);
+      }
+    }
+  };
+
+  const handleRejectPayment = async (paymentId: number) => {
+    const reason = window.prompt('Informe o motivo da rejeição:');
+    if (reason === null) return; // Cancelou
+    
+    if (!reason.trim()) {
+      alert('Motivo é obrigatório para rejeitar.');
+      return;
+    }
+
+    try {
+      await paymentService.rejectPayment(paymentId, reason);
+      alert('Pagamento rejeitado.');
+      // Recarregar os comprovantes para atualizar o status
+      if (selectedClient) {
+        const receiptsData = await receiptService.getClientReceipts(selectedClient.id);
+        setReceipts(receiptsData);
+      }
+    } catch (error) {
+      console.error('Erro ao rejeitar pagamento:', error);
+      setErrorMessage('Erro ao rejeitar pagamento.');
+      setShowError(true);
+    }
+  };
+
+  const handleUploadBoleto = async (clientId: number, description: string, value: number, dueDate: Date, file: File) => {
+    try {
+      await boletoService.uploadBoleto(clientId, description, value, dueDate, file);
+      alert('Boleto anexado com sucesso!');
+    } catch (error) {
+      console.error('Erro ao anexar boleto:', error);
+      setErrorMessage('Erro ao anexar boleto.');
+      setShowError(true);
+      throw error;
+    }
+  };
+
   const hasActiveFilters = useMemo(() => {
     const hasBasicFilters = Object.values(filters).some(v => v.trim() !== '');
     const hasAdvancedFilters = advancedFilters.status !== 'ALL' || 
@@ -866,6 +921,8 @@ export const ClientManagement: React.FC = () => {
           }}
           onUpload={handleUploadReceipt}
           onDelete={handleDeleteReceipt}
+          onApprove={handleApprovePayment}
+          onReject={handleRejectPayment}
         />
       )}
 
@@ -877,6 +934,7 @@ export const ClientManagement: React.FC = () => {
             setSelectedClient(null);
           }}
           onGenerate={handleGenerateBoleto}
+          onUpload={handleUploadBoleto}
           onSendEmail={handleSendBoletoEmail}
           onMarkAsPaid={handleMarkBoletoAsPaid}
         />

@@ -9,13 +9,19 @@ import {
   FiClock, 
   FiUsers,
   FiDollarSign,
-  FiFileText
+  FiFileText,
+  FiUpload,
+  FiPlus
 } from 'react-icons/fi';
-import { MdEvent, MdAttachMoney, MdWarning } from 'react-icons/md';
+import { MdEvent, MdAttachMoney, MdWarning, MdAdd, MdDateRange, MdCheckCircle, MdPayment } from 'react-icons/md';
 import { Event, CreateEventData } from '../../../types/Event';
 import { User } from '../../../types/User';
+import { Payment } from '../../../types/Payment';
+import { paymentService } from '../../../services/payments';
+import { api } from '../../../services/api';
 import { EventConflictChecker } from './EventConflictChecker';
 import { ConfirmationModal } from '../../common/Alerts/ConfirmationModal';
+
 import styles from './EventManagement/EventManagement.module.css';
 
 interface EventFormProps {
@@ -57,10 +63,40 @@ export const EventForm: React.FC<EventFormProps> = ({
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
 
+  // Estados para financeiro do evento
+  const [eventPayments, setEventPayments] = useState<Payment[]>([]);
+  const [loadingPayments, setLoadingPayments] = useState(false);
+  const [showNewPaymentForm, setShowNewPaymentForm] = useState(false);
+  const [newPaymentData, setNewPaymentData] = useState({
+    description: '',
+    amount: '',
+    dueDate: ''
+  });
+
   // DEBUG: Monitorar mudanças no showSuccessModal
   useEffect(() => {
     console.log('🎯 [EventForm] showSuccessModal mudou para:', showSuccessModal);
   }, [showSuccessModal]);
+
+  // Carregar pagamentos do evento se estiver editando
+  useEffect(() => {
+    if (editingEvent) {
+      loadEventPayments();
+    }
+  }, [editingEvent]);
+
+  const loadEventPayments = async () => {
+    if (!editingEvent) return;
+    try {
+      setLoadingPayments(true);
+      const data = await paymentService.getPaymentsByEventId(editingEvent.id);
+      setEventPayments(data);
+    } catch (error) {
+      console.error('Erro ao carregar pagamentos do evento:', error);
+    } finally {
+      setLoadingPayments(false);
+    }
+  };
 
   useEffect(() => {
     if (editingEvent) {
@@ -342,6 +378,142 @@ export const EventForm: React.FC<EventFormProps> = ({
                 {errors.depositValue && <span className={styles.errorText}>{errors.depositValue}</span>}
               </div>
             </div>
+
+            {editingEvent && (
+              <div className={styles.financeSection} style={{ marginTop: '32px', paddingTop: '32px', borderTop: '1px solid var(--border-color)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                  <h4 style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: 0, fontSize: '18px', color: 'var(--text-primary)' }}>
+                    <MdAttachMoney size={20} /> Gestão Financeira do Evento
+                  </h4>
+                  {!showNewPaymentForm && (
+                    <button 
+                      type="button"
+                      onClick={() => setShowNewPaymentForm(true)}
+                      style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px', background: '#10b981', color: 'white', border: 'none', borderRadius: '6px', fontSize: '13px', cursor: 'pointer' }}
+                    >
+                      <FiPlus size={16} /> Novo Pagamento
+                    </button>
+                  )}
+                </div>
+
+                {showNewPaymentForm && (
+                  <div style={{ background: 'var(--bg-secondary)', padding: '16px', borderRadius: '10px', marginBottom: '20px', border: '1px solid var(--border-color)' }}>
+                    <h5 style={{ margin: '0 0 12px 0', fontSize: '14px', color: 'var(--text-primary)' }}>Novo Pagamento</h5>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px' }}>
+                      <input 
+                        type="text" 
+                        placeholder="Descrição"
+                        value={newPaymentData.description}
+                        onChange={e => setNewPaymentData({...newPaymentData, description: e.target.value})}
+                        style={{ padding: '8px', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'var(--bg-primary)', color: 'var(--text-primary)', fontSize: '13px' }}
+                      />
+                      <input 
+                        type="number" 
+                        placeholder="Valor"
+                        value={newPaymentData.amount}
+                        onChange={e => setNewPaymentData({...newPaymentData, amount: e.target.value})}
+                        style={{ padding: '8px', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'var(--bg-primary)', color: 'var(--text-primary)', fontSize: '13px' }}
+                      />
+                      <input 
+                        type="date" 
+                        value={newPaymentData.dueDate}
+                        onChange={e => setNewPaymentData({...newPaymentData, dueDate: e.target.value})}
+                        style={{ padding: '8px', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'var(--bg-primary)', color: 'var(--text-primary)', fontSize: '13px' }}
+                      />
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '12px' }}>
+                      <button 
+                        type="button"
+                        onClick={() => setShowNewPaymentForm(false)}
+                        style={{ padding: '6px 12px', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'transparent', color: 'var(--text-muted)', fontSize: '13px', cursor: 'pointer' }}
+                      >
+                        Cancelar
+                      </button>
+                      <button 
+                        type="button"
+                        onClick={async () => {
+                          if (!newPaymentData.description || !newPaymentData.amount || !newPaymentData.dueDate) {
+                            alert('Preencha todos os campos.');
+                            return;
+                          }
+                          try {
+                            await paymentService.createPayment({
+                              eventId: editingEvent.id,
+                              amount: parseFloat(newPaymentData.amount),
+                              dueDate: newPaymentData.dueDate,
+                              description: newPaymentData.description,
+                              status: 'PENDING'
+                            });
+                            alert('Pagamento criado!');
+                            setShowNewPaymentForm(false);
+                            setNewPaymentData({ description: '', amount: '', dueDate: '' });
+                            loadEventPayments();
+                          } catch (err) {
+                            alert('Erro ao criar pagamento.');
+                          }
+                        }}
+                        style={{ padding: '6px 12px', borderRadius: '4px', border: 'none', background: '#10b981', color: 'white', fontWeight: '600', fontSize: '13px', cursor: 'pointer' }}
+                      >
+                        Criar
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {loadingPayments ? (
+                  <p>Carregando pagamentos...</p>
+                ) : eventPayments.length === 0 ? (
+                  <p style={{ color: 'var(--text-muted)', fontSize: '14px', textAlign: 'center', padding: '20px' }}>Nenhum pagamento registrado para este evento.</p>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    {eventPayments.map(payment => (
+                      <div key={payment.id} style={{ background: 'var(--bg-tertiary)', padding: '12px', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: '1px solid var(--border-color)' }}>
+                        <div>
+                          <p style={{ margin: '0 0 4px 0', fontWeight: '600', fontSize: '14px' }}>{payment.description}</p>
+                          <div style={{ display: 'flex', gap: '12px', fontSize: '12px', color: 'var(--text-muted)' }}>
+                            <span>Vencimento: {new Date(payment.dueDate).toLocaleDateString('pt-BR')}</span>
+                            <span>Valor: {parseFloat(payment.amount.toString()).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>
+                          </div>
+                        </div>
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                          {payment.invoiceUrl && (
+                            <a href={payment.invoiceUrl} target="_blank" rel="noreferrer" style={{ padding: '6px', background: '#64748b', color: 'white', borderRadius: '4px', display: 'flex' }} title="Ver Boleto">
+                              <FiFileText size={16} />
+                            </a>
+                          )}
+                          <button 
+                            type="button"
+                            onClick={() => {
+                              const input = document.createElement('input');
+                              input.type = 'file';
+                              input.accept = 'application/pdf';
+                              input.onchange = async (e: any) => {
+                                const file = e.target.files?.[0];
+                                if (!file) return;
+                                try {
+                                  const formData = new FormData();
+                                  formData.append('file', file);
+                                  const response = await api.post(`/payments/${payment.id}/upload-invoice`, formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+                                  if (response.status === 200) {
+                                    alert('Boleto anexado com sucesso!');
+                                    loadEventPayments();
+                                  }
+                                } catch (error) { alert('Erro ao anexar boleto'); }
+                              };
+                              input.click();
+                            }}
+                            style={{ padding: '6px', background: '#00B4D8', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', display: 'flex' }}
+                            title="Anexar Boleto"
+                          >
+                            <FiUpload size={16} />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
 
             <div className={styles.formGroup}>
               <label className={styles.formLabel}><FiFileText size={14} /> Observações</label>

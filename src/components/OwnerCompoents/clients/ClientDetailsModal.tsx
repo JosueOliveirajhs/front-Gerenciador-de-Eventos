@@ -14,7 +14,8 @@ import {
   FiTrendingUp,
   FiClock,
   FiPieChart,
-  FiBarChart2
+  FiBarChart2,
+  FiUpload
 } from 'react-icons/fi';
 import {
   MdPerson,
@@ -27,14 +28,24 @@ import {
   MdAttachMoney,
   MdDateRange,
   MdInfo,
-  MdError
+  MdError,
+  MdAdd,
+  MdCancel
 } from 'react-icons/md';
 import { User } from '../types';
 import { Event } from '../../../types/Event';
 import { Payment } from '../../../types/Payment';
 import { useClientData } from '../hooks/useClientData';
 import { LoadingSpinner } from '../../common/Loading/LoadingSpinner';
+import { paymentService } from '../../../services/payments';
+import { api } from '../../../services/api';
 import styles from './ClientDetailsModal.module.css';
+
+const getValidUrl = (url: string | undefined | null) => {
+  if (!url) return '';
+  if (url.startsWith('http')) return url;
+  return `http://localhost:8080${url.startsWith('/') ? '' : '/'}${url}`;
+};
 
 interface ClientDetailsModalProps {
   client: User;
@@ -52,6 +63,12 @@ export const ClientDetailsModal: React.FC<ClientDetailsModalProps> = ({
   onViewBoletos
 }) => {
   const [activeTab, setActiveTab] = useState<'info' | 'events' | 'stats' | 'payments'>('info');
+  const [showNewPaymentForm, setShowNewPaymentForm] = useState(false);
+  const [newPaymentData, setNewPaymentData] = useState({
+    description: '',
+    amount: '',
+    dueDate: ''
+  });
   
   // Usar o hook para buscar dados reais
   const { 
@@ -62,6 +79,18 @@ export const ClientDetailsModal: React.FC<ClientDetailsModalProps> = ({
     error,
     refreshData 
   } = useClientData(client.id);
+
+  // Estados para ações de pagamento
+  const [actionLoading, setActionLoading] = useState(false);
+  
+  // Modal de Rejeição
+  const [showRejectModal, setShowRejectModal] = useState(false);
+  const [rejectReason, setRejectReason] = useState('');
+  const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null);
+  
+  // Modal de Upload de Boleto
+  const [showUploadModal, setShowUploadModal] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   useEffect(() => {
     refreshData();
@@ -83,15 +112,27 @@ export const ClientDetailsModal: React.FC<ClientDetailsModalProps> = ({
     return phone;
   };
 
-  const formatDate = (date?: string) => {
+  const formatDate = (date?: string | number[] | null) => {
     if (!date) return 'Não informado';
-    return new Date(date).toLocaleDateString('pt-BR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+    
+    // Se for array (legado ou erro de Jackson), tenta converter
+    if (Array.isArray(date)) {
+        const [year, month, day, hour = 0, minute = 0] = date;
+        return new Date(year, month - 1, day, hour, minute).toLocaleDateString('pt-BR');
+    }
+
+    try {
+        const d = new Date(date);
+        if (isNaN(d.getTime())) return 'Data inválida';
+        
+        return d.toLocaleDateString('pt-BR', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric'
+        });
+    } catch (e) {
+        return 'Data inválida';
+    }
   };
 
   const formatCurrency = (value: number) => {
@@ -142,9 +183,66 @@ export const ClientDetailsModal: React.FC<ClientDetailsModalProps> = ({
     const texts: Record<string, string> = {
       PAID: 'Pago',
       PENDING: 'Pendente',
-      OVERDUE: 'Vencido'
+      OVERDUE: 'Vencido',
+      WAITING_APPROVAL: 'Aguardando Aprovação',
+      REJECTED: 'Rejeitado'
     };
     return texts[status] || status;
+  };
+
+  const handleApprovePayment = async (paymentId: number) => {
+    if (window.confirm('Tem certeza que deseja aprovar este pagamento? O saldo do evento será atualizado.')) {
+      try {
+        setActionLoading(true);
+        await paymentService.approvePayment(paymentId);
+        alert('Pagamento aprovado com sucesso!');
+        refreshData();
+      } catch (err: any) {
+        alert('Erro ao aprovar pagamento: ' + err.message);
+      } finally {
+        setActionLoading(false);
+      }
+    }
+  };
+
+  const handleRejectPayment = async () => {
+    if (!selectedPayment || !rejectReason.trim()) {
+      alert('Por favor, informe o motivo da rejeição.');
+      return;
+    }
+    try {
+      setActionLoading(true);
+      await paymentService.rejectPayment(selectedPayment.id, rejectReason);
+      alert('Pagamento rejeitado com sucesso.');
+      setShowRejectModal(false);
+      setRejectReason('');
+      setSelectedPayment(null);
+      refreshData();
+    } catch (err: any) {
+      alert('Erro ao rejeitar pagamento: ' + err.message);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleUploadInvoice = async () => {
+    if (!selectedPayment || !selectedFile) {
+      alert('Selecione um arquivo primeiro.');
+      return;
+    }
+    try {
+      setActionLoading(true);
+      await paymentService.uploadInvoice(selectedPayment.id, selectedFile);
+      alert('Boleto enviado com sucesso!');
+      setShowUploadModal(false);
+      setSelectedFile(null);
+      setSelectedPayment(null);
+      refreshData();
+    } catch (err: any) {
+      alert('Erro ao enviar boleto: ' + err.message);
+    } finally {
+      setActionLoading(false);
+    }
   };
 
   if (loading) {
@@ -188,7 +286,7 @@ export const ClientDetailsModal: React.FC<ClientDetailsModalProps> = ({
             <div className={styles.clientTitle}>
               <h2 className={styles.clientName}>{client.name}</h2>
               <p className={styles.clientSubtitle}>
-                Cliente desde {formatDate(client.createdAt).split(' ')[0]}
+                Cliente desde {formatDate(client.createdAt)}
               </p>
             </div>
           </div>
@@ -362,6 +460,111 @@ export const ClientDetailsModal: React.FC<ClientDetailsModalProps> = ({
 
           {activeTab === 'payments' && (
             <div className={styles.paymentsTab}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                <h3 className={styles.sectionTitle}>Pagamentos do Cliente</h3>
+                {!showNewPaymentForm && (
+                  <button 
+                    onClick={() => setShowNewPaymentForm(true)}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      padding: '8px 16px',
+                      background: '#00B4D8',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '8px',
+                      fontSize: '14px',
+                      fontWeight: '600',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <MdAdd size={20} /> Novo Pagamento
+                  </button>
+                )}
+              </div>
+
+              {showNewPaymentForm && (
+                <div style={{ background: 'var(--bg-secondary)', padding: '20px', borderRadius: '12px', marginBottom: '24px', border: '1px solid var(--border-color)', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
+                  <h4 style={{ margin: '0 0 16px 0', fontSize: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <MdAdd size={20} color="#00B4D8" /> Cadastrar Novo Pagamento
+                  </h4>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '12px', marginBottom: '4px', color: 'var(--text-muted)' }}>Descrição</label>
+                      <input 
+                        type="text" 
+                        placeholder="Ex: Parcela 1"
+                        value={newPaymentData.description}
+                        onChange={e => setNewPaymentData({...newPaymentData, description: e.target.value})}
+                        style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'var(--bg-primary)', color: 'var(--text-primary)' }}
+                      />
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '12px', marginBottom: '4px', color: 'var(--text-muted)' }}>Valor (R$)</label>
+                      <input 
+                        type="number" 
+                        step="0.01"
+                        placeholder="0.00"
+                        value={newPaymentData.amount}
+                        onChange={e => setNewPaymentData({...newPaymentData, amount: e.target.value})}
+                        style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'var(--bg-primary)', color: 'var(--text-primary)' }}
+                      />
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '12px', marginBottom: '4px', color: 'var(--text-muted)' }}>Vencimento</label>
+                      <input 
+                        type="date" 
+                        value={newPaymentData.dueDate}
+                        onChange={e => setNewPaymentData({...newPaymentData, dueDate: e.target.value})}
+                        style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'var(--bg-primary)', color: 'var(--text-primary)' }}
+                      />
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '16px' }}>
+                    <button 
+                      onClick={() => setShowNewPaymentForm(false)}
+                      style={{ padding: '8px 16px', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'transparent', color: 'var(--text-muted)', cursor: 'pointer' }}
+                    >
+                      Cancelar
+                    </button>
+                    <button 
+                      onClick={async () => {
+                        if (!newPaymentData.description || !newPaymentData.amount || !newPaymentData.dueDate) {
+                          alert('Preencha todos os campos.');
+                          return;
+                        }
+                        
+                        const eventId = events.length > 0 ? events[0].id : null;
+                        if (!eventId) {
+                          alert('O cliente precisa ter pelo menos um evento vinculado.');
+                          return;
+                        }
+
+                        try {
+                          await paymentService.createPayment({
+                            eventId: eventId,
+                            amount: parseFloat(newPaymentData.amount),
+                            dueDate: newPaymentData.dueDate,
+                            description: newPaymentData.description,
+                            status: 'PENDING'
+                          });
+                          alert('Pagamento criado!');
+                          setShowNewPaymentForm(false);
+                          setNewPaymentData({ description: '', amount: '', dueDate: '' });
+                          window.location.reload();
+                        } catch (err) {
+                          alert('Erro ao criar pagamento.');
+                        }
+                      }}
+                      style={{ padding: '8px 16px', borderRadius: '6px', border: 'none', background: '#00B4D8', color: 'white', fontWeight: '600', cursor: 'pointer' }}
+                    >
+                      Criar Pagamento
+                    </button>
+                  </div>
+                </div>
+              )}
+
               {payments.length === 0 ? (
                 <div className={styles.noData}>
                   <MdPayment size={48} />
@@ -388,12 +591,12 @@ export const ClientDetailsModal: React.FC<ClientDetailsModalProps> = ({
                           <div className={styles.paymentMeta}>
                             <span className={styles.paymentDate}>
                               <MdDateRange size={12} />
-                              Vencimento: {new Date(payment.dueDate).toLocaleDateString('pt-BR')}
+                              Vencimento: {formatDate(payment.dueDate || (payment as any).due_date)}
                             </span>
                             {payment.paymentDate && (
                               <span className={styles.paymentDate}>
                                 <MdCheckCircle size={12} />
-                                Pago em: {new Date(payment.paymentDate).toLocaleDateString('pt-BR')}
+                                Pago em: {formatDate(payment.paymentDate)}
                               </span>
                             )}
                           </div>
@@ -401,6 +604,71 @@ export const ClientDetailsModal: React.FC<ClientDetailsModalProps> = ({
                         <div className={styles.paymentValue}>
                           <MdAttachMoney size={14} />
                           {formatCurrency(payment.amount)}
+                        </div>
+                        
+                        {/* Ações do Pagamento */}
+                        <div style={{ marginTop: '10px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                          {/* Removido botões de Aprovar/Rejeitar e Anexar Boleto daqui, agora estão nos respectivos modais */}
+                          
+                          {payment.receiptUrl && (
+                            <a 
+                              href={getValidUrl(payment.receiptUrl)} 
+                              target="_blank" 
+                              rel="noreferrer"
+                              style={{ padding: '6px 10px', fontSize: '12px', background: '#64748b', color: 'white', border: 'none', borderRadius: '4px', textDecoration: 'none', display: 'inline-block' }}
+                            >
+                              <MdReceipt size={14} style={{ marginRight: '4px', verticalAlign: 'middle' }}/> Ver Comprovante
+                            </a>
+                          )}
+                          
+                          {payment.invoiceUrl && (
+                            <a 
+                              href={getValidUrl(payment.invoiceUrl)} 
+                              target="_blank" 
+                              rel="noreferrer"
+                              style={{ padding: '6px 10px', fontSize: '12px', background: '#64748b', color: 'white', border: 'none', borderRadius: '4px', textDecoration: 'none', display: 'inline-block' }}
+                            >
+                              <FiFileText size={14} style={{ marginRight: '4px', verticalAlign: 'middle' }}/> Ver Boleto
+                            </a>
+                          )}
+
+                          <button 
+                            onClick={() => {
+                              const input = document.createElement('input');
+                              input.type = 'file';
+                              input.accept = 'application/pdf';
+                              input.onchange = async (e: any) => {
+                                const file = e.target.files?.[0];
+                                if (!file) return;
+                                
+                                try {
+                                  const formData = new FormData();
+                                  formData.append('file', file);
+                                  
+                                  const response = await api.post(`/payments/${payment.id}/upload-invoice`, formData, {
+                                    headers: {
+                                      'Content-Type': 'multipart/form-data'
+                                    }
+                                  });
+                                  
+                                  if (response.status === 200) {
+                                    alert('Boleto anexado com sucesso!');
+                                    // Recarregar os dados do cliente para mostrar o novo boleto
+                                    window.location.reload();
+                                  } else {
+                                    alert('Erro ao anexar boleto.');
+                                  }
+                                } catch (error: any) {
+                                  console.error(error);
+                                  alert('Erro ao enviar arquivo: ' + (error.response?.data?.message || error.message));
+                                }
+                              };
+                              input.click();
+                            }}
+                            style={{ padding: '6px 10px', fontSize: '12px', background: '#0ea5e9', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+                          >
+                            <FiUpload size={14} /> {payment.invoiceUrl ? 'Substituir Boleto' : 'Anexar Boleto'}
+                          </button>
                         </div>
                       </div>
                     );
@@ -586,6 +854,45 @@ export const ClientDetailsModal: React.FC<ClientDetailsModalProps> = ({
           )}
         </div>
       </div>
+      
+      {/* Modal Rejeitar */}
+      {showRejectModal && selectedPayment && (
+        <div className={styles.modalOverlay} style={{ zIndex: 1100 }}>
+          <div className={styles.modal} style={{ maxWidth: '400px' }} onClick={e => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <h3 style={{ margin: 0 }}>Rejeitar Comprovante</h3>
+              <button className={styles.closeButton} onClick={() => { setShowRejectModal(false); setSelectedPayment(null); }}><FiX size={20} /></button>
+            </div>
+            <div className={styles.modalContent} style={{ padding: '20px' }}>
+              <p style={{ margin: '0 0 10px 0', fontSize: '14px', color: '#475569' }}>
+                Informe o motivo da rejeição do comprovante. Este motivo será enviado ao cliente.
+              </p>
+              <textarea 
+                value={rejectReason}
+                onChange={(e) => setRejectReason(e.target.value)}
+                placeholder="Ex: Comprovante ilegível, valor incorreto..."
+                style={{ width: '100%', minHeight: '100px', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', marginBottom: '15px', boxSizing: 'border-box' }}
+              />
+              <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+                <button 
+                  onClick={() => { setShowRejectModal(false); setSelectedPayment(null); }}
+                  style={{ padding: '8px 16px', background: 'transparent', border: '1px solid #cbd5e1', borderRadius: '4px', cursor: 'pointer' }}
+                >
+                  Cancelar
+                </button>
+                <button 
+                  onClick={handleRejectPayment}
+                  disabled={actionLoading || !rejectReason.trim()}
+                  style={{ padding: '8px 16px', background: '#ef4444', color: 'white', border: 'none', borderRadius: '4px', cursor: actionLoading || !rejectReason.trim() ? 'not-allowed' : 'pointer' }}
+                >
+                  {actionLoading ? 'Rejeitando...' : 'Rejeitar'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };

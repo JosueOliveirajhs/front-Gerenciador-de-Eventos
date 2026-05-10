@@ -57,11 +57,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   useEffect(() => {
     if (!user) return;
-    const interval = setInterval(() => {
-      refreshUnreadCount();
-    }, 15000);
-    return () => clearInterval(interval);
-  }, [user, refreshUnreadCount]);
+    // O polling HTTP (setInterval) foi removido pois os WebSockets 
+    // agora cuidam das atualizações em tempo real no Header.tsx
+  }, [user]);
 
   const login = (userData: User, token: string) => {
     console.log('AuthContext - Login:', {

@@ -127,15 +127,15 @@ export const paymentService = {
   },
 
   /**
-   * Faz upload de comprovante
+   * Faz upload de comprovante pelo cliente
    */
   uploadReceipt: async (id: number, file: File): Promise<Payment> => {
     try {
       console.log(`📎 Upload de comprovante para pagamento ${id}...`);
       const formData = new FormData();
-      formData.append('receipt', file);
+      formData.append('file', file);
       
-      const response = await api.post(`/payments/${id}/receipt`, formData, {
+      const response = await api.post(`/payments/${id}/upload-receipt`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }
@@ -145,6 +145,85 @@ export const paymentService = {
       return response.data;
     } catch (error) {
       console.error('❌ Erro ao enviar comprovante:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Faz upload do boleto pela organização
+   */
+  uploadInvoice: async (id: number, file: File): Promise<Payment> => {
+    try {
+      console.log(`📎 Upload de boleto para pagamento ${id}...`);
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      const response = await api.post(`/payments/${id}/upload-invoice`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+      
+      console.log('✅ Boleto enviado');
+      return response.data;
+    } catch (error) {
+      console.error('❌ Erro ao enviar boleto:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Aprova um pagamento
+   */
+  approvePayment: async (id: number): Promise<Payment> => {
+    try {
+      console.log(`✅ Aprovando pagamento ${id}...`);
+      const response = await api.put(`/payments/${id}/approve`);
+      return response.data;
+    } catch (error) {
+      console.error(`❌ Erro ao aprovar pagamento ${id}:`, error);
+      throw error;
+    }
+  },
+
+  /**
+   * Rejeita um pagamento
+   */
+  rejectPayment: async (id: number, reason: string): Promise<Payment> => {
+    try {
+      console.log(`❌ Rejeitando pagamento ${id}...`);
+      const response = await api.put(`/payments/${id}/reject`, null, { params: { reason } });
+      return response.data;
+    } catch (error) {
+      console.error(`❌ Erro ao rejeitar pagamento ${id}:`, error);
+      throw error;
+    }
+  },
+
+  /**
+   * Cria uma assinatura para a organização
+   */
+  createSubscription: async (orgId: number, subscriptionData: { planType: string, billingCycle: string, billingType: string }): Promise<any> => {
+    try {
+      console.log(`📝 Criando assinatura para organização ${orgId}...`, subscriptionData);
+      const response = await api.post(`/payments/${orgId}/create-subscription`, subscriptionData);
+      return response.data;
+    } catch (error) {
+      console.error(`❌ Erro ao criar assinatura para organização ${orgId}:`, error);
+      throw error;
+    }
+  },
+
+  /**
+   * Faz upgrade da assinatura para a organização
+   */
+  upgradeSubscription: async (orgId: number, subscriptionData: { planType: string, billingCycle: string, billingType: string }): Promise<any> => {
+    try {
+      console.log(`🚀 Fazendo upgrade de assinatura para organização ${orgId}...`, subscriptionData);
+      const response = await api.post(`/payments/${orgId}/upgrade-subscription`, subscriptionData);
+      return response.data;
+    } catch (error) {
+      console.error(`❌ Erro ao fazer upgrade de assinatura para organização ${orgId}:`, error);
       throw error;
     }
   },

@@ -40,7 +40,9 @@ import { useTheme } from '../../../context/ThemeContext';
 import { useAuth } from '../../../context/AuthContext';
 import styles from './SettingsPage.module.css';
 
-type TabType = 'empresa' | 'aparencia' | 'notificacoes' | 'financeiro' | 'seguranca' | 'integracoes';
+import { paymentService } from '../../../services/payments';
+
+type TabType = 'empresa' | 'aparencia' | 'notificacoes' | 'financeiro' | 'seguranca' | 'integracoes' | 'assinatura';
 
 export const SettingsPage: React.FC = () => {
   const { user } = useAuth();
@@ -73,6 +75,10 @@ export const SettingsPage: React.FC = () => {
     businessAccountId: '',
     accessToken: ''
   });
+  
+  // Estados para Assinatura
+  const [subLoading, setSubLoading] = useState(false);
+  const [billingCycle, setBillingCycle] = useState('MONTHLY');
 
   useEffect(() => {
     loadSettings();
@@ -171,6 +177,7 @@ export const SettingsPage: React.FC = () => {
     { id: 'aparencia', label: 'Aparência', icon: <MdPalette size={18} />, showForClient: true },
     { id: 'notificacoes', label: 'Notificações', icon: <MdNotifications size={18} />, showForClient: true },
     { id: 'financeiro', label: 'Financeiro', icon: <MdPayment size={18} />, showForClient: false },
+    { id: 'assinatura', label: 'Assinatura', icon: <FiPackage size={18} />, showForClient: false },
     { id: 'seguranca', label: 'Segurança', icon: <MdSecurity size={18} />, showForClient: true },
     { id: 'integracoes', label: 'Integrações', icon: <FiGlobe size={18} />, showForClient: false }
   ];
@@ -748,6 +755,91 @@ export const SettingsPage: React.FC = () => {
               </p>
               
               {/* ... (conteúdo de integrações existente) ... */}
+            </div>
+          )}
+
+          {/* ============================================ */}
+          {/* ABA ASSINATURA (APENAS OWNER) */}
+          {/* ============================================ */}
+          {activeTab === 'assinatura' && !isClient && (
+            <div className={styles.settingsSection}>
+              <h2 className={styles.sectionTitle}>Plano de Assinatura</h2>
+              <p className={styles.sectionDescription}>
+                Escolha o plano ideal para a sua organização.
+              </p>
+              
+              <div style={{ display: 'flex', justifyContent: 'center', margin: '20px 0', gap: '10px' }}>
+                <button 
+                  onClick={() => setBillingCycle('MONTHLY')} 
+                  style={{ padding: '8px 16px', borderRadius: '20px', border: '1px solid #3b82f6', background: billingCycle === 'MONTHLY' ? '#3b82f6' : 'transparent', color: billingCycle === 'MONTHLY' ? '#fff' : '#3b82f6', cursor: 'pointer' }}
+                >
+                  Mensal
+                </button>
+                <button 
+                  onClick={() => setBillingCycle('SEMIANNUALLY')} 
+                  style={{ padding: '8px 16px', borderRadius: '20px', border: '1px solid #3b82f6', background: billingCycle === 'SEMIANNUALLY' ? '#3b82f6' : 'transparent', color: billingCycle === 'SEMIANNUALLY' ? '#fff' : '#3b82f6', cursor: 'pointer' }}
+                >
+                  Semestral (10% off)
+                </button>
+                <button 
+                  onClick={() => setBillingCycle('YEARLY')} 
+                  style={{ padding: '8px 16px', borderRadius: '20px', border: '1px solid #3b82f6', background: billingCycle === 'YEARLY' ? '#3b82f6' : 'transparent', color: billingCycle === 'YEARLY' ? '#fff' : '#3b82f6', cursor: 'pointer' }}
+                >
+                  Anual (20% off)
+                </button>
+              </div>
+
+              <div style={{ display: 'flex', gap: '20px', marginTop: '20px', flexWrap: 'wrap', justifyContent: 'center' }}>
+                {[
+                  { id: 'ESSENCIAL', name: 'Essencial', price: 297.00, features: ['Eventos Básicos', 'Suporte Padrão'] },
+                  { id: 'PROFISSIONAL', name: 'Profissional', price: 497.00, features: ['Eventos Ilimitados', 'Integrações', 'Suporte Prioritário'], recommended: true },
+                  { id: 'PREMIUM', name: 'Premium', price: 697.00, features: ['Tudo do Profissional', 'Automações', 'Múltiplos Usuários'] },
+                  { id: 'ENTERPRISE', name: 'Enterprise', price: 1197.00, features: ['White Label', 'API de Acesso', 'Gerente de Contas'] }
+                ].map(plan => {
+                  let finalPrice = plan.price;
+                  if (billingCycle === 'SEMIANNUALLY') finalPrice = (plan.price * 6) * 0.9;
+                  if (billingCycle === 'YEARLY') finalPrice = (plan.price * 12) * 0.8;
+
+                  return (
+                    <div key={plan.id} style={{ flex: '1', minWidth: '220px', maxWidth: '280px', padding: '20px', border: plan.recommended ? '2px solid #3b82f6' : '1px solid #cbd5e1', borderRadius: '8px', textAlign: 'center', position: 'relative' }}>
+                      {plan.recommended && <div style={{ position: 'absolute', top: '-12px', left: '50%', transform: 'translateX(-50%)', background: '#3b82f6', color: 'white', padding: '4px 12px', borderRadius: '12px', fontSize: '12px', fontWeight: 'bold' }}>Recomendado</div>}
+                      <h3>{plan.name}</h3>
+                      <p style={{ fontSize: '24px', fontWeight: 'bold', margin: '15px 0' }}>
+                        R$ {finalPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                        <small style={{ fontSize: '12px', display: 'block', fontWeight: 'normal', color: '#64748b' }}>
+                          {billingCycle === 'MONTHLY' ? '/mês' : billingCycle === 'SEMIANNUALLY' ? '/semestre' : '/ano'}
+                        </small>
+                      </p>
+                      <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 20px 0', textAlign: 'left', lineHeight: '1.6', fontSize: '14px' }}>
+                        {plan.features.map((feat, idx) => (
+                          <li key={idx}><FiCheck color="#10b981"/> {feat}</li>
+                        ))}
+                      </ul>
+                      <button 
+                        disabled={subLoading}
+                        onClick={async () => {
+                          try {
+                            setSubLoading(true);
+                            await paymentService.createSubscription(user?.id || 0, { 
+                              planType: plan.id, 
+                              billingCycle: billingCycle, 
+                              billingType: 'UNDEFINED' // Permite que a organização escolha a forma de pagamento depois
+                            });
+                            alert(`Plano ${plan.name} selecionado com sucesso!`);
+                          } catch (err: any) {
+                            alert('Erro ao assinar: ' + (err.response?.data?.error || err.message));
+                          } finally {
+                            setSubLoading(false);
+                          }
+                        }}
+                        style={{ width: '100%', padding: '10px', background: plan.recommended ? '#10b981' : '#3b82f6', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: plan.recommended ? 'bold' : 'normal' }}
+                      >
+                        {subLoading ? 'Processando...' : 'Assinar ' + plan.name}
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           )}
         </div>

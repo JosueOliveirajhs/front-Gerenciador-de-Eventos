@@ -1,7 +1,7 @@
 // src/services/receipts.ts
 
 import { api } from './api';
-import { Receipt, UploadReceiptData, ApiResponse } from '../components/developer/pages/developer/clients/types';
+import { Receipt, UploadReceiptData } from '../components/OwnerCompoents/types';
 
 export const receiptService = {
     /**
@@ -9,8 +9,8 @@ export const receiptService = {
      */
     getClientReceipts: async (clientId: number): Promise<Receipt[]> => {
         try {
-            const response = await api.get<ApiResponse<Receipt[]>>(`/api/receipts/client/${clientId}`);
-            return response.data.data || [];
+            const response = await api.get<Receipt[]>(`/api/receipts/client/${clientId}`);
+            return response.data || [];
         } catch (error) {
             console.error('Erro ao buscar comprovantes:', error);
             return []; // Retorna array vazio em caso de erro
@@ -34,17 +34,17 @@ export const receiptService = {
         }
 
         try {
-            const response = await api.post<ApiResponse<Receipt>>('/api/receipts', formData, {
+            const response = await api.post<Receipt>('/api/receipts/upload', formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data',
                 },
             });
             
-            if (!response.data.data) {
+            if (!response.data) {
                 throw new Error('Resposta inválida do servidor');
             }
             
-            return response.data.data;
+            return response.data;
         } catch (error) {
             console.error('Erro ao fazer upload:', error);
             throw error;

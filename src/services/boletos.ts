@@ -1,7 +1,7 @@
 // src/services/boletos.ts
 
 import { api } from './api';
-import { Boleto, GenerateBoletoData, ApiResponse } from '../components/developer/pages/developer/clients/types';
+import { Boleto, GenerateBoletoData, ApiResponse } from '../components/OwnerCompoents/types';
 
 export const boletoService = {
     /**
@@ -29,6 +29,34 @@ export const boletoService = {
             return response.data.data;
         } catch (error) {
             console.error('Erro ao gerar boleto:', error);
+            throw error;
+        }
+    },
+
+    /**
+     * Fazer upload de boleto manual
+     */
+    uploadBoleto: async (clientId: number, description: string, value: number, dueDate: Date, file: File): Promise<Boleto> => {
+        try {
+            const formData = new FormData();
+            formData.append('clientId', clientId.toString());
+            formData.append('description', description);
+            formData.append('value', value.toString());
+            formData.append('dueDate', dueDate.toISOString().split('T')[0]);
+            formData.append('file', file);
+
+            const response = await api.post<ApiResponse<Boleto>>('/api/boletos/upload', formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                },
+            });
+            
+            if (!response.data.data) {
+                throw new Error('Resposta inválida do servidor');
+            }
+            return response.data.data;
+        } catch (error) {
+            console.error('Erro ao fazer upload de boleto:', error);
             throw error;
         }
     },

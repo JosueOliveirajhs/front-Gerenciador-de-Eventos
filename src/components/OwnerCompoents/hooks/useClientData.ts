@@ -100,10 +100,10 @@ export const useClientData = (clientId: number) => {
     const averageTicket = totalEvents > 0 ? totalSpent / totalEvents : 0;
 
     // Pagamentos
-    const pendingPayments = clientPayments.filter(p => p.status === 'PENDING').length;
+    const pendingPayments = clientPayments.filter(p => ['PENDING', 'WAITING_APPROVAL', 'REJECTED'].includes(p.status)).length;
     const paidPayments = clientPayments.filter(p => p.status === 'PAID').length;
     const overduePayments = clientPayments.filter(p => 
-      p.status === 'PENDING' && new Date(p.dueDate) < new Date()
+      (p.status === 'PENDING' || p.status === 'WAITING_APPROVAL') && new Date(p.dueDate) < new Date()
     ).length;
 
     // Datas dos eventos
