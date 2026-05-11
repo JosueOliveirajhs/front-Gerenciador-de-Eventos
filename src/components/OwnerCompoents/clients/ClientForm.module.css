@@ -1,5 +1,56 @@
 /* src/components/admin/clients/components/ClientForm.module.css */
+/* Estilos para o botão de olhinho na senha */
+.inputWrapper {
+  position: relative;
+  width: 100%;
+}
 
+.passwordInput {
+  padding-right: 45px !important; /* Espaço para o botão do olhinho */
+}
+
+.passwordToggle {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-muted);
+  padding: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  z-index: 1;
+}
+
+.passwordToggle:hover {
+  color: #00B4D8;
+}
+
+/* Garantir que o input wrapper tenha posição relativa */
+.inputWrapper {
+  position: relative;
+}
+
+.input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--input-border);
+  border-radius: 8px;
+  font-size: 14px;
+  background: var(--input-bg);
+  color: var(--text-primary);
+  transition: all 0.2s;
+}
+
+.input:focus {
+  outline: none;
+  border-color: #00B4D8;
+  box-shadow: 0 0 0 3px rgba(0, 180, 216, 0.1);
+}
 .modalOverlay {
     position: fixed;
     top: 0;

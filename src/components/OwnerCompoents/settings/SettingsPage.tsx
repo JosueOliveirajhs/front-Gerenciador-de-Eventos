@@ -1,5 +1,5 @@
 // src/components/OwnerCompoents/settings/SettingsPage.tsx
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   FiSave, 
   FiBell, 
@@ -21,7 +21,8 @@ import {
   FiCheck,
   FiX,
   FiRefreshCw,
-  FiMapPin
+  FiMapPin,
+  FiUser
 } from 'react-icons/fi';
 import { 
   MdBusiness, 
@@ -48,7 +49,6 @@ export const SettingsPage: React.FC = () => {
   const { user } = useAuth();
   const { theme, setTheme } = useTheme();
   
-  // ✅ Verificar se é CLIENT
   const isClient = user?.userType === 'CLIENT';
   
   const [settings, setSettings] = useState<SystemSettings | null>(null);
@@ -61,7 +61,6 @@ export const SettingsPage: React.FC = () => {
   const [showErrorModal, setShowErrorModal] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   
-  // Estados para integrações
   const [integrationStatus, setIntegrationStatus] = useState<Record<IntegrationProvider, IntegrationStatus>>({
     google: { connected: false },
     outlook: { connected: false },
@@ -76,7 +75,6 @@ export const SettingsPage: React.FC = () => {
     accessToken: ''
   });
   
-  // Estados para Assinatura
   const [subLoading, setSubLoading] = useState(false);
   const [billingCycle, setBillingCycle] = useState('MONTHLY');
 
@@ -171,7 +169,6 @@ export const SettingsPage: React.FC = () => {
     setHasChanges(true);
   };
 
-  // ✅ Tabs: CLIENT não vê 'empresa' e 'integracoes'
   const tabs: { id: TabType; label: string; icon: React.ReactNode; showForClient?: boolean }[] = [
     { id: 'empresa', label: 'Empresa', icon: <MdBusiness size={18} />, showForClient: false },
     { id: 'aparencia', label: 'Aparência', icon: <MdPalette size={18} />, showForClient: true },
@@ -182,7 +179,6 @@ export const SettingsPage: React.FC = () => {
     { id: 'integracoes', label: 'Integrações', icon: <FiGlobe size={18} />, showForClient: false }
   ];
 
-  // Filtrar tabs para CLIENT
   const visibleTabs = isClient 
     ? tabs.filter(tab => tab.showForClient !== false)
     : tabs;
@@ -210,7 +206,6 @@ export const SettingsPage: React.FC = () => {
 
   return (
     <div className={styles.settingsPage}>
-      {/* Cabeçalho */}
       <div className={styles.pageHeader}>
         <div>
           <h1 className={styles.pageTitle}>
@@ -260,9 +255,7 @@ export const SettingsPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Container Principal */}
       <div className={styles.settingsContainer}>
-        {/* Sidebar */}
         <div className={styles.settingsSidebar}>
           {visibleTabs.map(tab => (
             <button
@@ -276,151 +269,218 @@ export const SettingsPage: React.FC = () => {
           ))}
         </div>
 
-        {/* Conteúdo */}
         <div className={styles.settingsContent}>
           
           {/* ============================================ */}
-          {/* ABA EMPRESA (APENAS OWNER) */}
+          {/* ABA EMPRESA */}
           {/* ============================================ */}
           {activeTab === 'empresa' && !isClient && (
-            <div className={styles.settingsSection}>
-              <h2 className={styles.sectionTitle}>Informações da Empresa</h2>
-              
-              <div className={styles.formGrid}>
-                <div className={styles.formGroup}>
-                  <label className={styles.formLabel}>
-                    <MdBusiness size={14} />
-                    Nome da Empresa *
-                  </label>
-                  <input
-                    type="text"
-                    className={styles.formInput}
-                    value={settings.company.name}
-                    onChange={(e) => updateSettings('company', { name: e.target.value })}
-                    placeholder="Nome da empresa"
-                  />
-                </div>
+            <>
+              <div className={styles.settingsSection}>
+                <h2 className={styles.sectionTitle}>Informações da Empresa</h2>
+                
+                <div className={styles.formGrid}>
+                  <div className={styles.formGroup}>
+                    <label className={styles.formLabel}>
+                      <MdBusiness size={14} />
+                      Nome da Empresa *
+                    </label>
+                    <input
+                      type="text"
+                      className={styles.formInput}
+                      value={settings.company.name}
+                      onChange={(e) => updateSettings('company', { name: e.target.value })}
+                      placeholder="Nome da empresa"
+                    />
+                  </div>
 
-                <div className={styles.formGroup}>
-                  <label className={styles.formLabel}>
-                    CNPJ/CPF *
-                  </label>
-                  <input
-                    type="text"
-                    className={styles.formInput}
-                    value={settings.company.document}
-                    onChange={(e) => updateSettings('company', { document: e.target.value })}
-                    placeholder="00.000.000/0000-00"
-                  />
-                </div>
+                  <div className={styles.formGroup}>
+                    <label className={styles.formLabel}>CNPJ/CPF *</label>
+                    <input
+                      type="text"
+                      className={styles.formInput}
+                      value={settings.company.document}
+                      onChange={(e) => updateSettings('company', { document: e.target.value })}
+                      placeholder="00.000.000/0000-00"
+                    />
+                  </div>
 
-                <div className={styles.formGroup}>
-                  <label className={styles.formLabel}>
-                    <FiPhone size={14} />
-                    Telefone
-                  </label>
-                  <input
-                    type="text"
-                    className={styles.formInput}
-                    value={settings.company.phone}
-                    onChange={(e) => updateSettings('company', { phone: e.target.value })}
-                    placeholder="(00) 00000-0000"
-                  />
-                </div>
+                  <div className={styles.formGroup}>
+                    <label className={styles.formLabel}>
+                      <FiPhone size={14} />
+                      Telefone
+                    </label>
+                    <input
+                      type="text"
+                      className={styles.formInput}
+                      value={settings.company.phone}
+                      onChange={(e) => updateSettings('company', { phone: e.target.value })}
+                      placeholder="(00) 00000-0000"
+                    />
+                  </div>
 
-                <div className={styles.formGroup}>
-                  <label className={styles.formLabel}>
-                    <FiMail size={14} />
-                    E-mail
-                  </label>
-                  <input
-                    type="email"
-                    className={styles.formInput}
-                    value={settings.company.email}
-                    onChange={(e) => updateSettings('company', { email: e.target.value })}
-                    placeholder="contato@empresa.com"
-                  />
-                </div>
+                  <div className={styles.formGroup}>
+                    <label className={styles.formLabel}>
+                      <FiMail size={14} />
+                      E-mail
+                    </label>
+                    <input
+                      type="email"
+                      className={styles.formInput}
+                      value={settings.company.email}
+                      onChange={(e) => updateSettings('company', { email: e.target.value })}
+                      placeholder="contato@empresa.com"
+                    />
+                  </div>
 
-                <div className={styles.formGroupFull}>
-                  <label className={styles.formLabel}>
-                    <FiMapPin size={14} />
-                    Endereço
-                  </label>
-                  <input
-                    type="text"
-                    className={styles.formInput}
-                    value={settings.company.address}
-                    onChange={(e) => updateSettings('company', { address: e.target.value })}
-                    placeholder="Rua, número, bairro"
-                  />
-                </div>
+                  <div className={styles.formGroupFull}>
+                    <label className={styles.formLabel}>
+                      <FiMapPin size={14} />
+                      Endereço
+                    </label>
+                    <input
+                      type="text"
+                      className={styles.formInput}
+                      value={settings.company.address}
+                      onChange={(e) => updateSettings('company', { address: e.target.value })}
+                      placeholder="Rua, número, bairro"
+                    />
+                  </div>
 
-                <div className={styles.formGroup}>
-                  <label className={styles.formLabel}>Cidade</label>
-                  <input
-                    type="text"
-                    className={styles.formInput}
-                    value={settings.company.city}
-                    onChange={(e) => updateSettings('company', { city: e.target.value })}
-                    placeholder="Cidade"
-                  />
-                </div>
+                  <div className={styles.formGroup}>
+                    <label className={styles.formLabel}>Cidade</label>
+                    <input
+                      type="text"
+                      className={styles.formInput}
+                      value={settings.company.city}
+                      onChange={(e) => updateSettings('company', { city: e.target.value })}
+                      placeholder="Cidade"
+                    />
+                  </div>
 
-                <div className={styles.formGroup}>
-                  <label className={styles.formLabel}>Estado</label>
-                  <select
-                    className={styles.formInput}
-                    value={settings.company.state}
-                    onChange={(e) => updateSettings('company', { state: e.target.value })}
-                  >
-                    <option value="">Selecione...</option>
-                    <option value="AC">Acre</option>
-                    <option value="AL">Alagoas</option>
-                    <option value="AP">Amapá</option>
-                    <option value="AM">Amazonas</option>
-                    <option value="BA">Bahia</option>
-                    <option value="CE">Ceará</option>
-                    <option value="DF">Distrito Federal</option>
-                    <option value="ES">Espírito Santo</option>
-                    <option value="GO">Goiás</option>
-                    <option value="MA">Maranhão</option>
-                    <option value="MT">Mato Grosso</option>
-                    <option value="MS">Mato Grosso do Sul</option>
-                    <option value="MG">Minas Gerais</option>
-                    <option value="PA">Pará</option>
-                    <option value="PB">Paraíba</option>
-                    <option value="PR">Paraná</option>
-                    <option value="PE">Pernambuco</option>
-                    <option value="PI">Piauí</option>
-                    <option value="RJ">Rio de Janeiro</option>
-                    <option value="RN">Rio Grande do Norte</option>
-                    <option value="RS">Rio Grande do Sul</option>
-                    <option value="RO">Rondônia</option>
-                    <option value="RR">Roraima</option>
-                    <option value="SC">Santa Catarina</option>
-                    <option value="SP">São Paulo</option>
-                    <option value="SE">Sergipe</option>
-                    <option value="TO">Tocantins</option>
-                  </select>
-                </div>
+                  <div className={styles.formGroup}>
+                    <label className={styles.formLabel}>Estado</label>
+                    <select
+                      className={styles.formInput}
+                      value={settings.company.state}
+                      onChange={(e) => updateSettings('company', { state: e.target.value })}
+                    >
+                      <option value="">Selecione...</option>
+                      <option value="AC">Acre</option><option value="AL">Alagoas</option>
+                      <option value="AP">Amapá</option><option value="AM">Amazonas</option>
+                      <option value="BA">Bahia</option><option value="CE">Ceará</option>
+                      <option value="DF">Distrito Federal</option><option value="ES">Espírito Santo</option>
+                      <option value="GO">Goiás</option><option value="MA">Maranhão</option>
+                      <option value="MT">Mato Grosso</option><option value="MS">Mato Grosso do Sul</option>
+                      <option value="MG">Minas Gerais</option><option value="PA">Pará</option>
+                      <option value="PB">Paraíba</option><option value="PR">Paraná</option>
+                      <option value="PE">Pernambuco</option><option value="PI">Piauí</option>
+                      <option value="RJ">Rio de Janeiro</option><option value="RN">Rio Grande do Norte</option>
+                      <option value="RS">Rio Grande do Sul</option><option value="RO">Rondônia</option>
+                      <option value="RR">Roraima</option><option value="SC">Santa Catarina</option>
+                      <option value="SP">São Paulo</option><option value="SE">Sergipe</option>
+                      <option value="TO">Tocantins</option>
+                    </select>
+                  </div>
 
-                <div className={styles.formGroup}>
-                  <label className={styles.formLabel}>CEP</label>
-                  <input
-                    type="text"
-                    className={styles.formInput}
-                    value={settings.company.zipCode}
-                    onChange={(e) => updateSettings('company', { zipCode: e.target.value })}
-                    placeholder="00000-000"
-                  />
+                  <div className={styles.formGroup}>
+                    <label className={styles.formLabel}>CEP</label>
+                    <input
+                      type="text"
+                      className={styles.formInput}
+                      value={settings.company.zipCode}
+                      onChange={(e) => updateSettings('company', { zipCode: e.target.value })}
+                      placeholder="00000-000"
+                    />
+                  </div>
                 </div>
               </div>
-            </div>
+
+              {/* ✅ SEÇÃO PIX */}
+              <div className={styles.settingsSection} style={{ marginTop: '2rem', paddingTop: '2rem', borderTop: '2px solid var(--border-color)' }}>
+                <h2 className={styles.sectionTitle}>
+                  <FiDollarSign size={22} style={{ marginRight: '8px' }} />
+                  Dados para Pagamento PIX
+                </h2>
+                <p className={styles.sectionDescription}>
+                  Configure os dados que aparecerão para os clientes na hora do pagamento via PIX
+                </p>
+                
+                <div className={styles.formGrid}>
+                  <div className={styles.formGroup}>
+                    <label className={styles.formLabel}>
+                      <FiDollarSign size={14} />
+                      Tipo da Chave PIX
+                    </label>
+                    <select
+                      className={styles.formInput}
+                      value={settings.company.pixKeyType || 'CNPJ'}
+                      onChange={(e) => updateSettings('company', { pixKeyType: e.target.value } as any)}
+                    >
+                      <option value="CNPJ">CNPJ</option>
+                      <option value="CPF">CPF</option>
+                      <option value="EMAIL">E-mail</option>
+                      <option value="PHONE">Telefone</option>
+                      <option value="RANDOM">Chave Aleatória</option>
+                    </select>
+                  </div>
+
+                  <div className={styles.formGroup}>
+                    <label className={styles.formLabel}>
+                      <FiDollarSign size={14} />
+                      Chave PIX
+                    </label>
+                    <input
+                      type="text"
+                      className={styles.formInput}
+                      value={settings.company.pixKey || ''}
+                      onChange={(e) => updateSettings('company', { pixKey: e.target.value } as any)}
+                      placeholder="Sua chave PIX"
+                    />
+                  </div>
+
+                  <div className={styles.formGroup}>
+                    <label className={styles.formLabel}>
+                      <FiUser size={14} />
+                      Nome do Titular
+                    </label>
+                    <input
+                      type="text"
+                      className={styles.formInput}
+                      value={settings.company.pixHolderName || ''}
+                      onChange={(e) => updateSettings('company', { pixHolderName: e.target.value } as any)}
+                      placeholder="Nome que aparece no PIX"
+                    />
+                  </div>
+
+                  <div className={styles.formGroup}>
+                    <label className={styles.formLabel}>
+                      <MdBusiness size={14} />
+                      Nome do Banco
+                    </label>
+                    <input
+                      type="text"
+                      className={styles.formInput}
+                      value={settings.company.bankName || ''}
+                      onChange={(e) => updateSettings('company', { bankName: e.target.value } as any)}
+                      placeholder="Ex: Asaas IP S.A."
+                    />
+                  </div>
+                </div>
+                
+                <div className={styles.infoBox} style={{ marginTop: '1.5rem' }}>
+                  <FiInfo size={18} />
+                  <div>
+                    <strong>Importante</strong>
+                    <p>Estes dados serão exibidos para os clientes no momento do pagamento via PIX. Certifique-se de que estão corretos.</p>
+                  </div>
+                </div>
+              </div>
+            </>
           )}
 
           {/* ============================================ */}
-          {/* ABA APARÊNCIA (TODOS) */}
+          {/* ABA APARÊNCIA */}
           {/* ============================================ */}
           {activeTab === 'aparencia' && (
             <div className={styles.settingsSection}>
@@ -490,7 +550,7 @@ export const SettingsPage: React.FC = () => {
           )}
 
           {/* ============================================ */}
-          {/* ABA NOTIFICAÇÕES (TODOS) */}
+          {/* ABA NOTIFICAÇÕES */}
           {/* ============================================ */}
           {activeTab === 'notificacoes' && (
             <div className={styles.settingsSection}>
@@ -536,69 +596,35 @@ export const SettingsPage: React.FC = () => {
                 <h3>Alertas do Sistema</h3>
                 
                 <label className={styles.checkboxLabel}>
-                  <input
-                    type="checkbox"
-                    checked={settings.notifications.newEventAlert}
-                    onChange={(e) => updateSettings('notifications', { newEventAlert: e.target.checked })}
-                  />
-                  <MdEvent size={16} />
-                  <span>Novo evento cadastrado</span>
+                  <input type="checkbox" checked={settings.notifications.newEventAlert} onChange={(e) => updateSettings('notifications', { newEventAlert: e.target.checked })} />
+                  <MdEvent size={16} /><span>Novo evento cadastrado</span>
                 </label>
-
                 <label className={styles.checkboxLabel}>
-                  <input
-                    type="checkbox"
-                    checked={settings.notifications.eventReminder}
-                    onChange={(e) => updateSettings('notifications', { eventReminder: e.target.checked })}
-                  />
-                  <FiCalendar size={16} />
-                  <span>Lembrete de evento</span>
+                  <input type="checkbox" checked={settings.notifications.eventReminder} onChange={(e) => updateSettings('notifications', { eventReminder: e.target.checked })} />
+                  <FiCalendar size={16} /><span>Lembrete de evento</span>
                 </label>
-
                 <label className={styles.checkboxLabel}>
-                  <input
-                    type="checkbox"
-                    checked={settings.notifications.paymentReceived}
-                    onChange={(e) => updateSettings('notifications', { paymentReceived: e.target.checked })}
-                  />
-                  <FiDollarSign size={16} />
-                  <span>Pagamento recebido</span>
+                  <input type="checkbox" checked={settings.notifications.paymentReceived} onChange={(e) => updateSettings('notifications', { paymentReceived: e.target.checked })} />
+                  <FiDollarSign size={16} /><span>Pagamento recebido</span>
                 </label>
-
                 <label className={styles.checkboxLabel}>
-                  <input
-                    type="checkbox"
-                    checked={settings.notifications.lowStockAlert}
-                    onChange={(e) => updateSettings('notifications', { lowStockAlert: e.target.checked })}
-                  />
-                  <FiPackage size={16} />
-                  <span>Estoque baixo</span>
+                  <input type="checkbox" checked={settings.notifications.lowStockAlert} onChange={(e) => updateSettings('notifications', { lowStockAlert: e.target.checked })} />
+                  <FiPackage size={16} /><span>Estoque baixo</span>
                 </label>
               </div>
 
               <div className={styles.notificationsSection}>
                 <h3>Configurações de Lembrete</h3>
-                
                 <div className={styles.formGroup}>
-                  <label className={styles.formLabel}>
-                    <FiClock size={14} />
-                    Lembrar com antecedência (dias)
-                  </label>
-                  <input
-                    type="number"
-                    min="1"
-                    max="30"
-                    className={styles.formInput}
-                    value={settings.notifications.reminderDays}
-                    onChange={(e) => updateSettings('notifications', { reminderDays: parseInt(e.target.value) || 1 })}
-                  />
+                  <label className={styles.formLabel}><FiClock size={14} /> Lembrar com antecedência (dias)</label>
+                  <input type="number" min="1" max="30" className={styles.formInput} value={settings.notifications.reminderDays} onChange={(e) => updateSettings('notifications', { reminderDays: parseInt(e.target.value) || 1 })} />
                 </div>
               </div>
             </div>
           )}
 
           {/* ============================================ */}
-          {/* ABA FINANCEIRO (APENAS OWNER) */}
+          {/* ABA FINANCEIRO */}
           {/* ============================================ */}
           {activeTab === 'financeiro' && !isClient && (
             <div className={styles.settingsSection}>
@@ -606,64 +632,33 @@ export const SettingsPage: React.FC = () => {
               
               <div className={styles.formGrid}>
                 <div className={styles.formGroup}>
-                  <label className={styles.formLabel}>
-                    <FiDollarSign size={14} />
-                    Moeda Padrão
-                  </label>
-                  <select
-                    className={styles.formInput}
-                    value={settings.financial.currency}
-                    onChange={(e) => updateSettings('financial', { currency: e.target.value as any })}
-                  >
+                  <label className={styles.formLabel}><FiDollarSign size={14} /> Moeda Padrão</label>
+                  <select className={styles.formInput} value={settings.financial.currency} onChange={(e) => updateSettings('financial', { currency: e.target.value as any })}>
                     <option value="BRL">Real Brasileiro (R$)</option>
                     <option value="USD">Dólar Americano ($)</option>
                     <option value="EUR">Euro (€)</option>
                   </select>
                 </div>
-
                 <div className={styles.formGroup}>
-                  <label className={styles.formLabel}>
-                    Prazo de Pagamento Padrão (dias)
-                  </label>
-                  <input
-                    type="number"
-                    min="0"
-                    className={styles.formInput}
-                    value={settings.financial.defaultPaymentTerms}
-                    onChange={(e) => updateSettings('financial', { defaultPaymentTerms: parseInt(e.target.value) || 0 })}
-                  />
+                  <label className={styles.formLabel}>Prazo de Pagamento Padrão (dias)</label>
+                  <input type="number" min="0" className={styles.formInput} value={settings.financial.defaultPaymentTerms} onChange={(e) => updateSettings('financial', { defaultPaymentTerms: parseInt(e.target.value) || 0 })} />
                 </div>
               </div>
 
               <div className={styles.notificationsSection}>
                 <h3>Configurações de Sinal</h3>
-                
                 <label className={styles.switchLabel}>
                   <div className={styles.switchInfo}>
                     <strong>Exigir sinal</strong>
                     <p>Obrigar pagamento de sinal para confirmar eventos</p>
                   </div>
-                  <input
-                    type="checkbox"
-                    checked={settings.financial.requireDeposit}
-                    onChange={(e) => updateSettings('financial', { requireDeposit: e.target.checked })}
-                  />
+                  <input type="checkbox" checked={settings.financial.requireDeposit} onChange={(e) => updateSettings('financial', { requireDeposit: e.target.checked })} />
                   <span className={styles.switchSlider}></span>
                 </label>
-
                 {settings.financial.requireDeposit && (
                   <div className={styles.formGroup}>
-                    <label className={styles.formLabel}>
-                      Percentual do Sinal (%)
-                    </label>
-                    <input
-                      type="number"
-                      min="1"
-                      max="100"
-                      className={styles.formInput}
-                      value={settings.financial.depositPercentage}
-                      onChange={(e) => updateSettings('financial', { depositPercentage: parseInt(e.target.value) || 0 })}
-                    />
+                    <label className={styles.formLabel}>Percentual do Sinal (%)</label>
+                    <input type="number" min="1" max="100" className={styles.formInput} value={settings.financial.depositPercentage} onChange={(e) => updateSettings('financial', { depositPercentage: parseInt(e.target.value) || 0 })} />
                   </div>
                 )}
               </div>
@@ -673,18 +668,14 @@ export const SettingsPage: React.FC = () => {
                   <strong>Gerar notas automaticamente</strong>
                   <p>Criar nota fiscal automaticamente após confirmação</p>
                 </div>
-                <input
-                  type="checkbox"
-                  checked={settings.financial.autoGenerateInvoices}
-                  onChange={(e) => updateSettings('financial', { autoGenerateInvoices: e.target.checked })}
-                />
+                <input type="checkbox" checked={settings.financial.autoGenerateInvoices} onChange={(e) => updateSettings('financial', { autoGenerateInvoices: e.target.checked })} />
                 <span className={styles.switchSlider}></span>
               </label>
             </div>
           )}
 
           {/* ============================================ */}
-          {/* ABA SEGURANÇA (TODOS) */}
+          {/* ABA SEGURANÇA */}
           {/* ============================================ */}
           {activeTab === 'seguranca' && (
             <div className={styles.settingsSection}>
@@ -692,31 +683,12 @@ export const SettingsPage: React.FC = () => {
               
               <div className={styles.formGrid}>
                 <div className={styles.formGroup}>
-                  <label className={styles.formLabel}>
-                    <FiLock size={14} />
-                    Tempo de Sessão (minutos)
-                  </label>
-                  <input
-                    type="number"
-                    min="5"
-                    max="480"
-                    className={styles.formInput}
-                    value={settings.security.sessionTimeout}
-                    onChange={(e) => updateSettings('security', { sessionTimeout: parseInt(e.target.value) || 30 })}
-                  />
+                  <label className={styles.formLabel}><FiLock size={14} /> Tempo de Sessão (minutos)</label>
+                  <input type="number" min="5" max="480" className={styles.formInput} value={settings.security.sessionTimeout} onChange={(e) => updateSettings('security', { sessionTimeout: parseInt(e.target.value) || 30 })} />
                 </div>
-
                 <div className={styles.formGroup}>
-                  <label className={styles.formLabel}>
-                    Expiração de Senha (dias)
-                  </label>
-                  <input
-                    type="number"
-                    min="0"
-                    className={styles.formInput}
-                    value={settings.security.passwordExpiryDays}
-                    onChange={(e) => updateSettings('security', { passwordExpiryDays: parseInt(e.target.value) || 0 })}
-                  />
+                  <label className={styles.formLabel}>Expiração de Senha (dias)</label>
+                  <input type="number" min="0" className={styles.formInput} value={settings.security.passwordExpiryDays} onChange={(e) => updateSettings('security', { passwordExpiryDays: parseInt(e.target.value) || 0 })} />
                   <small className={styles.helpText}>0 = nunca expira</small>
                 </div>
               </div>
@@ -726,67 +698,31 @@ export const SettingsPage: React.FC = () => {
                   <strong>Autenticação de dois fatores (2FA)</strong>
                   <p>Adicionar uma camada extra de segurança ao login</p>
                 </div>
-                <input
-                  type="checkbox"
-                  checked={settings.security.twoFactorAuth}
-                  onChange={(e) => updateSettings('security', { twoFactorAuth: e.target.checked })}
-                />
+                <input type="checkbox" checked={settings.security.twoFactorAuth} onChange={(e) => updateSettings('security', { twoFactorAuth: e.target.checked })} />
                 <span className={styles.switchSlider}></span>
               </label>
 
               <div className={styles.securityNotice}>
                 <MdWarning size={20} />
-                <p>
-                  Para sua segurança, recomenda-se alterar a senha regularmente e ativar a 
-                  autenticação de dois fatores.
-                </p>
+                <p>Para sua segurança, recomenda-se alterar a senha regularmente e ativar a autenticação de dois fatores.</p>
               </div>
             </div>
           )}
 
           {/* ============================================ */}
-          {/* ABA INTEGRAÇÕES (APENAS OWNER) */}
-          {/* ============================================ */}
-          {activeTab === 'integracoes' && !isClient && (
-            <div className={styles.settingsSection}>
-              <h2 className={styles.sectionTitle}>Integrações</h2>
-              <p className={styles.sectionDescription}>
-                Conecte o sistema com serviços externos para sincronizar dados e automatizar processos
-              </p>
-              
-              {/* ... (conteúdo de integrações existente) ... */}
-            </div>
-          )}
-
-          {/* ============================================ */}
-          {/* ABA ASSINATURA (APENAS OWNER) */}
+          {/* ABA ASSINATURA */}
           {/* ============================================ */}
           {activeTab === 'assinatura' && !isClient && (
             <div className={styles.settingsSection}>
               <h2 className={styles.sectionTitle}>Plano de Assinatura</h2>
-              <p className={styles.sectionDescription}>
-                Escolha o plano ideal para a sua organização.
-              </p>
+              <p className={styles.sectionDescription}>Escolha o plano ideal para a sua organização.</p>
               
               <div style={{ display: 'flex', justifyContent: 'center', margin: '20px 0', gap: '10px' }}>
-                <button 
-                  onClick={() => setBillingCycle('MONTHLY')} 
-                  style={{ padding: '8px 16px', borderRadius: '20px', border: '1px solid #3b82f6', background: billingCycle === 'MONTHLY' ? '#3b82f6' : 'transparent', color: billingCycle === 'MONTHLY' ? '#fff' : '#3b82f6', cursor: 'pointer' }}
-                >
-                  Mensal
-                </button>
-                <button 
-                  onClick={() => setBillingCycle('SEMIANNUALLY')} 
-                  style={{ padding: '8px 16px', borderRadius: '20px', border: '1px solid #3b82f6', background: billingCycle === 'SEMIANNUALLY' ? '#3b82f6' : 'transparent', color: billingCycle === 'SEMIANNUALLY' ? '#fff' : '#3b82f6', cursor: 'pointer' }}
-                >
-                  Semestral (10% off)
-                </button>
-                <button 
-                  onClick={() => setBillingCycle('YEARLY')} 
-                  style={{ padding: '8px 16px', borderRadius: '20px', border: '1px solid #3b82f6', background: billingCycle === 'YEARLY' ? '#3b82f6' : 'transparent', color: billingCycle === 'YEARLY' ? '#fff' : '#3b82f6', cursor: 'pointer' }}
-                >
-                  Anual (20% off)
-                </button>
+                {['MONTHLY', 'SEMIANNUALLY', 'YEARLY'].map(cycle => (
+                  <button key={cycle} onClick={() => setBillingCycle(cycle)} style={{ padding: '8px 16px', borderRadius: '20px', border: '1px solid #3b82f6', background: billingCycle === cycle ? '#3b82f6' : 'transparent', color: billingCycle === cycle ? '#fff' : '#3b82f6', cursor: 'pointer' }}>
+                    {cycle === 'MONTHLY' ? 'Mensal' : cycle === 'SEMIANNUALLY' ? 'Semestral (10% off)' : 'Anual (20% off)'}
+                  </button>
+                ))}
               </div>
 
               <div style={{ display: 'flex', gap: '20px', marginTop: '20px', flexWrap: 'wrap', justifyContent: 'center' }}>
@@ -811,29 +747,16 @@ export const SettingsPage: React.FC = () => {
                         </small>
                       </p>
                       <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 20px 0', textAlign: 'left', lineHeight: '1.6', fontSize: '14px' }}>
-                        {plan.features.map((feat, idx) => (
-                          <li key={idx}><FiCheck color="#10b981"/> {feat}</li>
-                        ))}
+                        {plan.features.map((feat, idx) => <li key={idx}><FiCheck color="#10b981"/> {feat}</li>)}
                       </ul>
-                      <button 
-                        disabled={subLoading}
-                        onClick={async () => {
-                          try {
-                            setSubLoading(true);
-                            await paymentService.createSubscription(user?.id || 0, { 
-                              planType: plan.id, 
-                              billingCycle: billingCycle, 
-                              billingType: 'UNDEFINED' // Permite que a organização escolha a forma de pagamento depois
-                            });
-                            alert(`Plano ${plan.name} selecionado com sucesso!`);
-                          } catch (err: any) {
-                            alert('Erro ao assinar: ' + (err.response?.data?.error || err.message));
-                          } finally {
-                            setSubLoading(false);
-                          }
-                        }}
-                        style={{ width: '100%', padding: '10px', background: plan.recommended ? '#10b981' : '#3b82f6', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: plan.recommended ? 'bold' : 'normal' }}
-                      >
+                      <button disabled={subLoading} onClick={async () => {
+                        try {
+                          setSubLoading(true);
+                          await paymentService.createSubscription(user?.id || 0, { planType: plan.id, billingCycle: billingCycle, billingType: 'UNDEFINED' });
+                          alert(`Plano ${plan.name} selecionado com sucesso!`);
+                        } catch (err: any) { alert('Erro ao assinar: ' + (err.response?.data?.error || err.message)); }
+                        finally { setSubLoading(false); }
+                      }} style={{ width: '100%', padding: '10px', background: plan.recommended ? '#10b981' : '#3b82f6', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: plan.recommended ? 'bold' : 'normal' }}>
                         {subLoading ? 'Processando...' : 'Assinar ' + plan.name}
                       </button>
                     </div>
@@ -845,22 +768,8 @@ export const SettingsPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Modais */}
-      <ConfirmationModal
-        isOpen={showSuccessModal}
-        title="Sucesso!"
-        message={successMessage}
-        type="success"
-        onConfirm={() => setShowSuccessModal(false)}
-        onCancel={() => setShowSuccessModal(false)}
-        confirmText="OK"
-      />
-
-      <ErrorModal
-        isOpen={showErrorModal}
-        message={errorMessage}
-        onClose={() => setShowErrorModal(false)}
-      />
+      <ConfirmationModal isOpen={showSuccessModal} title="Sucesso!" message={successMessage} type="success" onConfirm={() => setShowSuccessModal(false)} onCancel={() => setShowSuccessModal(false)} confirmText="OK" />
+      <ErrorModal isOpen={showErrorModal} message={errorMessage} onClose={() => setShowErrorModal(false)} />
     </div>
   );
 };

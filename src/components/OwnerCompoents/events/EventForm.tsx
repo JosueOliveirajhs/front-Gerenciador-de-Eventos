@@ -11,9 +11,14 @@ import {
   FiDollarSign,
   FiFileText,
   FiUpload,
-  FiPlus
+  FiPlus,
+  FiEye,
+  FiDownload,
+  FiExternalLink,
+  FiRefreshCw,
+  FiAlertCircle
 } from 'react-icons/fi';
-import { MdEvent, MdAttachMoney, MdWarning, MdAdd, MdDateRange, MdCheckCircle, MdPayment } from 'react-icons/md';
+import { MdEvent, MdAttachMoney, MdWarning, MdPictureAsPdf } from 'react-icons/md';
 import { Event, CreateEventData } from '../../../types/Event';
 import { User } from '../../../types/User';
 import { Payment } from '../../../types/Payment';
@@ -21,6 +26,7 @@ import { paymentService } from '../../../services/payments';
 import { api } from '../../../services/api';
 import { EventConflictChecker } from './EventConflictChecker';
 import { ConfirmationModal } from '../../common/Alerts/ConfirmationModal';
+import { ErrorModal } from '../../common/Alerts/ErrorModal';
 
 import styles from './EventManagement/EventManagement.module.css';
 
@@ -33,6 +39,8 @@ interface EventFormProps {
   formatDateForDisplay: (dateString: string) => string;
   existingEvents: Event[];
 }
+
+const API_URL = 'http://localhost:8080';
 
 export const EventForm: React.FC<EventFormProps> = ({
   clients,
@@ -59,11 +67,11 @@ export const EventForm: React.FC<EventFormProps> = ({
   const [hasConflict, setHasConflict] = useState(false);
   const [loading, setLoading] = useState(false);
   
-  // Estado para o modal de sucesso
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
+  const [showErrorModal, setShowErrorModal] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
-  // Estados para financeiro do evento
   const [eventPayments, setEventPayments] = useState<Payment[]>([]);
   const [loadingPayments, setLoadingPayments] = useState(false);
   const [showNewPaymentForm, setShowNewPaymentForm] = useState(false);
@@ -73,12 +81,12 @@ export const EventForm: React.FC<EventFormProps> = ({
     dueDate: ''
   });
 
-  // DEBUG: Monitorar mudanças no showSuccessModal
-  useEffect(() => {
-    console.log('🎯 [EventForm] showSuccessModal mudou para:', showSuccessModal);
-  }, [showSuccessModal]);
+  // Preview state (igual ClientDocuments)
+  const [previewPayment, setPreviewPayment] = useState<Payment | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string>('');
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [previewError, setPreviewError] = useState<string | null>(null);
 
-  // Carregar pagamentos do evento se estiver editando
   useEffect(() => {
     if (editingEvent) {
       loadEventPayments();
@@ -181,6 +189,17 @@ export const EventForm: React.FC<EventFormProps> = ({
     return Object.keys(newErrors).length === 0;
   };
 
+  const getCurrentISODate = (): string => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    const seconds = String(now.getSeconds()).padStart(2, '0');
+    return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -188,42 +207,205 @@ export const EventForm: React.FC<EventFormProps> = ({
     
     setLoading(true);
     try {
+      const totalValue = parseFloat(formData.totalValue);
+      const depositValue = parseFloat(formData.depositValue);
+      const balanceValue = totalValue - depositValue;
+      
+      const paymentData = {
+        description: `Pagamento do evento: ${formData.title}`,
+        amount: balanceValue > 0 ? balanceValue : totalValue,
+        dueDate: formData.eventDate,
+        status: 'PENDING',
+        paymentDate: getCurrentISODate(),
+        paymentMethod: null,
+        billingType: null,
+        invoiceUrl: null,
+        receiptUrl: null,
+        uploadedAt: getCurrentISODate(),
+        rejectionReason: null,
+        userId: null
+      };
+      
       const submitData = {
         ...formData,
         clientId: Number(formData.clientId),
         guestCount: Number(formData.guestCount),
         totalValue: formData.totalValue,
-        depositValue: formData.depositValue
+        depositValue: formData.depositValue,
+        payment: paymentData
       };
-      
-      console.log('📝 [EventForm] Enviando dados:', submitData);
       
       await onSubmit(submitData);
       
-      console.log('✅ [EventForm] onSubmit executado com sucesso');
-      
-      // DEBUG: Verificar se está chegando aqui
-      console.log('🔵 [EventForm] ANTES de setSuccessMessage');
       setSuccessMessage(editingEvent 
         ? 'Evento atualizado com sucesso!' 
         : 'Evento criado com sucesso!'
       );
-      console.log('🟡 [EventForm] ANTES de setShowSuccessModal');
       setShowSuccessModal(true);
-      console.log('🟢 [EventForm] DEPOIS de setShowSuccessModal');
       
-    } catch (error) {
-      console.error('❌ [EventForm] Erro ao salvar evento:', error);
-      alert('Erro ao salvar evento: ' + error);
+    } catch (error: any) {
+      console.error('Erro ao salvar evento:', error);
+      setErrorMessage(error?.message || 'Erro ao salvar evento. Tente novamente.');
+      setShowErrorModal(true);
     } finally {
       setLoading(false);
     }
   };
 
   const handleSuccessClose = () => {
-    console.log('🔴 [EventForm] Fechando modal de sucesso');
     setShowSuccessModal(false);
     onCancel();
+  };
+
+  const handleErrorClose = () => {
+    setShowErrorModal(false);
+    setErrorMessage('');
+  };
+
+  const handleCreatePayment = async () => {
+    if (!newPaymentData.description || !newPaymentData.amount || !newPaymentData.dueDate) {
+      setErrorMessage('Preencha todos os campos do pagamento.');
+      setShowErrorModal(true);
+      return;
+    }
+    
+    try {
+      await paymentService.createPayment({
+        eventId: editingEvent!.id,
+        amount: parseFloat(newPaymentData.amount),
+        dueDate: newPaymentData.dueDate,
+        description: newPaymentData.description,
+        status: 'PENDING',
+        paymentDate: getCurrentISODate(),
+        uploadedAt: getCurrentISODate()
+      });
+      
+      setSuccessMessage('Pagamento criado com sucesso!');
+      setShowSuccessModal(true);
+      setShowNewPaymentForm(false);
+      setNewPaymentData({ description: '', amount: '', dueDate: '' });
+      loadEventPayments();
+      
+    } catch (err: any) {
+      console.error('Erro ao criar pagamento:', err);
+      setErrorMessage(err?.message || 'Erro ao criar pagamento. Tente novamente.');
+      setShowErrorModal(true);
+    }
+  };
+
+  // ✅ VISUALIZAR BOLETO - Via backend proxy
+  // ✅ VISUALIZAR BOLETO - Com token JWT
+const handleViewBoleto = async (payment: Payment) => {
+  if (!payment.id) {
+    setErrorMessage('Boleto não disponível.');
+    setShowErrorModal(true);
+    return;
+  }
+
+  setPreviewPayment(payment);
+  setPreviewLoading(true);
+  setPreviewError(null);
+
+  try {
+    // ✅ Pegar o token JWT do localStorage
+    const token = localStorage.getItem('token');
+    
+    const url = `${API_URL}/payments/${payment.id}/invoice/download`;
+    
+    const response = await fetch(url, {
+      headers: token ? { 
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      } : {}
+    });
+
+    if (!response.ok) {
+      throw new Error(`Erro ${response.status}`);
+    }
+
+    const blob = await response.blob();
+    const blobUrl = URL.createObjectURL(blob);
+    setPreviewUrl(blobUrl);
+    setPreviewLoading(false);
+
+  } catch (err: any) {
+    console.error('Erro ao carregar boleto:', err);
+    setPreviewLoading(false);
+    setPreviewError(err.message || 'Erro ao carregar documento');
+  }
+};
+
+
+  // ✅ FECHAR PREVIEW
+  const handleClosePreview = () => {
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    setPreviewPayment(null);
+    setPreviewUrl('');
+    setPreviewLoading(false);
+    setPreviewError(null);
+  };
+
+  // ✅ DOWNLOAD - Via backend proxy
+  const handleDownloadBoleto = (payment: Payment) => {
+    if (payment.id) {
+      window.open(`${API_URL}/payments/${payment.id}/invoice/download`, '_blank', 'noopener,noreferrer');
+    } else if (payment.invoiceUrl) {
+      window.open(payment.invoiceUrl, '_blank', 'noopener,noreferrer');
+    } else {
+      setErrorMessage('Boleto não disponível para download.');
+      setShowErrorModal(true);
+    }
+  };
+
+  // ✅ ABRIR EM NOVA ABA - URL direta
+  const handleOpenBoleto = (payment: Payment) => {
+    if (payment.invoiceUrl) {
+      window.open(payment.invoiceUrl, '_blank', 'noopener,noreferrer');
+    } else {
+      setErrorMessage('Boleto não disponível.');
+      setShowErrorModal(true);
+    }
+  };
+
+  const handleUploadInvoice = async (paymentId: number) => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'application/pdf';
+    input.onchange = async (e: any) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      try {
+        const formData = new FormData();
+        formData.append('file', file);
+        const response = await api.post(`/payments/${paymentId}/upload-invoice`, formData, { 
+          headers: { 'Content-Type': 'multipart/form-data' } 
+        });
+        if (response.status === 200) {
+          setSuccessMessage('Boleto anexado com sucesso!');
+          setShowSuccessModal(true);
+          loadEventPayments();
+        }
+      } catch (err: any) {
+        console.error('Erro ao anexar boleto:', err);
+        setErrorMessage(err?.message || 'Erro ao anexar boleto. Tente novamente.');
+        setShowErrorModal(true);
+      }
+    };
+    input.click();
+  };
+
+  const formatDate = (dateString: string): string => {
+    try {
+      return new Date(dateString).toLocaleDateString('pt-BR');
+    } catch {
+      return dateString;
+    }
+  };
+
+  const formatCurrency = (value: any): string => {
+    const num = typeof value === 'string' ? parseFloat(value) : value;
+    if (isNaN(num)) return 'R$ 0,00';
+    return num.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
   };
 
   return (
@@ -379,8 +561,9 @@ export const EventForm: React.FC<EventFormProps> = ({
               </div>
             </div>
 
+            {/* SEÇÃO FINANCEIRA */}
             {editingEvent && (
-              <div className={styles.financeSection} style={{ marginTop: '32px', paddingTop: '32px', borderTop: '1px solid var(--border-color)' }}>
+              <div style={{ marginTop: '32px', paddingTop: '32px', borderTop: '1px solid var(--border-color)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                   <h4 style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: 0, fontSize: '18px', color: 'var(--text-primary)' }}>
                     <MdAttachMoney size={20} /> Gestão Financeira do Evento
@@ -400,113 +583,83 @@ export const EventForm: React.FC<EventFormProps> = ({
                   <div style={{ background: 'var(--bg-secondary)', padding: '16px', borderRadius: '10px', marginBottom: '20px', border: '1px solid var(--border-color)' }}>
                     <h5 style={{ margin: '0 0 12px 0', fontSize: '14px', color: 'var(--text-primary)' }}>Novo Pagamento</h5>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px' }}>
-                      <input 
-                        type="text" 
-                        placeholder="Descrição"
-                        value={newPaymentData.description}
+                      <input type="text" placeholder="Descrição" value={newPaymentData.description}
                         onChange={e => setNewPaymentData({...newPaymentData, description: e.target.value})}
-                        style={{ padding: '8px', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'var(--bg-primary)', color: 'var(--text-primary)', fontSize: '13px' }}
-                      />
-                      <input 
-                        type="number" 
-                        placeholder="Valor"
-                        value={newPaymentData.amount}
+                        style={{ padding: '8px', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'var(--bg-primary)', color: 'var(--text-primary)', fontSize: '13px' }} />
+                      <input type="number" placeholder="Valor" value={newPaymentData.amount}
                         onChange={e => setNewPaymentData({...newPaymentData, amount: e.target.value})}
-                        style={{ padding: '8px', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'var(--bg-primary)', color: 'var(--text-primary)', fontSize: '13px' }}
-                      />
-                      <input 
-                        type="date" 
-                        value={newPaymentData.dueDate}
+                        style={{ padding: '8px', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'var(--bg-primary)', color: 'var(--text-primary)', fontSize: '13px' }} />
+                      <input type="date" value={newPaymentData.dueDate}
                         onChange={e => setNewPaymentData({...newPaymentData, dueDate: e.target.value})}
-                        style={{ padding: '8px', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'var(--bg-primary)', color: 'var(--text-primary)', fontSize: '13px' }}
-                      />
+                        style={{ padding: '8px', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'var(--bg-primary)', color: 'var(--text-primary)', fontSize: '13px' }} />
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '12px' }}>
-                      <button 
-                        type="button"
-                        onClick={() => setShowNewPaymentForm(false)}
-                        style={{ padding: '6px 12px', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'transparent', color: 'var(--text-muted)', fontSize: '13px', cursor: 'pointer' }}
-                      >
-                        Cancelar
-                      </button>
-                      <button 
-                        type="button"
-                        onClick={async () => {
-                          if (!newPaymentData.description || !newPaymentData.amount || !newPaymentData.dueDate) {
-                            alert('Preencha todos os campos.');
-                            return;
-                          }
-                          try {
-                            await paymentService.createPayment({
-                              eventId: editingEvent.id,
-                              amount: parseFloat(newPaymentData.amount),
-                              dueDate: newPaymentData.dueDate,
-                              description: newPaymentData.description,
-                              status: 'PENDING'
-                            });
-                            alert('Pagamento criado!');
-                            setShowNewPaymentForm(false);
-                            setNewPaymentData({ description: '', amount: '', dueDate: '' });
-                            loadEventPayments();
-                          } catch (err) {
-                            alert('Erro ao criar pagamento.');
-                          }
-                        }}
-                        style={{ padding: '6px 12px', borderRadius: '4px', border: 'none', background: '#10b981', color: 'white', fontWeight: '600', fontSize: '13px', cursor: 'pointer' }}
-                      >
-                        Criar
-                      </button>
+                      <button type="button" onClick={() => setShowNewPaymentForm(false)}
+                        style={{ padding: '6px 12px', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'transparent', color: 'var(--text-muted)', fontSize: '13px', cursor: 'pointer' }}>Cancelar</button>
+                      <button type="button" onClick={handleCreatePayment}
+                        style={{ padding: '6px 12px', borderRadius: '4px', border: 'none', background: '#10b981', color: 'white', fontWeight: '600', fontSize: '13px', cursor: 'pointer' }}>Criar</button>
                     </div>
                   </div>
                 )}
 
                 {loadingPayments ? (
-                  <p>Carregando pagamentos...</p>
+                  <div style={{ textAlign: 'center', padding: '20px', color: 'var(--text-muted)' }}>
+                    <FiRefreshCw size={16} style={{ animation: 'spin 1s linear infinite', marginRight: '8px' }} />
+                    Carregando pagamentos...
+                  </div>
                 ) : eventPayments.length === 0 ? (
-                  <p style={{ color: 'var(--text-muted)', fontSize: '14px', textAlign: 'center', padding: '20px' }}>Nenhum pagamento registrado para este evento.</p>
+                  <div style={{ textAlign: 'center', padding: '20px', color: 'var(--text-muted)', fontSize: '14px' }}>
+                    Nenhum pagamento registrado para este evento.
+                  </div>
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                     {eventPayments.map(payment => (
-                      <div key={payment.id} style={{ background: 'var(--bg-tertiary)', padding: '12px', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: '1px solid var(--border-color)' }}>
-                        <div>
-                          <p style={{ margin: '0 0 4px 0', fontWeight: '600', fontSize: '14px' }}>{payment.description}</p>
-                          <div style={{ display: 'flex', gap: '12px', fontSize: '12px', color: 'var(--text-muted)' }}>
-                            <span>Vencimento: {new Date(payment.dueDate).toLocaleDateString('pt-BR')}</span>
-                            <span>Valor: {parseFloat(payment.amount.toString()).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>
+                      <div key={payment.id} style={{
+                        background: 'var(--bg-tertiary)', padding: '14px 16px', borderRadius: '12px',
+                        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                        border: '1px solid var(--border-color)', flexWrap: 'wrap', gap: '12px'
+                      }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: '200px' }}>
+                          <div style={{ width: '42px', height: '42px', borderRadius: '10px',
+                            background: payment.invoiceUrl ? 'rgba(239, 68, 68, 0.1)' : 'rgba(100, 116, 139, 0.1)',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                            <MdPictureAsPdf size={22} color={payment.invoiceUrl ? '#ef4444' : '#64748b'} />
+                          </div>
+                          <div style={{ minWidth: 0 }}>
+                            <p style={{ margin: '0 0 4px 0', fontWeight: '600', fontSize: '14px', color: 'var(--text-primary)' }}>
+                              {payment.description}
+                            </p>
+                            <div style={{ display: 'flex', gap: '16px', fontSize: '12px', color: 'var(--text-muted)', flexWrap: 'wrap' }}>
+                              <span>Venc: {formatDate(payment.dueDate)}</span>
+                              <span style={{ fontWeight: '600', color: 'var(--text-primary)' }}>{formatCurrency(payment.amount)}</span>
+                            </div>
                           </div>
                         </div>
-                        <div style={{ display: 'flex', gap: '8px' }}>
+                        <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
                           {payment.invoiceUrl && (
-                            <a href={payment.invoiceUrl} target="_blank" rel="noreferrer" style={{ padding: '6px', background: '#64748b', color: 'white', borderRadius: '4px', display: 'flex' }} title="Ver Boleto">
-                              <FiFileText size={16} />
-                            </a>
+                            <>
+                              <button type="button" onClick={() => handleViewBoleto(payment)}
+                                style={{ padding: '8px 12px', background: 'rgba(0, 180, 216, 0.1)', color: '#00B4D8',
+                                  border: 'none', borderRadius: '8px', cursor: 'pointer', display: 'flex',
+                                  alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 600 }}
+                                title="Visualizar boleto"><FiEye size={14} />Ver</button>
+                              <button type="button" onClick={() => handleDownloadBoleto(payment)}
+                                style={{ padding: '8px 12px', background: 'rgba(16, 185, 129, 0.1)', color: '#10b981',
+                                  border: 'none', borderRadius: '8px', cursor: 'pointer', display: 'flex',
+                                  alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 600 }}
+                                title="Download boleto"><FiDownload size={14} />Baixar</button>
+                              <button type="button" onClick={() => handleOpenBoleto(payment)}
+                                style={{ padding: '8px 12px', background: 'rgba(245, 158, 11, 0.1)', color: '#f59e0b',
+                                  border: 'none', borderRadius: '8px', cursor: 'pointer', display: 'flex',
+                                  alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 600 }}
+                                title="Abrir em nova aba"><FiExternalLink size={14} />Abrir</button>
+                            </>
                           )}
-                          <button 
-                            type="button"
-                            onClick={() => {
-                              const input = document.createElement('input');
-                              input.type = 'file';
-                              input.accept = 'application/pdf';
-                              input.onchange = async (e: any) => {
-                                const file = e.target.files?.[0];
-                                if (!file) return;
-                                try {
-                                  const formData = new FormData();
-                                  formData.append('file', file);
-                                  const response = await api.post(`/payments/${payment.id}/upload-invoice`, formData, { headers: { 'Content-Type': 'multipart/form-data' } });
-                                  if (response.status === 200) {
-                                    alert('Boleto anexado com sucesso!');
-                                    loadEventPayments();
-                                  }
-                                } catch (error) { alert('Erro ao anexar boleto'); }
-                              };
-                              input.click();
-                            }}
-                            style={{ padding: '6px', background: '#00B4D8', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', display: 'flex' }}
-                            title="Anexar Boleto"
-                          >
-                            <FiUpload size={16} />
-                          </button>
+                          <button type="button" onClick={() => handleUploadInvoice(payment.id)}
+                            style={{ padding: '8px 12px', background: 'rgba(0, 180, 216, 0.1)', color: '#00B4D8',
+                              border: 'none', borderRadius: '8px', cursor: 'pointer', display: 'flex',
+                              alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 600 }}
+                            title="Anexar boleto"><FiUpload size={14} />Anexar</button>
                         </div>
                       </div>
                     ))}
@@ -517,24 +670,13 @@ export const EventForm: React.FC<EventFormProps> = ({
 
             <div className={styles.formGroup}>
               <label className={styles.formLabel}><FiFileText size={14} /> Observações</label>
-              <textarea
-                value={formData.notes}
-                onChange={(e) => setFormData({...formData, notes: e.target.value})}
-                className={styles.formTextarea}
-                rows={3}
-                placeholder="Detalhes adicionais sobre o evento..."
-              />
+              <textarea value={formData.notes} onChange={(e) => setFormData({...formData, notes: e.target.value})}
+                className={styles.formTextarea} rows={3} placeholder="Detalhes adicionais sobre o evento..." />
             </div>
 
             <div className={styles.formActions}>
-              <button type="button" onClick={onCancel} className={styles.secondaryButton}>
-                Cancelar
-              </button>
-              <button 
-                type="submit" 
-                className={styles.primaryButton}
-                disabled={loading || (hasConflict && !editingEvent)}
-              >
+              <button type="button" onClick={onCancel} className={styles.secondaryButton}>Cancelar</button>
+              <button type="submit" className={styles.primaryButton} disabled={loading || (hasConflict && !editingEvent)}>
                 <FiSave size={18} />
                 {loading ? 'Salvando...' : (editingEvent ? 'Salvar Alterações' : 'Criar Evento')}
               </button>
@@ -543,16 +685,79 @@ export const EventForm: React.FC<EventFormProps> = ({
         </div>
       </div>
 
-      {/* Modal de Sucesso */}
-      <ConfirmationModal
-        isOpen={showSuccessModal}
-        title="Sucesso!"
-        message={successMessage}
-        type="success"
-        onConfirm={handleSuccessClose}
-        onCancel={handleSuccessClose}
-        confirmText="OK"
-      />
+      {/* MODAL PREVIEW */}
+      {previewPayment && previewUrl && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(0, 0, 0, 0.7)', backdropFilter: 'blur(8px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          zIndex: 2000, padding: '20px' }} onClick={handleClosePreview}>
+          <div style={{ background: 'var(--card-bg)', borderRadius: '20px', width: '100%', maxWidth: '900px',
+            height: '90vh', display: 'flex', flexDirection: 'column', overflow: 'hidden',
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)' }} onClick={(e) => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+              padding: '16px 20px', background: 'linear-gradient(135deg, #00B4D8 0%, #0096B4 100%)',
+              color: 'white', flexShrink: 0, flexWrap: 'wrap', gap: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{ width: '40px', height: '40px', background: 'rgba(255,255,255,0.2)',
+                  borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <MdPictureAsPdf size={22} color="white" />
+                </div>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 600 }}>{previewPayment.description}</h3>
+                  <p style={{ margin: '2px 0 0 0', fontSize: '12px', opacity: 0.9 }}>
+                    Venc: {formatDate(previewPayment.dueDate)} • {formatCurrency(previewPayment.amount)}
+                  </p>
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button type="button" onClick={() => handleDownloadBoleto(previewPayment)}
+                  style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 14px',
+                    background: 'rgba(255,255,255,0.2)', color: 'white', border: '1px solid rgba(255,255,255,0.3)',
+                    borderRadius: '8px', fontSize: '13px', fontWeight: 500, cursor: 'pointer' }}>
+                  <FiDownload size={16} />Download</button>
+                <button type="button" onClick={handleClosePreview}
+                  style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 14px',
+                    background: 'rgba(255,255,255,0.2)', color: 'white', border: '1px solid rgba(255,255,255,0.3)',
+                    borderRadius: '8px', fontSize: '13px', fontWeight: 500, cursor: 'pointer' }}>
+                  <FiX size={16} />Fechar</button>
+              </div>
+            </div>
+            <div style={{ flex: 1, background: '#f8fafc', position: 'relative' }}>
+              {previewLoading && (
+                <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column',
+                  alignItems: 'center', justifyContent: 'center', gap: '16px', color: 'var(--text-muted)' }}>
+                  <div style={{ width: '40px', height: '40px', border: '3px solid var(--border-color)',
+                    borderTop: '3px solid #00B4D8', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+                  <p style={{ fontSize: '14px' }}>Carregando documento...</p>
+                </div>
+              )}
+              {previewError && (
+                <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column',
+                  alignItems: 'center', justifyContent: 'center', gap: '16px', color: 'var(--text-muted)',
+                  padding: '40px', textAlign: 'center' }}>
+                  <FiAlertCircle size={48} color="#ef4444" />
+                  <p style={{ fontSize: '14px', maxWidth: '400px' }}>{previewError}</p>
+                  <button type="button" onClick={() => handleDownloadBoleto(previewPayment)}
+                    style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 20px',
+                      background: '#00B4D8', color: 'white', border: 'none', borderRadius: '8px',
+                      fontSize: '14px', fontWeight: 600, cursor: 'pointer' }}>
+                    <FiDownload size={16} />Baixar documento</button>
+                </div>
+              )}
+              <iframe src={previewUrl}
+                style={{ width: '100%', height: '100%', border: 'none',
+                  display: previewLoading || previewError ? 'none' : 'block' }}
+                title={previewPayment.description || 'Boleto'} />
+            </div>
+          </div>
+        </div>
+      )}
+
+      <ConfirmationModal isOpen={showSuccessModal} title="Sucesso!" message={successMessage}
+        type="success" onConfirm={handleSuccessClose} onCancel={handleSuccessClose} confirmText="OK" />
+      <ErrorModal isOpen={showErrorModal} message={errorMessage} onClose={handleErrorClose} />
+
+      <style>{`@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}</style>
     </>
   );
 };

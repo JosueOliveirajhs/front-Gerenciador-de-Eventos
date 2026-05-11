@@ -29,6 +29,21 @@ export interface ContractedService {
 
 export const eventService = {
   /**
+   * ✅ NOVO: Busca disponibilidade de datas e horarios (publico)
+   */
+  getAvailability: async (): Promise<{date: string, startTime: string, endTime: string}[]> => {
+    try {
+      console.log('📅 Buscando disponibilidade...');
+      const response = await api.get('/events/availability');
+      console.log('✅ Disponibilidade carregada:', response.data.length, 'registros');
+      return response.data;
+    } catch (error) {
+      console.error('❌ Erro ao buscar disponibilidade:', error);
+      return [];
+    }
+  },
+
+  /**
    * Busca todos os eventos
    */
   getAllEvents: async (): Promise<Event[]> => {
@@ -303,7 +318,6 @@ export const eventService = {
     } catch (error) {
       console.log(`ℹ️ Progresso não disponível para evento ${eventId}`);
       
-      // Fallback: buscar dados separadamente
       const [event, checklist, services] = await Promise.all([
         eventService.getEventById(eventId),
         eventService.getEventChecklist(eventId),
@@ -326,7 +340,30 @@ export const eventService = {
   createEvent: async (eventData: CreateEventData): Promise<Event> => {
     try {
       console.log('📝 Criando evento:', eventData);
-      const response = await api.post('/events', eventData);
+      
+      const now = new Date().toISOString();
+      
+      const payload = {
+        ...eventData,
+        paymentDate: now,
+        payment: {
+          amount: eventData.payment?.amount || parseFloat(eventData.totalValue) - parseFloat(eventData.depositValue || '0'),
+          dueDate: eventData.payment?.dueDate || eventData.eventDate,
+          description: eventData.payment?.description || `Pagamento do evento: ${eventData.title}`,
+          status: eventData.payment?.status || 'PENDING',
+          paymentDate: now,
+          paymentMethod: 'PIX',
+          billingType: 'BOLETO',
+          invoiceUrl: '',
+          paymentUrl: '',
+          receiptUrl: '',
+          rejectionReason: '',
+          asaasPaymentId: '',
+          uploadedAt: now
+        }
+      };
+      
+      const response = await api.post('/events', payload);
       console.log('✅ Evento criado:', response.data);
       return response.data;
     } catch (error) {
